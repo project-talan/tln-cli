@@ -1,0 +1,27 @@
+{
+  "name": "tln-cli",
+  "version": "0.1.0",
+  "description": "Multi-projects management tool",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "tln2": "./cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/project-talan/tln-cli.git"
+  },
+  "keywords": [
+    "node",
+    "cli",
+    "management"
+  ],
+  "author": "Vladyslav Kurmaz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/project-talan/tln-cli/issues"
+  },
+  "homepage": "https://github.com/project-talan/tln-cli#readme"
+}
