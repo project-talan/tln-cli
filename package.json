@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/project-talan/tln-cli/issues"
   },
-  "homepage": "https://github.com/project-talan/tln-cli#readme"
+  "homepage": "https://github.com/project-talan/tln-cli#readme",
+  "dependencies": {
+    "yargs": "^12.0.2"
+  }
 }
