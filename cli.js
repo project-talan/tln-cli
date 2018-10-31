@@ -71,7 +71,8 @@ const argv = require('yargs')
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
         appl.resolve(argv.components).forEach(function(component) {
-          component.print(function(...args) { console.log.apply(console, args); });
+          logger.trace('resolved', component.getId());
+          component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
         });
       }
     )

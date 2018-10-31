@@ -43,8 +43,9 @@ class Appl {
     folders.forEach(function(folder) {
       this.entity = this.entity.dive(folder, true);
     }.bind(this));
-    this.root.dive('docker');
-    this.root.dive('project-talan');
+    //
+    this.logger.trace('root:', this.root.getId(), this.root.descs);
+    this.logger.trace('entity:', this.entity.getId(), this.entity.descs);
   }
   //
   resolve(components) {
@@ -57,10 +58,13 @@ class Appl {
     }
     if (ids.length) {
       ids.forEach(function(id) {
+        this.logger.trace('resolving ', `'${id}'`);
         // try to find inside child components
+        this.logger.trace('searching', `'${id}'`, 'within children');
         let e = this.entity.find(id, true);
         if (!e) {
           // try to use components in parent's child
+          this.logger.trace('searching', `'${id}'`, 'using parent');
           e = this.entity.find(id, false, this.entity);
         }
         if (e) {

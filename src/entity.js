@@ -28,23 +28,32 @@ class Entity {
     return ((this.getId() === e.getId()) && (this.getHome() === e.getHome()));
   }
   //
-  print(cout, offset = '', last = false) {
-    cout(`${offset} ${this.id}`);
-    let cnt = this.entities.length;
-    let no = offset;
-    if (offset.length) {
-      if (this.entities.length) {
-        no = offset.substring(0, offset.length - 1) + '│';
-      }
-      if (last) {
-        no = offset.substring(0, offset.length - 1) + ' ';
-      }
+  print(cout, depth, offset = '', last = false) {
+    // output yourself
+    let status = '';
+    if (!fs.existsSync(this.getHome())) {
+      status = '?'
     }
-    this.entities.forEach(function(entity) {
-      cnt--;
-      const delim = (cnt)?(' ├'):(' └');
-      entity.print(cout, `${no}${delim}`, cnt === 0);
-    });
+    cout(`${offset} ${this.id} ${status}`);
+    //
+    if (depth !== 0) {
+      this.construct();
+      let cnt = this.entities.length;
+      let no = offset;
+      if (offset.length) {
+        if (this.entities.length) {
+          no = offset.substring(0, offset.length - 1) + '│';
+        }
+        if (last) {
+          no = offset.substring(0, offset.length - 1) + ' ';
+        }
+      }
+      this.entities.forEach(function(entity) {
+        cnt--;
+        const delim = (cnt)?(' ├'):(' └');
+        entity.print(cout, depth-1, `${no}${delim}`, cnt === 0);
+      });
+    }
   }
   //
   buildDescPair(source, desc) {
@@ -76,44 +85,62 @@ class Entity {
       this.descs.unshift(this.buildDescPair(source, desc));
     }
   }
+  //
+  getIDs() {
+    // collect ids
+    let ids = [];
+    // ... from already created entities
+    this.entities.forEach(function (e) { ids.push(e.getId()); });
+    // ... from descs
+    this.descs.forEach(function(pair) {
+      let ents = [];
+      if (pair.desc.getEntities) {
+        ents = pair.desc.getEntities();
+      }
+      //
+      ents.forEach(function(e) {
+        ids.push(e.id);
+      });
+    }.bind(this));
+    // ... from file system
+    const enumDirs = function(h) {
+      return  fs.readdirSync(h).
+              forEach(function(name) {
+                const p = path.join(h, name);
+                if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
+                  ids.push(name);
+                }
+              });
+    };
+    if (fs.existsSync(this.getHome())) {
+      enumDirs(this.getHome());
+    }
+    // remove duplicates
+    ids = ids.filter(function(item, pos) {
+      return ids.indexOf(item) == pos;
+    });
+    this.logger.trace('ids', ids);
+    return ids;
+  }
+  //
+  construct() {
+    this.getIDs().forEach(function(id) {
+      this.dive(id, false);
+    }.bind(this));
+  }
 
   find(id, recursive, floatUp = null){
     let entity = null;
+    this.logger.trace('searching', `'${id}'`, `inside ${this.id}`);
     if (this.getId() === id) {
       entity = this;
     } else {
       // check if requested entity was already created or can be created
       entity = this.dive(id, false);
       if (!entity && recursive) {
-        // collect ids
-        let ids = [];
-        // ... from already created entities
-        this.entities.forEach(function (e) { ids.push(e.getId()); });
-        // ... from descs
-        this.descs.forEach(function(pair) {
-          let ents = [];
-          if (pair.desc.getEntities) {
-            ents = pair.desc.getEntities();
-          }
-          //
-          ents.forEach(function(e) {
-            ids.push(e.id);
-          });
-        }.bind(this));
-        // ... from file system
-        const enumDirs = function(h) {
-          return  fs.readdirSync(h).
-                  forEach(function(name) {
-                    const p = path.join(h, name);
-                    if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
-                      ids.push(name);
-                    }
-                  });
-        };
-        enumDirs(this.getHome());
-        ids = ids.filter(function(item, pos) {
-          return ids.indexOf(item) == pos;
-        });
+        const ids = this.getIDs();
+        this.logger.trace('collected ids', ids);
+        //
         ids.find(function(item) {
           const e = this.dive(item, false);
           if (e && !this.isItMe(e)) {
