@@ -16,8 +16,16 @@ class Entity {
     this.entities = [];
   }
   //
+  getId() {
+    return this.id;
+  }
+  //
   getHome() {
     return this.home;
+  }
+  //
+  isItMe(e) {
+    return ((this.getId() === e.getId()) && (this.getHome() === e.getHome()));
   }
   //
   print(cout, offset = '', last = false) {
@@ -68,10 +76,63 @@ class Entity {
       this.descs.unshift(this.buildDescPair(source, desc));
     }
   }
+
+  find(id, recursive, floatUp = null){
+    let entity = null;
+    if (this.getId() === id) {
+      entity = this;
+    } else {
+      // check if requested entity was already created or can be created
+      entity = this.dive(id, false);
+      if (!entity && recursive) {
+        // collect ids
+        let ids = [];
+        // ... from already created entities
+        this.entities.forEach(function (e) { ids.push(e.getId()); });
+        // ... from descs
+        this.descs.forEach(function(pair) {
+          let ents = [];
+          if (pair.desc.getEntities) {
+            ents = pair.desc.getEntities();
+          }
+          //
+          ents.forEach(function(e) {
+            ids.push(e.id);
+          });
+        }.bind(this));
+        // ... from file system
+        const enumDirs = function(h) {
+          return  fs.readdirSync(h).
+                  forEach(function(name) {
+                    const p = path.join(h, name);
+                    if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
+                      ids.push(name);
+                    }
+                  });
+        };
+        enumDirs(this.getHome());
+        ids = ids.filter(function(item, pos) {
+          return ids.indexOf(item) == pos;
+        });
+        ids.find(function(item) {
+          const e = this.dive(item, false);
+          if (e && !this.isItMe(e)) {
+            entity = e.find(id, recursive, null);
+          }
+          return (entity != null);
+        }.bind(this));
+      }
+      //
+      if (floatUp && this.parent) {
+        entity = this.parent.find(id, recursive, this);
+      }
+    }
+    return entity;
+  }
   
-  dive(id) {
+  dive(id, force) {
     // check if entity was already created
-    let entity = this.entities.find(function (e) { return e.id === id; });
+    let entity = this.entities.find(function (e) { return e.getId() === id; });
     if (!entity) {
       // collect description from already loaded sources
       const descs = [];
@@ -86,9 +147,9 @@ class Entity {
           descs.push(this.buildDescPair(pair.path, ent));
         }
       }.bind(this));
-      // create child entity, if entity is presented on the disc or has description inside parent
+      // create child entity
       const eh = path.join(this.getHome(), id);
-      if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length) {
+      if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
         entity = new Entity(this, id, eh, descs, this.logger);
         entity.loadDescs();
         this.entities.push(entity);

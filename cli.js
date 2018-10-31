@@ -52,6 +52,29 @@ const argv = require('yargs')
         e.steps.prereq();
       }
     )
+    .command('ls [components] [-d]', 'display components hierarchy',
+      (yargs) => {
+        yargs
+          .positional('components', {
+            describe: 'delimited by colon components, i.e. boost:bootstrap',
+            default: '',
+            type: 'string'
+          })
+          .option('d', {
+            alias: 'depth',
+            default: -1,
+            describe: 'depth level',
+            type: 'number'
+          })
+      },
+      (argv) => {
+        const logger = require('./src/logger').create(argv.verbose);
+        const appl = require('./src/appl').create(logger, __dirname);
+        appl.resolve(argv.components).forEach(function(component) {
+          component.print(function(...args) { console.log.apply(console, args); });
+        });
+      }
+    )
     .command(
       ['exec <steps> [components] [-r] [-s]', '$0'],
       'execute set of steps over set of components',
@@ -79,8 +102,8 @@ const argv = require('yargs')
             type: 'boolean'
           })
       }, (argv) => {
-        const logger = require('./logger').create(argv.verbose);
-        logger.trace(argv);
+        const logger = require('./src/logger').create(argv.verbose);
+        //logger.trace(argv);
         //
         let cwd = process.cwd();
         // find local dev env projects root
@@ -108,7 +131,7 @@ const argv = require('yargs')
         if (!id) {
           id = '/';
         }
-        let root = require('./entity').createRoot(projectsHome, id, logger);
+        let root = require('./src/entity').createRoot(projectsHome, id, logger);
         root.loadDescsFromSource(__dirname);
         root.loadDescs();
         //
