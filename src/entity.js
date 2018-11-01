@@ -95,8 +95,8 @@ class Entity {
     // ... from descs
     this.descs.forEach(function(pair) {
       let ents = [];
-      if (pair.desc.getEntities) {
-        ents = pair.desc.getEntities();
+      if (pair.desc.entities) {
+        ents = pair.desc.entities();
       }
       //
       ents.forEach(function(e) {
@@ -166,8 +166,8 @@ class Entity {
       const descs = [];
       this.descs.forEach(function(pair) {
         let ents = [];
-        if (pair.desc.getEntities) {
-          ents = pair.desc.getEntities();
+        if (pair.desc.entities) {
+          ents = pair.desc.entities();
         }
         //
         const ent = ents.find(function (e) { return e.id === id; });
