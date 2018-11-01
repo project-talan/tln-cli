@@ -1,6 +1,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const utils = require('./utils');
 
 class Appl {
   constructor(logger, home) {
@@ -27,15 +28,11 @@ class Appl {
       // running tln outside the projects home - use cwd
       projectsHome = cwd;
     }
-    this.logger.info('projects home:', projectsHome);
-    this.logger.info('cwd:', cwd);
-    this.logger.info('folders:', folders);
+    this.logger.info(utils.prefix(this, 'constructor'), 'projects home:', projectsHome);
+    this.logger.info(utils.prefix(this, 'constructor'), 'cwd:', cwd);
+    this.logger.info(utils.prefix(this, 'constructor'), 'folders:', folders);
     //
-    let id = path.basename(projectsHome);
-    if (!id) {
-      id = '/';
-    }
-    this.root = require('./entity').createRoot(projectsHome, id, this.logger);
+    this.root = require('./entity').createRoot(projectsHome, '/', this.logger);
     this.root.loadDescsFromSource(this.home);
     this.root.loadDescs();
     //
@@ -44,12 +41,12 @@ class Appl {
       this.entity = this.entity.dive(folder, true);
     }.bind(this));
     //
-    this.logger.trace('root:', this.root.getId(), this.root.descs);
-    this.logger.trace('entity:', this.entity.getId(), this.entity.descs);
+    this.logger.trace(utils.prefix(this, 'constructor'), 'root:', utils.quote(this.root.getId()), this.root.descs);
+    this.logger.trace(utils.prefix(this, 'constructor'), 'entity:', utils.quote(this.entity.getId()), this.entity.descs);
   }
   //
   resolve(components) {
-    this.logger.info(components);
+    this.logger.trace(utils.prefix(this, this.resolve.name), utils.quote(components));
     //
     let r = [];
     let ids = [];
@@ -58,9 +55,8 @@ class Appl {
     }
     if (ids.length) {
       ids.forEach(function(id) {
-        this.logger.trace('resolving ', `'${id}'`);
+        this.logger.trace(utils.prefix(this, this.resolve.name), 'resolving ', utils.quote(id));
         // try to find inside child components
-        this.logger.trace('searching', `'${id}'`, 'within children');
         let e = this.entity.find(id, true);
         if (!e) {
           // try to use components in parent's child

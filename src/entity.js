@@ -1,6 +1,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const utils = require('./utils');
 
 class Entity {
   constructor(parent, id, home, descs, logger) {
@@ -130,8 +131,8 @@ class Entity {
   }
 
   find(id, recursive, floatUp = null){
+    this.logger.trace(utils.prefix(this, this.find.name), 'searching', utils.quote(id), 'inside', utils.quote(this.getId()), (floatUp)?'using parent':'within children');
     let entity = null;
-    this.logger.trace('searching', `'${id}'`, `inside ${this.id}`);
     if (this.getId() === id) {
       entity = this;
     } else {
@@ -175,11 +176,14 @@ class Entity {
         }
       }.bind(this));
       // create child entity
-      const eh = path.join(this.getHome(), id);
-      if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
-        entity = new Entity(this, id, eh, descs, this.logger);
-        entity.loadDescs();
-        this.entities.push(entity);
+      // TODO find more elegant solution
+      if (id !== '/') {
+        const eh = path.join(this.getHome(), id);
+        if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
+          entity = new Entity(this, id, eh, descs, this.logger);
+          entity.loadDescs();
+          this.entities.push(entity);
+        }
       }
     }
     return entity;

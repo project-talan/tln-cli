@@ -14,7 +14,6 @@ class Logger {
     });
     this.logger = log4js.getLogger();
   }
-
   trace(...args) { this.logger.trace.apply(this.logger, args); }
   debug(...args) { this.logger.debug.apply(this.logger, args); }
   info(...args) { this.logger.info.apply(this.logger, args); }
