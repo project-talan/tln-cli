@@ -1,6 +1,9 @@
+'use strict';
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
 const utils = require('./utils');
 
 class Appl {
@@ -8,7 +11,7 @@ class Appl {
     this.logger = logger;
     this.home = home;
     this.root = null;
-    this.entity = null;
+    this.component = null;
     //
     let cwd = process.cwd();
     // find local dev env projects root
@@ -17,7 +20,7 @@ class Appl {
       // otherwise use current folder as root
       projectsHome = cwd;
     }
-    // build chain of entities from projects home to the current folder
+    // build chain of components from projects home to the current folder
     let folders = [];
     if (cwd.startsWith(projectsHome)) {
       const rel = path.relative(projectsHome, cwd);
@@ -28,21 +31,22 @@ class Appl {
       // running tln outside the projects home - use cwd
       projectsHome = cwd;
     }
+    this.logger.info(utils.prefix(this, 'constructor'), 'operating system', utils.quote(os.type()), utils.quote(os.platform()), utils.quote(os.release()));
     this.logger.info(utils.prefix(this, 'constructor'), 'projects home:', projectsHome);
     this.logger.info(utils.prefix(this, 'constructor'), 'cwd:', cwd);
     this.logger.info(utils.prefix(this, 'constructor'), 'folders:', folders);
     //
-    this.root = require('./entity').createRoot(projectsHome, '/', this.logger);
+    this.root = require('./component').createRoot(projectsHome, '/', this.logger);
     this.root.loadDescsFromSource(this.home);
     this.root.loadDescs();
     //
-    this.entity = this.root;
+    this.component = this.root;
     folders.forEach(function(folder) {
-      this.entity = this.entity.dive(folder, true);
+      this.component = this.component.dive(folder, true);
     }.bind(this));
     //
     this.logger.trace(utils.prefix(this, 'constructor'), 'root:', utils.quote(this.root.getId()), this.root.descs);
-    this.logger.trace(utils.prefix(this, 'constructor'), 'entity:', utils.quote(this.entity.getId()), this.entity.descs);
+    this.logger.trace(utils.prefix(this, 'constructor'), 'component:', utils.quote(this.component.getId()), this.component.descs);
   }
   //
   resolve(components) {
@@ -57,11 +61,11 @@ class Appl {
       ids.forEach(function(id) {
         this.logger.trace(utils.prefix(this, this.resolve.name), 'resolving ', utils.quote(id));
         // try to find inside child components
-        let e = this.entity.find(id, true);
+        let e = this.component.find(id, true);
         if (!e) {
           // try to use components in parent's child
           this.logger.trace('searching', `'${id}'`, 'using parent');
-          e = this.entity.find(id, false, this.entity);
+          e = this.component.find(id, false, this.component);
         }
         if (e) {
           r.push(e);
@@ -71,7 +75,7 @@ class Appl {
       }.bind(this));
     } else {
       // resolve to the cwd component
-      r.push(this.entity);
+      r.push(this.component);
     }
     return r;
   }

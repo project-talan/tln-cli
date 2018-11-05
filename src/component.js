@@ -1,9 +1,10 @@
+'use strict';
 
 const path = require('path');
 const fs = require('fs');
 const utils = require('./utils');
 
-class Entity {
+class Component {
   constructor(parent, id, home, descs, logger) {
 
     this.parent = parent;
@@ -14,7 +15,7 @@ class Entity {
 
     this.props = {};
     this.steps = {};
-    this.entities = [];
+    this.components = [];
   }
   //
   getId() {
@@ -39,17 +40,17 @@ class Entity {
     //
     if (depth !== 0) {
       this.construct();
-      let cnt = this.entities.length;
+      let cnt = this.components.length;
       let no = offset;
       if (offset.length) {
-        if (this.entities.length) {
+        if (this.components.length) {
           no = offset.substring(0, offset.length - 1) + '│';
         }
         if (last) {
           no = offset.substring(0, offset.length - 1) + ' ';
         }
       }
-      this.entities.forEach(function(entity) {
+      this.components.forEach(function(entity) {
         cnt--;
         const delim = (cnt)?(' ├'):(' └');
         entity.print(cout, depth-1, `${no}${delim}`, cnt === 0);
@@ -90,13 +91,13 @@ class Entity {
   getIDs() {
     // collect ids
     let ids = [];
-    // ... from already created entities
-    this.entities.forEach(function (e) { ids.push(e.getId()); });
+    // ... from already created components
+    this.components.forEach(function (e) { ids.push(e.getId()); });
     // ... from descs
     this.descs.forEach(function(pair) {
       let ents = [];
-      if (pair.desc.entities) {
-        ents = pair.desc.entities();
+      if (pair.desc.components) {
+        ents = pair.desc.components();
       }
       //
       ents.forEach(function(e) {
@@ -160,14 +161,14 @@ class Entity {
   
   dive(id, force) {
     // check if entity was already created
-    let entity = this.entities.find(function (e) { return e.getId() === id; });
+    let entity = this.components.find(function (e) { return e.getId() === id; });
     if (!entity) {
       // collect description from already loaded sources
       const descs = [];
       this.descs.forEach(function(pair) {
         let ents = [];
-        if (pair.desc.entities) {
-          ents = pair.desc.entities();
+        if (pair.desc.components) {
+          ents = pair.desc.components();
         }
         //
         const ent = ents.find(function (e) { return e.id === id; });
@@ -180,9 +181,9 @@ class Entity {
       if (id !== '/') {
         const eh = path.join(this.getHome(), id);
         if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
-          entity = new Entity(this, id, eh, descs, this.logger);
+          entity = new Component(this, id, eh, descs, this.logger);
           entity.loadDescs();
-          this.entities.push(entity);
+          this.components.push(entity);
         }
       }
     }
@@ -192,9 +193,9 @@ class Entity {
 }
 
 module.exports.createRoot = (home, id, logger) => {
-  return new Entity(null, id, home, [], logger);
+  return new Component(null, id, home, [], logger);
 }
 
 module.exports.create = (parent, id, descs, logger) => {
-  return new Entity(parent, id, path.join(parent.getHome(), id), descs, logger);
+  return new Component(parent, id, path.join(parent.getHome(), id), descs, logger);
 }

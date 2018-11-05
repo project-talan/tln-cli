@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+'use strict';
 
 const path = require('path');
 // tln2 inspect
@@ -74,6 +75,13 @@ const argv = require('yargs')
           logger.trace('resolved', component.getId());
           component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
         });
+        /*
+        const { spawnSync } = require( 'child_process' ),
+        ls = spawnSync( 'ls', [ '-lh', '/usr' ] );
+
+        console.log( `stderr: ${ls.stderr.toString()}` );
+        console.log( `stdout: ${ls.stdout.toString()}` );
+        */
       }
     )
     .command(

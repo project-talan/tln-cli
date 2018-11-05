@@ -1,2 +1,2 @@
-modele.exports = class Context {
+module.exports = class Context {
 }
