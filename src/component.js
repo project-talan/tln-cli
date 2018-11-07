@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const variables = require('./variables');
 const utils = require('./utils');
 
 class Component {
@@ -124,13 +125,15 @@ class Component {
     this.logger.trace('ids', ids);
     return ids;
   }
-  //
+
+  // create all children from available descriptions
   construct() {
     this.getIDs().forEach(function(id) {
       this.dive(id, false);
     }.bind(this));
   }
 
+  // find entity inside children or pop up to check parent and continue search there
   find(id, recursive, floatUp = null){
     this.logger.trace(utils.prefix(this, this.find.name), 'searching', utils.quote(id), 'inside', utils.quote(this.getId()), (floatUp)?'using parent':'within children');
     let entity = null;
@@ -188,6 +191,34 @@ class Component {
       }
     }
     return entity;
+  }
+
+  // build component environment variables
+  env(names = []) {
+    let r = {};
+    const vars = [];
+    // construct vars, collect names
+    this.descs.forEach(function(pair) {
+      if (pair.desc.variables) {
+        const v = pair.desc.variables(variables.create());
+        this.logger.trace('!!!!', v);
+        names = v.names(names);
+        vars.push(v);
+      }
+    }.bind(this));
+    //
+    if (this.parent) {
+      r = this.parent.env(names);
+    } else {
+      names.forEach(function(n){
+        r[n] = process.env[n];
+      });
+    }
+    vars.forEach(function(v){
+      r = v.build(r);
+    });
+    //
+    return r;
   }
 
 }

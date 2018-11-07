@@ -2,11 +2,10 @@
 
 'use strict';
 
+const os = require('os');
 const path = require('path');
 // tln2 inspect
-// tln2 <set|get> <name> <value> - work with different configuration parameters
 // tln2 --home
-// tln tree
 // tln update - pull externl configurations
 
 const argv = require('yargs')
@@ -21,15 +20,15 @@ const argv = require('yargs')
       (yargs) => {
       },
       (argv) => {
-        console.log(String.raw`     _____           _           _     _______    _             `)
-        console.log(String.raw`    |  __ \         (_)         | |   |__   __|  | |            `)
-        console.log(String.raw`    | |__) | __ ___  _  ___  ___| |_     | | __ _| | __ _ _ __  `)
-        console.log(String.raw`    |  ___/ '__/ _ \| |/ _ \/ __| __|    | |/ _' | |/ _' | '_ \ `)
-        console.log(String.raw`    | |   | | | (_) | |  __/ (__| |_     | | (_| | | (_| | | | |`)
-        console.log(String.raw`    |_|   |_|  \___/| |\___|\___|\__|    |_|\__,_|_|\__,_|_| |_|`)
-        console.log(String.raw`                   _/ |                                         `)
-        console.log(String.raw`                  |__/                                          `)
-        //console.log(String.raw` ¯\_(ツ)_/¯                                                     `)
+        console.log(String.raw`  _____           _           _     _______    _             `)
+        console.log(String.raw` |  __ \         (_)         | |   |__   __|  | |            `)
+        console.log(String.raw` | |__) | __ ___  _  ___  ___| |_     | | __ _| | __ _ _ __  `)
+        console.log(String.raw` |  ___/ '__/ _ \| |/ _ \/ __| __|    | |/ _' | |/ _' | '_ \ `)
+        console.log(String.raw` | |   | | | (_) | |  __/ (__| |_     | | (_| | | (_| | | | |`)
+        console.log(String.raw` |_|   |_|  \___/| |\___|\___|\__|    |_|\__,_|_|\__,_|_| |_|`)
+        console.log(String.raw`                _/ |                                         `)
+        console.log(String.raw`               |__/                                          `)
+        console.log(String.raw`  mailto: vladislab.kurmaz@gmail.com                         `)
       }
     )
     .command('init [repo] [-f]', 'initialize configuration file in current folder or read config from git repo',
@@ -74,14 +73,8 @@ const argv = require('yargs')
         appl.resolve(argv.components).forEach(function(component) {
           logger.trace('resolved', component.getId());
           component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
+          console.log(component.env());
         });
-        /*
-        const { spawnSync } = require( 'child_process' ),
-        ls = spawnSync( 'ls', [ '-lh', '/usr' ] );
-
-        console.log( `stderr: ${ls.stderr.toString()}` );
-        console.log( `stdout: ${ls.stdout.toString()}` );
-        */
       }
     )
     .command(
