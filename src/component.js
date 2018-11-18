@@ -276,6 +276,11 @@ class Component {
     return r;
   }
 
+  //
+  execute(steps) {
+    this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
+  }
+
 }
 
 module.exports.createRoot = (home, id, logger) => {

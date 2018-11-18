@@ -125,57 +125,10 @@ const argv = require('yargs')
           })
       }, (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
-        //logger.trace(argv);
-        //
-        let cwd = process.cwd();
-        // find local dev env projects root
-        let projectsHome = process.env.PROJECTS_HOME;
-        if (!projectsHome) {
-          // otherwise use current folder as root
-          projectsHome = cwd;
-        }
-        // build chain of entities from projects home to the current folder
-        let folders = [];
-        if (cwd.startsWith(projectsHome)) {
-          const rel = path.relative(projectsHome, cwd);
-          if (rel) {
-            folders = rel.split(path.sep);
-          }
-        } else {
-          // running tln outside the projects home - use cwd
-          projectsHome = cwd;
-        }
-        logger.info('projects home:', projectsHome);
-        logger.info('cwd:', cwd);
-        logger.info('folders:', folders);
-        //
-        let id = path.basename(projectsHome);
-        if (!id) {
-          id = '/';
-        }
-        let root = require('./src/entity').createRoot(projectsHome, id, logger);
-        root.loadDescsFromSource(__dirname);
-        root.loadDescs();
-        //
-        let entity = root;
-        folders.forEach(function(folder) {
-          entity = entity.dive(folder);
+        const appl = require('./src/appl').create(logger, __dirname);
+        appl.resolve(argv.components).forEach(function(component) {
+          component.execute(argv.steps.split(':'));
         });
-        root.dive('docker');
-        root.dive('project-talan');
-        //
-        root.print(function(...args) { logger.trace.apply(logger, args); });
-        //logger.trace('root', root);
-        //logger.trace('entity', entity);
-        if (root && entity) {
-        } else {
-          logger.fatal('Could\'t create root or/and base entity');
-        }
-        if (argv.components) {
-          // locate components from command line
-        } else {
-          // use component from current folder
-        }
       }
     )
 //    .epilog('Vladyslav Kurmaz, mailto:vladislav.kurmaz@gmail.com')
