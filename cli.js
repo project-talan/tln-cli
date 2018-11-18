@@ -4,7 +4,6 @@
 
 const os = require('os');
 const path = require('path');
-// tln2 inspect
 // tln2 --home
 // tln update - pull externl configurations
 
@@ -52,6 +51,27 @@ const argv = require('yargs')
         e.steps.prereq();
       }
     )
+    .command('inspect [components]', 'display component internal structure',
+      (yargs) => {
+        yargs
+          .positional('components', {
+            describe: 'delimited by colon components, i.e. boost:bootstrap',
+            default: '',
+            type: 'string'
+          })
+      },
+      (argv) => {
+        const logger = require('./src/logger').create(argv.verbose);
+        const appl = require('./src/appl').create(logger, __dirname);
+        let mark = ''
+        appl.resolve(argv.components).forEach(function(component) {
+          logger.trace('resolved', component.getId());
+          if (mark) console.log(mark);
+          mark = '*';
+          component.inspect(function(...args) { console.log.apply(console, args); });
+        });
+      }
+    )
     .command('ls [components] [-d]', 'display components hierarchy',
       (yargs) => {
         yargs
@@ -73,7 +93,7 @@ const argv = require('yargs')
         appl.resolve(argv.components).forEach(function(component) {
           logger.trace('resolved', component.getId());
           component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
-          console.log(component.env());
+          //console.log(component.env());
         });
       }
     )

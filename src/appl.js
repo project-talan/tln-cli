@@ -37,7 +37,8 @@ class Appl {
     this.logger.info(utils.prefix(this, 'constructor'), 'folders:', folders);
     //
     this.root = require('./component').createRoot(projectsHome, '/', this.logger);
-    this.root.loadDescsFromSource(this.home);
+    this.logger.trace('catalog folder', this.home);
+    this.root.loadDescsFromFolder(this.home);
     this.root.loadDescs();
     //
     this.component = this.root;
@@ -45,8 +46,8 @@ class Appl {
       this.component = this.component.dive(folder, true);
     }.bind(this));
     //
-    this.logger.trace(utils.prefix(this, 'constructor'), 'root:', utils.quote(this.root.getId()), this.root.descs);
-    this.logger.trace(utils.prefix(this, 'constructor'), 'component:', utils.quote(this.component.getId()), this.component.descs);
+    this.logger.trace(utils.prefix(this, 'constructor'), 'root component:', utils.quote(this.root.getId()), this.root.descs);
+    this.logger.trace(utils.prefix(this, 'constructor'), 'current component:', utils.quote(this.component.getId()), this.component.descs);
   }
   //
   resolve(components) {

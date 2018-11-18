@@ -59,6 +59,18 @@ class Component {
     }
   }
   //
+  inspect(cout) {
+    cout(`id: ${this.id}`);
+    cout(`home: ${this.home}`);
+    cout('parent:', (this.parent)?(this.parent.getId()):('none'));
+    cout('descs:');
+    this.descs.forEach(function(pair) {
+      cout(` - ${pair.path}`);
+    }.bind(this));
+    cout('inherits:');
+    cout('depends:');
+  }
+  //
   buildDescPair(source, desc) {
     return { path: source, desc: desc };
   }
@@ -71,23 +83,78 @@ class Component {
     return path.join(source, '.tln');
   }
   //
+  enumFolders(h) {
+    let ids = [];
+    fs.readdirSync(h).
+    forEach(function(name) {
+      const p = path.join(h, name);
+      if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
+        ids.push(name);
+      }
+    });
+    return ids;
+  };
+  //
   loadDescs() {
-    this.loadDescsFromSource(this.getHome());
+    this.loadDescsFromFolder(this.getHome());
+    this.loadDescsFromFile(this.getHome(), false);
   }
   //
-  loadDescsFromSource(source) {
-    // add additional source from .tln folder with git repository
-    const confDir = this.getConfFolder(source);
-    if (fs.existsSync(confDir)) {
-      this.loadDescsFromSource(confDir);
-    }
+  mergeDescs(location, scan) {
+    let desc = null;
     // load definitions from .tln.conf file
-    const conf = this.getConfFile(source);
+    const conf = this.getConfFile(location);
     if (fs.existsSync(conf)) {
-      const desc = require(conf);
-      this.descs.unshift(this.buildDescPair(source, desc));
+      desc = require(conf);
+    }
+    if (scan) {
+      // enum folders recursively and merge all description information all together
+      if (!desc) {
+        desc = {};
+      }
+      //
+      let components = [];
+      if (desc.components) {
+        components = desc.components();
+      }
+      //
+      const folders = this.enumFolders(location);
+      folders.forEach(function(folder) {
+        let component = this.mergeDescs(path.join(location, folder), scan);
+        const i = components.findIndex(function (c) { return c.id === folder; });
+        if (i >=0 ) {
+          // merge descs
+          this.logger.fatal('recursive merge of folders is not implemented');
+        } else {
+          // add
+          component.id = folder
+          components.push(component);
+        }
+
+      }.bind(this));
+      // reassign
+      desc.components = function(){ return components; };
+    }
+    return desc;
+  }
+
+  //
+  loadDescsFromFile(location, scan) {
+    let desc = this.mergeDescs(location, scan);
+    if (desc) {
+      this.descs.unshift(this.buildDescPair(location, desc));
     }
   }
+
+  //
+  loadDescsFromFolder(location) {
+    // add additional source from .tln folder with git repository
+    const confDir = this.getConfFolder(location);
+    if (fs.existsSync(confDir)) {
+      this.loadDescsFromFile(confDir, true);
+    }
+  }
+
   //
   getIDs() {
     // collect ids
@@ -106,22 +173,11 @@ class Component {
       });
     }.bind(this));
     // ... from file system
-    const enumDirs = function(h) {
-      return  fs.readdirSync(h).
-              forEach(function(name) {
-                const p = path.join(h, name);
-                if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
-                  ids.push(name);
-                }
-              });
-    };
     if (fs.existsSync(this.getHome())) {
-      enumDirs(this.getHome());
+      ids = ids.concat(this.enumFolders(this.getHome()));
     }
     // remove duplicates
-    ids = ids.filter(function(item, pos) {
-      return ids.indexOf(item) == pos;
-    });
+    ids = utils.uniquea(ids);
     this.logger.trace('ids', ids);
     return ids;
   }
@@ -164,19 +220,19 @@ class Component {
   
   dive(id, force) {
     // check if entity was already created
-    let entity = this.components.find(function (e) { return e.getId() === id; });
-    if (!entity) {
+    let component = this.components.find(function(c) { return c.getId() === id; });
+    if (!component) {
       // collect description from already loaded sources
       const descs = [];
       this.descs.forEach(function(pair) {
-        let ents = [];
+        let components = [];
         if (pair.desc.components) {
-          ents = pair.desc.components();
+          components = pair.desc.components();
         }
         //
-        const ent = ents.find(function (e) { return e.id === id; });
-        if (ent) {
-          descs.push(this.buildDescPair(pair.path, ent));
+        const component = components.find(function (c) { return c.id === id; });
+        if (component) {
+          descs.push(this.buildDescPair(pair.path, component));
         }
       }.bind(this));
       // create child entity
@@ -184,13 +240,13 @@ class Component {
       if (id !== '/') {
         const eh = path.join(this.getHome(), id);
         if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
-          entity = new Component(this, id, eh, descs, this.logger);
-          entity.loadDescs();
-          this.components.push(entity);
+          component = new Component(this, id, eh, descs, this.logger);
+          component.loadDescs();
+          this.components.push(component);
         }
       }
     }
-    return entity;
+    return component;
   }
 
   // build component environment variables
@@ -201,7 +257,6 @@ class Component {
     this.descs.forEach(function(pair) {
       if (pair.desc.variables) {
         const v = pair.desc.variables(variables.create());
-        this.logger.trace('!!!!', v);
         names = v.names(names);
         vars.push(v);
       }
