@@ -67,6 +67,11 @@ class Component {
     this.descs.forEach(function(pair) {
       cout(` - ${pair.path}`);
     }.bind(this));
+    cout('env:');
+    let vars = this.env();
+    for(let v in vars) {
+      cout(` - ${v}:${vars[v]}`);
+    }
     cout('inherits:');
     cout('depends:');
   }
@@ -256,7 +261,8 @@ class Component {
     // construct vars, collect names
     this.descs.forEach(function(pair) {
       if (pair.desc.variables) {
-        const v = pair.desc.variables(variables.create());
+        const v = variables.create();
+        v.register(pair.desc.variables());
         names = v.names(names);
         vars.push(v);
       }

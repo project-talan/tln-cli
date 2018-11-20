@@ -93,7 +93,6 @@ const argv = require('yargs')
         appl.resolve(argv.components).forEach(function(component) {
           logger.trace('resolved', component.getId());
           component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
-          //console.log(component.env());
         });
       }
     )

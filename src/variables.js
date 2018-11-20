@@ -21,13 +21,14 @@ class Variables {
   }
 
   //
-  add(name, value) {
+  set(name, value) {
     if (typeof value === 'function') {
       this.pairs.push({ name: name, value: null, callback: value });
+    } else {
+      this.pairs.push({ name: name, value: value, callback: function(n, v, vars){
+        return v;
+      } });
     }
-    this.pairs.push({ name: name, value: value, callback: function(n, v, vars){
-      return v;
-    } });
   }
 
   //
@@ -56,6 +57,18 @@ class Variables {
       n.push(e.name);
     });
     return utils.uniquea(n);
+  }
+
+  register(arr) {
+    arr.forEach(function(item){
+      if (item.type === 'set') {
+        this.set(item.name, item.value);
+      } else if (item.type === 'append') {
+        this.append(item.name, item.value);
+      } else if (item.type === 'prepend') {
+        this.prepend(item.name, item.value);
+      }
+    }.bind(this));
   }
 
   //
