@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const variables = require('./variables');
+const script = require('./script');
 const utils = require('./utils');
 
 class Component {
@@ -35,7 +36,7 @@ class Component {
     // output yourself
     let status = '';
     if (!fs.existsSync(this.getHome())) {
-      status = '?'
+      status = '*'
     }
     cout(`${offset} ${this.id} ${status}`);
     //
@@ -65,15 +66,16 @@ class Component {
     cout('parent:', (this.parent)?(this.parent.getId()):('none'));
     cout('descs:');
     this.descs.forEach(function(pair) {
-      cout(` - ${pair.path}`);
+      cout(` - ${pair.path} ${pair.desc}`);
     }.bind(this));
+    cout('tags:');
+    cout('inherits:');
+    cout('depends:');
     cout('env:');
     let vars = this.env();
     for(let v in vars) {
       cout(` - ${v}:${vars[v]}`);
     }
-    cout('inherits:');
-    cout('depends:');
   }
   //
   buildDescPair(source, desc) {
@@ -84,8 +86,8 @@ class Component {
     return path.join(source, '.tln.conf');
   }
   //
-  getConfFolder(source) {
-    return path.join(source, '.tln');
+  getConfFolder(source, folder = '.tln') {
+    return path.join(source, folder);
   }
   //
   enumFolders(h) {
@@ -104,7 +106,8 @@ class Component {
     this.loadDescsFromFolder(this.getHome());
     this.loadDescsFromFile(this.getHome(), false);
   }
-  //
+
+  // recursively scan input folder and mege all available descriptions
   mergeDescs(location, scan) {
     let desc = null;
     // load definitions from .tln.conf file
@@ -152,9 +155,9 @@ class Component {
   }
 
   //
-  loadDescsFromFolder(location) {
+  loadDescsFromFolder(location, folder = '.tln') {
     // add additional source from .tln folder with git repository
-    const confDir = this.getConfFolder(location);
+    const confDir = this.getConfFolder(location, folder);
     if (fs.existsSync(confDir)) {
       this.loadDescsFromFile(confDir, true);
     }
@@ -275,6 +278,7 @@ class Component {
         r[n] = process.env[n];
       });
     }
+    r['COMPONENT_HOME'] = this.getHome();
     vars.forEach(function(v){
       r = v.build(r);
     });
@@ -283,8 +287,34 @@ class Component {
   }
 
   //
-  execute(steps) {
+  execute(steps, filter) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
+    // collect steps from descs
+    steps.forEach(function(step){
+      const list2execute = [];
+      this.descs.forEach(function(pair) {
+        // is description available
+        if (pair.desc.steps) {
+          pair.desc.steps().forEach(function(s) {
+            // is it our step
+            if (s.id == step) {
+              // are we meet underyling os
+              if (filter.validate(s)) {
+                list2execute.push(script.create(this.logger, s.script));
+              }
+            }
+          }.bind(this));
+        }
+      }.bind(this));
+      //
+      if (list2execute.length) {
+        list2execute.forEach(function(s){
+          s.execute('');
+        });
+      } else {
+        this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
+      }
+    }.bind(this));
   }
 
 }

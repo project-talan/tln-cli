@@ -3,8 +3,10 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const lsbRelease = require('lsb-release');
 
 const utils = require('./utils');
+const filter = require('./filter');
 
 class Appl {
   constructor(logger, home) {
@@ -38,7 +40,7 @@ class Appl {
     //
     this.root = require('./component').createRoot(projectsHome, '/', this.logger);
     this.logger.trace('catalog folder', this.home);
-    this.root.loadDescsFromFolder(this.home);
+    this.root.loadDescsFromFolder(this.home, 'presets');
     this.root.loadDescs();
     //
     this.component = this.root;
@@ -49,6 +51,21 @@ class Appl {
     this.logger.trace(utils.prefix(this, 'constructor'), 'root component:', utils.quote(this.root.getId()), this.root.descs);
     this.logger.trace(utils.prefix(this, 'constructor'), 'current component:', utils.quote(this.component.getId()), this.component.descs);
   }
+
+  //
+  configure() {
+    return new Promise(function(resolve, reject){
+      lsbRelease(function (_, data) {
+        data.os = os.type();
+        data.platform = os.platform();
+        data.version = os.release();
+        //
+        this.logger.trace(utils.prefix(this, 'configure'), 'filter string:', data);
+        resolve(filter.create(this.logger, data));
+      }.bind(this));
+    }.bind(this));
+  }
+
   //
   resolve(components) {
     this.logger.trace(utils.prefix(this, this.resolve.name), utils.quote(components));

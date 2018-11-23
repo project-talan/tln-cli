@@ -113,7 +113,7 @@ const argv = require('yargs')
           .option('r', {
             alias: 'recursive',
             default: false,
-            describe: 'execute commands recursively for all direct child component',
+            describe: 'execute commands recursively for all direct child components',
             type: 'boolean'
           })
           .option('s', {
@@ -125,9 +125,13 @@ const argv = require('yargs')
       }, (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
-        appl.resolve(argv.components).forEach(function(component) {
-          component.execute(argv.steps.split(':'));
-        });
+
+        appl.configure()
+          .then(filter => {
+            appl.resolve(argv.components).forEach(function(component) {
+              component.execute(argv.steps.split(':'), filter);
+            });
+          });
       }
     )
 //    .epilog('Vladyslav Kurmaz, mailto:vladislav.kurmaz@gmail.com')
