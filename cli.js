@@ -122,6 +122,12 @@ const argv = require('yargs')
             describe: 'generate and save scripts only, don\'t execute',
             type: 'boolean'
           })
+          .option('k', {
+            alias: 'skip',
+            default: false,
+            describe: 'skip execution, used with --save to store generated scripts',
+            type: 'boolean'
+          })
       }, (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
@@ -129,7 +135,7 @@ const argv = require('yargs')
         appl.configure()
           .then(filter => {
             appl.resolve(argv.components).forEach(function(component) {
-              component.execute(argv.steps.split(':'), filter);
+              component.execute(argv.steps.split(':'), filter, argv.save, argv.skip);
             });
           });
       }

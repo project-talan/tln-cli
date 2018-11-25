@@ -287,9 +287,10 @@ class Component {
   }
 
   //
-  execute(steps, filter) {
+  execute(steps, filter, save, skip) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs
+    const chm = this.getHome();
     steps.forEach(function(step){
       const list2execute = [];
       this.descs.forEach(function(pair) {
@@ -300,7 +301,7 @@ class Component {
             if (s.id == step) {
               // are we meet underyling os
               if (filter.validate(s)) {
-                list2execute.push(script.create(this.logger, s.script));
+                list2execute.push(script.create(this.logger, s.script, chm, step));
               }
             }
           }.bind(this));
@@ -308,8 +309,9 @@ class Component {
       }.bind(this));
       //
       if (list2execute.length) {
+      
         list2execute.forEach(function(s){
-          s.execute('');
+          s.execute(chm, save, skip);
         });
       } else {
         this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');

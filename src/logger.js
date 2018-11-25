@@ -21,6 +21,8 @@ class Logger {
   error(...args) { this.logger.error.apply(this.logger, args); }
   fatal(...args) { this.logger.fatal.apply(this.logger, args); }
 
+  con(...args) { console.log.apply(console, args); }
+
 }
 
 module.exports.create = (verbose) => {
