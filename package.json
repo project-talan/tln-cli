@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
-    "chmod": "^0.2.1",
     "log4js": "^3.0.6",
     "lsb-release": "^0.1.0",
     "tempfile": "^2.0.0",
