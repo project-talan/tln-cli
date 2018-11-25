@@ -2,7 +2,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const chmod = require('chmod');
 const { spawnSync, execSync } = require('child_process');
 const tempfile = require('tempfile');
 const utils = require('./utils');
@@ -30,7 +29,7 @@ class Script {
         fl = tempfile('.sh');
       }
       fs.writeFileSync(fl, r.join('\n'));
-      chmod(fl, {execute: true});
+      fs.chmodSync(fl, fs.constants.S_IXUSR);
     }
     if (fl && !skip) {
       // run script from file
