@@ -119,13 +119,13 @@ const argv = require('yargs')
           .option('s', {
             alias: 'save',
             default: false,
-            describe: 'generate and save scripts only, don\'t execute',
+            describe: 'generate and save scripts inside component folder, otherwise temp folder will be used',
             type: 'boolean'
           })
           .option('k', {
             alias: 'skip',
             default: false,
-            describe: 'skip execution, used with --save to store generated scripts',
+            describe: 'skip execution, dump scripts to the console',
             type: 'boolean'
           })
       }, (argv) => {
@@ -133,16 +133,20 @@ const argv = require('yargs')
         const appl = require('./src/appl').create(logger, __dirname);
 
         appl.configure()
+          .then(async (filter) => {
+            for(const component of appl.resolve(argv.components)) {
+              await component.execute(argv.steps.split(':'), filter, argv.save, argv.skip);
+            }
+          });
+/*
+        appl.configure()
           .then(filter => {
             appl.resolve(argv.components).forEach(function(component) {
               component.execute(argv.steps.split(':'), filter, argv.save, argv.skip);
             });
           });
+*/
       }
     )
-//    .epilog('Vladyslav Kurmaz, mailto:vladislav.kurmaz@gmail.com')
     .argv
 ;
-// console.log(__dirname);
-// console.log(__filename);
-// console.log(process.cwd());

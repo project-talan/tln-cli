@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { spawnSync, execSync } = require('child_process');
+const { spawn } = require('child_process');
 const tempfile = require('tempfile');
 const utils = require('./utils');
 
@@ -16,14 +16,17 @@ class Script {
 
   //
   // ? should we force to create path to component when execute ?
-  execute(cwd, save, skip) {
+  async execute(cwd, save, skip) {
     const r = this.fn();
     let fl = null;
     if (typeof r === 'string') {
       // string represents script file name
-      fl = path.join(this.home, `${this.id}.sh`);
+      fl = path.join(this.home, `${r}.sh`);
     } else if (r instanceof Array) {
       if (save) {
+        if (!fs.existsSync(this.home)) {
+          fs.mkdirSync(this.home, { recursive: true });
+        }
         fl = path.join(this.home, `${this.id}.sh`);
       } else {
         fl = tempfile('.sh');
@@ -33,16 +36,34 @@ class Script {
     }
     if (fl && !skip) {
       // run script from file
-      let opt = {};
+      let opt = {stdio: [process.stdin, process.stdout, process.stderr]};
       if (fs.existsSync(cwd)) {
         opt.cwd = cwd;
       }
-      const ls = spawnSync(fl, opt);
-      const es = ls.stderr.toString();
-      if (es) {
-        this.logger.error();
+      let spawnPromise = (command, args, options) => {
+        return new Promise((resolve, reject) => {
+          const child = spawn(command, args, options)
+          /*/
+          child.stdout.on('data', (data) => {
+            this.logger.info(`stdout: ${data}`)
+          })
+          child.stderr.on('data', (data) => {
+            this.logger.info(`stderr: ${data}`)
+          })
+          /*/
+
+          child.on('close', (code) => {
+            /*/
+            if (code !== 0)
+              this.logger.error(`Command execution failed with code: ${code}`)
+            else
+              this.logger.info(`Command execution completed with code: ${code}`)
+            /*/
+            resolve()
+          })
+        })
       }
-      this.logger.con(ls.stdout.toString());
+      await spawnPromise(fl, [], opt);
     }
   }
 }
