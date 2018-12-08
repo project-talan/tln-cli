@@ -36,7 +36,8 @@ class Script {
     }
     if (fl && !skip) {
       // run script from file
-      let opt = {stdio: [process.stdin, process.stdout, process.stderr]};
+      // TODO merge process.env and custom env
+      let opt = {stdio: [process.stdin, process.stdout, process.stderr], /*env:*/};
       if (fs.existsSync(cwd)) {
         opt.cwd = cwd;
       }
