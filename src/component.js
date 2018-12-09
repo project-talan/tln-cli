@@ -287,11 +287,11 @@ class Component {
   }
 
   //
-  execute(steps, filter, save, skip) {
+  async execute(steps, filter, save, skip) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs
     const chm = this.getHome();
-    steps.forEach(function(step){
+    for(const step of steps) {
       const list2execute = [];
       this.descs.forEach(function(pair) {
         // is description available
@@ -309,14 +309,13 @@ class Component {
       }.bind(this));
       //
       if (list2execute.length) {
-      
-        list2execute.forEach(function(s){
-          s.execute(chm, save, skip);
-        });
+        for(const s of list2execute) {
+          await s.execute(chm, save, skip);
+        }
       } else {
         this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
       }
-    }.bind(this));
+    };
   }
 
 }
