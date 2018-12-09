@@ -27,7 +27,7 @@ const argv = require('yargs')
         console.log(String.raw` |_|   |_|  \___/| |\___|\___|\__|    |_|\__,_|_|\__,_|_| |_|`)
         console.log(String.raw`                _/ |                                         `)
         console.log(String.raw`               |__/                                          `)
-        console.log(String.raw`  mailto: vladislab.kurmaz@gmail.com                         `)
+        console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
       }
     )
     .command('init [repo] [-f]', 'initialize configuration file in current folder or read config from git repo',
