@@ -15,7 +15,9 @@ class Component {
     this.descs = descs;
     this.logger = logger;
 
-    this.props = {};
+    this.tags = [];
+    this.inherits = [];
+    this.depends = [];
     this.steps = {};
     this.components = [];
   }
@@ -285,37 +287,63 @@ class Component {
     //
     return r;
   }
-
   //
-  async execute(steps, filter, save, skip) {
+  findStep(step, filter, home) {
+    let r = [];
+    for(const pair of this.descs) {
+      let options = {};
+      if (pair.desc.options) {
+        options = pair.desc.options();
+      }
+      let variables = [];
+
+      // is description available
+      if (pair.desc.steps) {
+        pair.desc.steps().forEach(function(s) {
+          // is it our step
+          if (s.id == step) {
+            // are we meet underyling os
+            if (filter.validate(s)) {
+              r.push(script.create(this.logger, s.script, home, step, options, variables));
+            }
+          }
+        }.bind(this));
+      }
+      // lookup inside inherits list
+      if (pair.desc.inherits) {
+        let inhs = pair.desc.inherits();
+        for(const inh of inhs) {
+          const e = this.find(inh, false, this);
+          if (e) {
+            r = r.concat(e.findStep(step, filter, home));
+          } else {
+            this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()), 'component');
+          }
+        }
+      }
+    }
+    // lookup inside parents
+    if (this.parent) {
+      r = r.concat(this.parent.findStep(step, filter, home));
+    }
+    return r;
+  }
+  //
+  async execute(steps, filter, save, skip, argv) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs
-    const chm = this.getHome();
+    const home = this.getHome();
     for(const step of steps) {
-      const list2execute = [];
-      this.descs.forEach(function(pair) {
-        // is description available
-        if (pair.desc.steps) {
-          pair.desc.steps().forEach(function(s) {
-            // is it our step
-            if (s.id == step) {
-              // are we meet underyling os
-              if (filter.validate(s)) {
-                list2execute.push(script.create(this.logger, s.script, chm, step));
-              }
-            }
-          }.bind(this));
-        }
-      }.bind(this));
+      const list2execute = this.findStep(step, filter, home);
       //
       if (list2execute.length) {
         for(const s of list2execute) {
-          await s.execute(chm, save, skip);
+          await s.execute(home, save, skip, argv);
         }
       } else {
         this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
       }
-    };
+    }
   }
 
 }

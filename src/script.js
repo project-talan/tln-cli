@@ -16,7 +16,7 @@ class Script {
 
   //
   // ? should we force to create path to component when execute ?
-  async execute(cwd, save, skip) {
+  async execute(cwd, save, skip, argv) {
     const r = this.fn();
     let fl = null;
     if (typeof r === 'string') {
