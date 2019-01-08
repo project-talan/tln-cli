@@ -11,6 +11,7 @@
   ```
   curl -sL https://deb.nodesource.com/setup_10.x -o nodesource_setup.sh
   sudo bash nodesource_setup.sh
+  sudo apt-get install -y gcc g++ make
   sudo apt-get install -y nodejs
   ```
 * Install tln-cli ```npm i -g tln-cli```
