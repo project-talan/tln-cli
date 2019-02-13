@@ -66,7 +66,11 @@ class Appl {
     }.bind(this));
   }
 
-  //
+  // components are colon separated string of ids (paths)
+  // every id can be
+  // * exact component id, like git
+  // * absolute path /java/openjdk-11.0.2
+  // * relative path static/html
   resolve(components) {
     this.logger.trace(utils.prefix(this, this.resolve.name), utils.quote(components));
     //

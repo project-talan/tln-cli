@@ -26,6 +26,14 @@ class Component {
     return this.id;
   }
   //
+  getUid() {
+    if (this.parent) {
+      const pUid = this.parent.getUid();
+      return `${pUid}/${this.id}`;
+    }
+    return '';
+  }
+  //
   getHome() {
     return this.home;
   }
@@ -65,6 +73,7 @@ class Component {
   inspect(cout) {
     cout(`id: ${this.id}`);
     cout(`home: ${this.home}`);
+    cout('uid: ' + this.getUid());
     cout('parent:', (this.parent)?(this.parent.getId()):('none'));
     cout('descs:');
     this.descs.forEach(function(pair) {
@@ -288,53 +297,58 @@ class Component {
     return r;
   }
   //
-  findStep(step, filter, home) {
-    let r = [];
+  findStep(step, filter, home, steps) {
+    let r = steps;
+    // first lookup inside parents
+    if (this.parent) {
+      r = this.parent.findStep(step, filter, home, r);
+    }
+    //
     for(const pair of this.descs) {
-      let options = {};
-      if (pair.desc.options) {
-        options = pair.desc.options();
-      }
-      let variables = [];
-
-      // is description available
-      if (pair.desc.steps) {
-        pair.desc.steps().forEach(function(s) {
-          // is it our step
-          if (s.id == step) {
-            // are we meet underyling os
-            if (filter.validate(s)) {
-              r.push(script.create(this.logger, s.script, home, step, options, variables));
-            }
-          }
-        }.bind(this));
-      }
-      // lookup inside inherits list
+      // second, lookup inside inherits list
       if (pair.desc.inherits) {
         let inhs = pair.desc.inherits();
         for(const inh of inhs) {
           const e = this.find(inh, false, this);
           if (e) {
-            r = r.concat(e.findStep(step, filter, home));
+            r = e.findStep(step, filter, home, r);
           } else {
             this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()), 'component');
           }
         }
       }
-    }
-    // lookup inside parents
-    if (this.parent) {
-      r = r.concat(this.parent.findStep(step, filter, home));
+      // third, check component's descriptions
+      if (pair.desc.steps) {
+        let options = {};
+        if (pair.desc.options) {
+          options = pair.desc.options();
+        }
+        let variables = [];
+
+        pair.desc.steps().forEach( s => {
+          // is it our step
+          if ((s.id === step) || (step === '*')) {
+            // are we meet underyling os
+            if (filter.validate(s)) {
+              // check if step was already added
+              const scriptUid = this.getUid() + `:${step}`;
+              if (!r.find( es => es.getUid() === scriptUid )) {
+                r.push(script.create(this.logger, scriptUid, step, home, s.script )); // , home, step, options, variables));
+              }
+            }
+          }
+        });
+      }
     }
     return r;
   }
   //
   async execute(steps, filter, save, skip, argv) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
-    // collect steps from descs
+    // collect steps from descs, interits, parents
     const home = this.getHome();
     for(const step of steps) {
-      const list2execute = this.findStep(step, filter, home);
+      const list2execute = this.findStep(step, filter, home, []);
       //
       if (list2execute.length) {
         for(const s of list2execute) {
@@ -348,6 +362,7 @@ class Component {
 
 }
 
+// TODO re-arrange parameters logger, id, home, descs
 module.exports.createRoot = (home, id, logger) => {
   return new Component(null, id, home, [], logger);
 }

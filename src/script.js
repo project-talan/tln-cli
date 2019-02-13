@@ -7,11 +7,16 @@ const tempfile = require('tempfile');
 const utils = require('./utils');
 
 class Script {
-  constructor(logger, fn, home, id) {
+  constructor(logger, uid, name, home, fn) {
     this.logger = logger;
-    this.fn = fn;
+    this.uid = uid;
+    this.name = name;
     this.home = home;
-    this.id = id;
+    this.fn = fn;
+  }
+
+  getUid() {
+    return this.uid;
   }
 
   //
@@ -27,11 +32,11 @@ class Script {
         if (!fs.existsSync(this.home)) {
           fs.mkdirSync(this.home, { recursive: true });
         }
-        fl = path.join(this.home, `${this.id}.sh`);
+        fl = path.join(this.home, `${this.name}.sh`);
       } else {
         fl = tempfile('.sh');
       }
-      fs.writeFileSync(fl, r.join('\n'));
+      fs.writeFileSync(fl, (['#!/bin/bash -e'].concat(r)).join('\n'));
       fs.chmodSync(fl, fs.constants.S_IXUSR);
     }
     if (fl && !skip) {
@@ -69,6 +74,6 @@ class Script {
   }
 }
 
-module.exports.create = (logger, fn, home, id) => {
-  return new Script(logger, fn, home, id);
+module.exports.create = (logger, uid, name, home, fn) => {
+  return new Script(logger, uid, name, home, fn);
 }
