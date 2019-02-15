@@ -161,7 +161,7 @@ class Component {
   loadDescsFromFile(location, scan) {
     let desc = this.mergeDescs(location, scan);
     if (desc) {
-      this.descs.unshift(this.buildDescPair(location, desc));
+      this.descs.push(this.buildDescPair(location, desc));
     }
   }
 
@@ -317,6 +317,10 @@ class Component {
           }
         }
       }
+    }
+    let i = -1;
+    for(const pair of this.descs) {
+      i++;
       // third, check component's descriptions
       if (pair.desc.steps) {
         let options = {};
@@ -324,16 +328,16 @@ class Component {
           options = pair.desc.options();
         }
         let variables = [];
-
         pair.desc.steps().forEach( s => {
           // is it our step
           if ((s.id === step) || (step === '*')) {
             // are we meet underyling os
             if (filter.validate(s)) {
               // check if step was already added
-              const scriptUid = this.getUid() + `:${step}`;
+              const scriptUid = this.getUid() + `:${i}:${step}`;
               if (!r.find( es => es.getUid() === scriptUid )) {
                 r.push(script.create(this.logger, scriptUid, step, home, s.script )); // , home, step, options, variables));
+              } else {
               }
             }
           }
