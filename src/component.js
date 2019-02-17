@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const variables = require('./variables');
+const options = require('./options');
 const script = require('./script');
 const utils = require('./utils');
 
@@ -26,12 +27,12 @@ class Component {
     return this.id;
   }
   //
-  getUid() {
+  getUid(chunks = []) {
+    let r = ['tln'];
     if (this.parent) {
-      const pUid = this.parent.getUid();
-      return `${pUid}/${this.id}`;
+      r =  [this.parent.getUid(), this.id];
     }
-    return '';
+    return r.concat(chunks).join('.');
   }
   //
   getHome() {
@@ -323,9 +324,9 @@ class Component {
       i++;
       // third, check component's descriptions
       if (pair.desc.steps) {
-        let options = {};
+        let opts = options.create(this.logger);
         if (pair.desc.options) {
-          options = pair.desc.options();
+          opts = options.create(this.logger, pair.desc.options());
         }
         let variables = [];
         pair.desc.steps().forEach( s => {
@@ -334,9 +335,9 @@ class Component {
             // are we meet underyling os
             if (filter.validate(s)) {
               // check if step was already added
-              const scriptUid = this.getUid() + `:${i}:${step}`;
+              const scriptUid = this.getUid([`${i}`, step]);
               if (!r.find( es => es.getUid() === scriptUid )) {
-                r.push(script.create(this.logger, scriptUid, step, home, s.script )); // , home, step, options, variables));
+                r.push(script.create(this.logger, { uid: scriptUid, name: step, home: home, options:opts, fn: s.script }));
               } else {
               }
             }
