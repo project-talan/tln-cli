@@ -8,10 +8,11 @@ const script = require('./script');
 const utils = require('./utils');
 
 class Component {
-  constructor(parent, id, home, descs, logger) {
+  constructor(parent, id, name, home, descs, logger) {
 
     this.parent = parent;
     this.id = id;
+    this.name = name;
     this.home = home;
     this.descs = descs;
     this.logger = logger;
@@ -25,6 +26,10 @@ class Component {
   //
   getId() {
     return this.id;
+  }
+  //
+  getName() {
+    return this.name;
   }
   //
   getUid(chunks = []) {
@@ -260,7 +265,7 @@ class Component {
       if (id !== '/') {
         const eh = path.join(this.getHome(), id);
         if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
-          component = new Component(this, id, eh, descs, this.logger);
+          component = new Component(this, id, id, eh, descs, this.logger);
           component.loadDescs();
           this.components.push(component);
         }
@@ -297,12 +302,12 @@ class Component {
     //
     return r;
   }
-  //
-  findStep(step, filter, home, steps) {
+  // TOTHINK should we merge all scripts into one
+  findStep(step, filter, home, steps, tail) {
     let r = steps;
     // first lookup inside parents
     if (this.parent) {
-      r = this.parent.findStep(step, filter, home, r);
+      r = this.parent.findStep(step, filter, home, r, [this.parent.getName()].concat(tail));
     }
     //
     for(const pair of this.descs) {
@@ -312,32 +317,54 @@ class Component {
         for(const inh of inhs) {
           const e = this.find(inh, false, this);
           if (e) {
-            r = e.findStep(step, filter, home, r);
+            r = e.findStep(step, filter, home, r, [this.getId()].concat(tail));
           } else {
             this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()), 'component');
           }
         }
       }
     }
+    // calculate descs count to simpify scipt names
     let i = -1;
     for(const pair of this.descs) {
-      i++;
       // third, check component's descriptions
       if (pair.desc.steps) {
+        // environment files
+        let envs = [];
+        if (pair.desc.envs) {
+          envs = pair.desc.envs();
+        }
+        // build script specific variables
+        let variables = [];
+        if (pair.desc.variables) {
+        }
+        // process options
         let opts = options.create(this.logger);
         if (pair.desc.options) {
           opts = options.create(this.logger, pair.desc.options());
         }
-        let variables = [];
         pair.desc.steps().forEach( s => {
           // is it our step
           if ((s.id === step) || (step === '*')) {
             // are we meet underyling os
             if (filter.validate(s)) {
               // check if step was already added
-              const scriptUid = this.getUid([`${i}`, step]);
+              i++;
+              let suffix = [step];
+              if (i || (home !== this.getHome())) {
+                suffix.push(`${i}`);
+              }
+              let scriptUid = this.getUid(suffix);
               if (!r.find( es => es.getUid() === scriptUid )) {
-                r.push(script.create(this.logger, { uid: scriptUid, name: step, home: home, options:opts, fn: s.script }));
+                const scr = script.create(this.logger, { 
+                  uid: scriptUid,
+                  name: (tail.concat(suffix)).join('.'),
+                  home: home,
+                  options:opts,
+                  envs: envs,
+                  fn: s.script
+                });
+                r.push(scr);
               } else {
               }
             }
@@ -353,7 +380,7 @@ class Component {
     // collect steps from descs, interits, parents
     const home = this.getHome();
     for(const step of steps) {
-      const list2execute = this.findStep(step, filter, home, []);
+      const list2execute = this.findStep(step, filter, home, [], []);
       //
       if (list2execute.length) {
         for(const s of list2execute) {
@@ -369,9 +396,9 @@ class Component {
 
 // TODO re-arrange parameters logger, id, home, descs
 module.exports.createRoot = (home, id, logger) => {
-  return new Component(null, id, home, [], logger);
+  return new Component(null, id, 'tln', home, [], logger);
 }
 
 module.exports.create = (parent, id, descs, logger) => {
-  return new Component(parent, id, path.join(parent.getHome(), id), descs, logger);
+  return new Component(parent, id, id, path.join(parent.getHome(), id), descs, logger);
 }

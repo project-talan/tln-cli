@@ -14,11 +14,16 @@ class Script {
     this.name = params.name;
     this.home = params.home;
     this.options = params.options;
+    this.envs = params.envs;
     this.fn = params.fn;
   }
 
   getUid() {
     return this.uid;
+  }
+
+  simpifyName() {
+    this.uid = this.name;
   }
 
   //
@@ -28,7 +33,7 @@ class Script {
     // prepare context
     const cntx = context.create(this.logger);
     cntx.updateEnv(this.options.parse(argv));
-    cntx.updateEnv({TLN_COMPONENT_HOME: this.home});
+    cntx.updateEnv({COMPONENT_HOME: this.home});
     // create component location if not exists
     if (!fs.existsSync(this.home)) {
       fs.mkdirSync(this.home, { recursive: true });
@@ -41,11 +46,16 @@ class Script {
       fl = path.join(this.home, `${r}.sh`);
     } else if (r instanceof Array) {
       if (save) {
-        fl = path.join(this.home, `${this.uid}.sh`);
+        fl = path.join(this.home, `${this.name}.sh`);
       } else {
         fl = tempfile('.sh');
       }
-      fs.writeFileSync(fl, (['#!/bin/bash -e'].concat(r)).join('\n'));
+      let envFiles = [];
+      for(const e of this.envs) {
+        envFiles.push(`if [ -f ${e} ]; then export \$(cat ${e} | grep -v ^# | xargs); fi`);
+      }
+      //
+      fs.writeFileSync(fl, ((['#!/bin/bash -e'].concat(envFiles)).concat(r)).join('\n'));
       fs.chmodSync(fl, fs.constants.S_IXUSR);
     }
     if (fl) {
