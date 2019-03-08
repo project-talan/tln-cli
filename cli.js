@@ -4,8 +4,6 @@
 
 const os = require('os');
 const path = require('path');
-// tln2 --home
-// tln update - pull externl configurations
 
 const argv = require('yargs')
     .usage('Multi-component management system\nUsage:\n $0 <command> [parameters] [options]')
@@ -148,5 +146,4 @@ const argv = require('yargs')
 */
       }
     )
-    .argv
-;
+    .argv;

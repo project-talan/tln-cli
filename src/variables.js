@@ -2,65 +2,81 @@
 
 const utils = require('./utils');
 const os = require('os');
+const path = require('path');
 
 function getDelimiter(delimiter = null) {
-  let r = delimiter;
-  if (!r) {
-    if ( os.platform() === 'win32') {
-      r = ';';
-    } else {
-      r = ':';
-    }
-  }
   return r;
 }
 
 class Variables {
-  constructor() {
-    this.pairs = [];
+  constructor(anchor, origin) {
+    this.anchor = anchor;
+    this.origin = origin;
+    this.items = [];
   }
 
+  buildScope(name, value, delimiter = null) {
+    let d = delimiter;
+    if (!d) {
+      if ( os.platform() === 'win32') {
+        d = ';';
+      } else {
+        d = ':';
+      }
+    }
+    //
+    return { name: name, value: value, sep: path.sep, delimiter: d, env: {} };
+  }
   //
   set(name, value) {
     if (typeof value === 'function') {
-      this.pairs.push({ name: name, value: null, callback: value });
+      this.items.push({ scope: this.buildScope(name, value), callback: value });
     } else {
-      this.pairs.push({ name: name, value: value, callback: function(n, v, vars){
-        return v;
+      this.items.push({ scope: this.buildScope(name, value), callback: (scope) => {
+        return scope.value;
       } });
     }
   }
 
   //
   append(name, value, delimiter = null) {
-    this.pairs.push({ name: name, value: value, callback: function(d, n, v, env){
-      if (env[n]) {
-        return `${env[n]}${d}${v}`;
+    this.items.push({ scope: this.buildScope(name, value, delimiter), callback: (scope) => {
+      let v = scope.value;
+      if (typeof v === 'function') {
+        v = v(scope);
+      }
+      if (scope.env[scope.name]) {
+        return `${scope.env[scope.name]}${scope.delimiter}${v}`;
       }
       return v;
-    }.bind(this, getDelimiter(delimiter)) });
+    }});
   }
 
   //
   prepend(name, value, delimiter = null ) {
-    this.pairs.push({ name: name, value: value, callback: function(d, n, v, env){
-      if (env[n]) {
-        return `${v}${d}${env[n]}`;
+    this.items.push({ scope: this.buildScope(name, value, delimiter), callback: (scope) => {
+      let v = scope.value;
+      if (typeof v === 'function') {
+        v = v(scope);
+      }
+      if (scope.env[scope.name]) {
+        return `${v}${scope.delimiter}${scope.env[scope.name]}`;
       }
       return v;
-    }.bind(this, getDelimiter(delimiter)) });
+    }});
   }
 
   //
   names(n) {
-    this.pairs.forEach(function(e){
-      n.push(e.name);
+    this.items.forEach(function(e){
+      n.push(e.scope.name);
     });
     return utils.uniquea(n);
   }
+  //
 
   register(arr) {
-    arr.forEach(function(item){
+    for(const item of arr) {
       if (item.type === 'set') {
         this.set(item.name, item.value);
       } else if (item.type === 'append') {
@@ -68,18 +84,22 @@ class Variables {
       } else if (item.type === 'prepend') {
         this.prepend(item.name, item.value);
       }
-    }.bind(this));
+    }
   }
 
   //
   build(env) {
-    this.pairs.forEach(function(e){
-      env[e.name] = e.callback(e.name, e.value, env);
-    });
+    env['COMPONENT_ANCHOR'] = this.anchor;
+    env['COMPONENT_ORIGIN'] = this.origin;
+    for(const e of this.items) {
+      let scope = e.scope;
+      scope.env = env;
+      env[e.scope.name] = e.callback(scope);
+    }
     return env;
   }
 }
 
-module.exports.create = () => {
-  return new Variables();
+module.exports.create = (anchor, origin) => {
+  return new Variables(anchor, origin);
 }

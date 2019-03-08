@@ -14,7 +14,8 @@ class Script {
     this.name = params.name;
     this.home = params.home;
     this.options = params.options;
-    this.envs = params.envs;
+    this.env = params.env;
+    this.envFiles = params.envFiles;
     this.fn = params.fn;
   }
 
@@ -51,7 +52,7 @@ class Script {
         fl = tempfile('.sh');
       }
       let envFiles = [];
-      for(const e of this.envs) {
+      for(const e of this.envFiles) {
         envFiles.push(`if [ -f ${e} ]; then export \$(cat ${e} | grep -v ^# | xargs); fi`);
       }
       //

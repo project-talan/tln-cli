@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const environment = require('./environment');
 const variables = require('./variables');
 const options = require('./options');
 const script = require('./script');
@@ -75,23 +76,25 @@ class Component {
       });
     }
   }
-  //
+
+  // print all information about component
+  // TODO: list all possible steps
   inspect(cout) {
     cout(`id: ${this.id}`);
     cout(`home: ${this.home}`);
     cout('uid: ' + this.getUid());
     cout('parent:', (this.parent)?(this.parent.getId()):('none'));
     cout('descs:');
-    this.descs.forEach(function(pair) {
-      cout(` - ${pair.path} ${pair.desc}`);
-    }.bind(this));
+    this.descs.forEach( pair => {
+      cout(`  - ${pair.path}`);
+    });
     cout('tags:');
     cout('inherits:');
     cout('depends:');
     cout('env:');
-    let vars = this.env();
+    const vars = environment.create(this.logger, this.home).build(this.getVariables([]))
     for(let v in vars) {
-      cout(` - ${v}:${vars[v]}`);
+      cout(`  - ${v}:${vars[v]}`);
     }
   }
   //
@@ -245,21 +248,21 @@ class Component {
   
   dive(id, force) {
     // check if entity was already created
-    let component = this.components.find(function(c) { return c.getId() === id; });
+    let component = this.components.find( (c) => { return c.getId() === id; });
     if (!component) {
       // collect description from already loaded sources
       const descs = [];
-      this.descs.forEach(function(pair) {
+      this.descs.forEach( (pair) => {
         let components = [];
         if (pair.desc.components) {
           components = pair.desc.components();
         }
         //
-        const component = components.find(function (c) { return c.id === id; });
+        const component = components.find( (c) => { return c.id === id; });
         if (component) {
           descs.push(this.buildDescPair(pair.path, component));
         }
-      }.bind(this));
+      });
       // create child entity
       // TODO find more elegant solution
       if (id !== '/') {
@@ -274,7 +277,7 @@ class Component {
     return component;
   }
 
-  // build component environment variables
+  /*/ build component environment variables
   env(names = []) {
     let r = {};
     const vars = [];
@@ -302,6 +305,49 @@ class Component {
     //
     return r;
   }
+  /*/
+
+  // Collect and combine all environment variables from parents, depends list and component itself
+  // goal is to provide complete script execution environment
+  getVariables(vars, origin = null, descId = null) {
+    let orig = origin;
+    if (!orig) {
+      orig = this.getHome();
+    }
+    let r = vars;
+    // get variables form hierarchy of parents
+    if (this.parent) {
+      r = this.parent.getVariables(r, orig);
+    }
+    // for each depends list
+    for(const pair of this.descs) {
+      if (pair.desc.depends) {
+        let dpnds = pair.desc.depends();
+        for(const dpn of dpnds) {
+          const e = this.find(dpn, true, this);
+          if (e) {
+            r = e.getVariables(r);
+          } else {
+            this.logger.warn(utils.quote(dpn), 'component from depends list was not resolved for', utils.quote(this.getId()));
+          }
+        }
+      }
+    }
+    // look into componet's descs
+    for(const pair of this.descs) {
+      if (!descId || (descId && (descId === pair.path))) {
+        if (!r.find(e => e.id === descId)) {
+          if (pair.desc.variables) {
+            const v = variables.create(this.getHome(), orig);
+            v.register(pair.desc.variables());
+            r.push({id: pair.path, vars: v});
+          }
+        }
+      }
+    }
+    return r;
+  }
+
   // TOTHINK should we merge all scripts into one
   findStep(step, filter, home, steps, tail) {
     let r = steps;
@@ -309,9 +355,8 @@ class Component {
     if (this.parent) {
       r = this.parent.findStep(step, filter, home, r, [this.parent.getName()].concat(tail));
     }
-    //
+    // second, lookup inside inherits list
     for(const pair of this.descs) {
-      // second, lookup inside inherits list
       if (pair.desc.inherits) {
         let inhs = pair.desc.inherits();
         for(const inh of inhs) {
@@ -319,7 +364,7 @@ class Component {
           if (e) {
             r = e.findStep(step, filter, home, r, [this.getId()].concat(tail));
           } else {
-            this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()), 'component');
+            this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()));
           }
         }
       }
@@ -330,9 +375,9 @@ class Component {
       // third, check component's descriptions
       if (pair.desc.steps) {
         // environment files
-        let envs = [];
+        let envFiles = [];
         if (pair.desc.envs) {
-          envs = pair.desc.envs();
+          envFiles = pair.desc.envs();
         }
         // build script specific variables
         let variables = [];
@@ -361,7 +406,8 @@ class Component {
                   name: (tail.concat(suffix)).join('.'),
                   home: home,
                   options:opts,
-                  envs: envs,
+                  env: {},
+                  envFiles: envFiles,
                   fn: s.script
                 });
                 r.push(scr);

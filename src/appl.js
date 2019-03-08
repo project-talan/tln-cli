@@ -54,23 +54,24 @@ class Appl {
 
   //
   configure() {
-    return new Promise(function(resolve, reject){
-      lsbRelease(function (_, data) {
+    return new Promise( (resolve, reject) => {
+      lsbRelease( (_, data) => {
         data.os = os.type();
         data.platform = os.platform();
         data.version = os.release();
         //
         this.logger.trace(utils.prefix(this, 'configure'), 'filter string:', data);
         resolve(filter.create(this.logger, data));
-      }.bind(this));
-    }.bind(this));
+      });
+    });
   }
 
+  // function is used during initial components lookup from command line parameter
   // components are colon separated string of ids (paths)
   // every id can be
-  // * exact component id, like git
-  // * absolute path /java/openjdk-11.0.2
-  // * relative path static/html
+  // (1) exact component id, like git:        will be looked inside child hierarchy of current component
+  // (2) absolute path /java/openjdk-11.0.2:  lookup will start from root component
+  // (2) relative path static/html:           the same as (1)
   resolve(components) {
     this.logger.trace(utils.prefix(this, this.resolve.name), utils.quote(components));
     //
@@ -80,23 +81,24 @@ class Appl {
       ids = components.split(':');
     }
     if (ids.length) {
-      ids.forEach(function(id) {
+      ids.forEach( (id) => {
+        // split id into elements, identify is it absulute path
         this.logger.trace(utils.prefix(this, this.resolve.name), 'resolving ', utils.quote(id));
         // try to find inside child components
         let e = this.component.find(id, true);
         if (!e) {
           // try to use components in parent's child
           this.logger.trace('searching', `'${id}'`, 'using parent');
-          e = this.component.find(id, false, this.component);
+          e = this.component.find(id, true, this.component);
         }
         if (e) {
           r.push(e);
         } else {
-          this.logger.warn(`component with id=${id} was not found`);
+          this.logger.warn('component with id', utils.quote(id), 'was not found');
         }
-      }.bind(this));
+      } );
     } else {
-      // resolve to the cwd component
+      // resolve to the current folder component
       r.push(this.component);
     }
     return r;
