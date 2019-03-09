@@ -10,10 +10,10 @@ class Environment {
   //
   build(variables) {
     let names = [];
-    variables.forEach(v => {
+    for(const v of variables) {
       names = v.vars.names(names);
       this.env = v.vars.build(this.env);
-    });
+    }
     //
     let r = {};
     names.forEach( n => {

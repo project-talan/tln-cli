@@ -96,6 +96,8 @@ class Variables {
       scope.env = env;
       env[e.scope.name] = e.callback(scope);
     }
+    delete env['COMPONENT_ANCHOR'];
+    delete env['COMPONENT_ORIGIN'];
     return env;
   }
 }

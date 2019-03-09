@@ -3,7 +3,7 @@
 class Context {
   constructor(logger) {
     this.logger = logger;
-    this.env = JSON.parse(JSON.stringify(process.env));
+    this.env = {};
   }
 
   getEnv() {

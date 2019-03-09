@@ -12,9 +12,7 @@ class Script {
     this.logger = logger;
     this.uid = params.uid;
     this.name = params.name;
-    this.home = params.home;
     this.options = params.options;
-    this.env = params.env;
     this.envFiles = params.envFiles;
     this.fn = params.fn;
   }
@@ -23,30 +21,27 @@ class Script {
     return this.uid;
   }
 
-  simpifyName() {
-    this.uid = this.name;
-  }
-
   //
   // ? should we force to create path to component when execute ?
   // TODO: add windows cmd script
-  async execute(cwd, save, skip, argv) {
+  async execute(cwd, params) {
+    const home = cwd;
     // prepare context
     const cntx = context.create(this.logger);
-    cntx.updateEnv(this.options.parse(argv));
-    cntx.updateEnv({COMPONENT_HOME: this.home});
+    cntx.updateEnv(params.env);
+    cntx.updateEnv(this.options.parse(params.argv));
     // create component location if not exists
-    if (!fs.existsSync(this.home)) {
-      fs.mkdirSync(this.home, { recursive: true });
+    if (!fs.existsSync(home)) {
+      fs.mkdirSync(home, { recursive: true });
     }
     //
     const r = this.fn(cntx);
     let fl = null;
     if (typeof r === 'string') {
       // string represents script file name
-      fl = path.join(this.home, `${r}.sh`);
+      fl = path.join(home, `${r}.sh`);
     } else if (r instanceof Array) {
-      if (save) {
+      if (params.save) {
         fl = path.join(this.home, `${this.name}.sh`);
       } else {
         fl = tempfile('.sh');
@@ -60,12 +55,11 @@ class Script {
       fs.chmodSync(fl, fs.constants.S_IXUSR);
     }
     if (fl) {
-      if (skip) {
+      if (params.skip) {
         // output script to the console
         this.logger.con(fs.readFileSync(fl, 'utf-8'));
       } else {
         // run script from file
-        // TODO merge process.env and custom env
         let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: cntx.getEnv()};
         if (fs.existsSync(cwd)) {
           opt.cwd = cwd;

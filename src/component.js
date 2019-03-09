@@ -348,12 +348,13 @@ class Component {
     return r;
   }
 
-  // TOTHINK should we merge all scripts into one
-  findStep(step, filter, home, steps, tail) {
-    let r = steps;
+  // Collect all available steps from component own descriptions, hierarchy of parens and from inherits list
+  // Result is two arrays scripts to execute and environment variables
+  findStep(step, filter, home, res, tail) {
+    let r = res;
     // first lookup inside parents
     if (this.parent) {
-      r = this.parent.findStep(step, filter, home, r, [this.parent.getName()].concat(tail));
+      r = this.parent.findStep(step, filter, home, res, [this.parent.getName()].concat(tail));
     }
     // second, lookup inside inherits list
     for(const pair of this.descs) {
@@ -369,21 +370,18 @@ class Component {
         }
       }
     }
-    // calculate descs count to simpify scipt names
-    let i = -1;
+    // third, check component's descriptions
+    let i = -1; // calculate descs count to simplify scipts' names
     for(const pair of this.descs) {
-      // third, check component's descriptions
       if (pair.desc.steps) {
+        // environment variables
+        r.vars = this.getVariables(r.vars, null, pair.path); // ???? Should it be null
         // environment files
         let envFiles = [];
         if (pair.desc.envs) {
           envFiles = pair.desc.envs();
         }
-        // build script specific variables
-        let variables = [];
-        if (pair.desc.variables) {
-        }
-        // process options
+        // steps' options
         let opts = options.create(this.logger);
         if (pair.desc.options) {
           opts = options.create(this.logger, pair.desc.options());
@@ -391,7 +389,7 @@ class Component {
         pair.desc.steps().forEach( s => {
           // is it our step
           if ((s.id === step) || (step === '*')) {
-            // are we meet underyling os
+            // are we meet underyling os, version and other filter's restrictions
             if (filter.validate(s)) {
               // check if step was already added
               i++;
@@ -400,17 +398,14 @@ class Component {
                 suffix.push(`${i}`);
               }
               let scriptUid = this.getUid(suffix);
-              if (!r.find( es => es.getUid() === scriptUid )) {
-                const scr = script.create(this.logger, { 
+              if (!r.steps.find( es => es.getUid() === scriptUid )) {
+                r.steps.push( script.create(this.logger, { 
                   uid: scriptUid,
                   name: (tail.concat(suffix)).join('.'),
-                  home: home,
                   options:opts,
-                  env: {},
                   envFiles: envFiles,
                   fn: s.script
-                });
-                r.push(scr);
+                }));
               } else {
               }
             }
@@ -424,13 +419,17 @@ class Component {
   async execute(steps, filter, save, skip, argv) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs, interits, parents
-    const home = this.getHome();
     for(const step of steps) {
-      const list2execute = this.findStep(step, filter, home, [], []);
+      const home = this.getHome();
+      const scope2execute = this.findStep(step, filter, home, { vars: [], steps:[] }, []);
       //
-      if (list2execute.length) {
-        for(const s of list2execute) {
-          await s.execute(home, save, skip, argv);
+      if (scope2execute.steps.length) {
+        // prepare environment
+        const env = environment.create(this.logger, this.home);
+        env.build(scope2execute.vars);
+        //
+        for(const s of scope2execute.steps) {
+          await s.execute(home, { save: save, skip: skip, argv: argv, env: env.getEnv() });
         }
       } else {
         this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
