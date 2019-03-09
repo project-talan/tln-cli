@@ -351,6 +351,7 @@ class Component {
   // Collect all available steps from component own descriptions, hierarchy of parens and from inherits list
   // Result is two arrays scripts to execute and environment variables
   findStep(step, filter, home, res, tail) {
+    this.logger.con(this.id, tail);
     let r = res;
     // first lookup inside parents
     if (this.parent) {
@@ -363,7 +364,7 @@ class Component {
         for(const inh of inhs) {
           const e = this.find(inh, false, this);
           if (e) {
-            r = e.findStep(step, filter, home, r, [this.getId()].concat(tail));
+            r = e.findStep(step, filter, home, r, tail);
           } else {
             this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()));
           }

@@ -42,7 +42,7 @@ class Script {
       fl = path.join(home, `${r}.sh`);
     } else if (r instanceof Array) {
       if (params.save) {
-        fl = path.join(this.home, `${this.name}.sh`);
+        fl = path.join(home, `${this.name}.sh`);
       } else {
         fl = tempfile('.sh');
       }
