@@ -44,9 +44,9 @@ const argv = require('yargs')
           })
       },
       (argv) => {
-        const e = require(path.join(process.cwd(), '.tln.conf'));
-        console.log(e.steps);
-        e.steps.prereq();
+        const logger = require('./src/logger').create(argv.verbose);
+        const appl = require('./src/appl').create(logger, __dirname);
+        appl.initComponentDescription(argv.repo, argv.force);
       }
     )
     .command('inspect [components]', 'display component internal structure',

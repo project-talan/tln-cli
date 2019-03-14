@@ -351,7 +351,6 @@ class Component {
   // Collect all available steps from component own descriptions, hierarchy of parens and from inherits list
   // Result is two arrays scripts to execute and environment variables
   findStep(step, filter, home, res, tail) {
-    this.logger.con(this.id, tail);
     let r = res;
     // first lookup inside parents
     if (this.parent) {
@@ -416,6 +415,8 @@ class Component {
     }
     return r;
   }
+  //
+
   //
   async execute(steps, filter, save, skip, argv) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);

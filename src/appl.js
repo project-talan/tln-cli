@@ -103,6 +103,44 @@ class Appl {
     }
     return r;
   }
+  //
+  initComponentDescription(repo, force) {
+    this.logger.trace(utils.prefix(this, this.initComponentDescription.name), utils.quote(repo), force);
+    if (repo) {
+      // clone repo with tln configuration
+    } else {
+      // generate local configuration file
+      const fileName = this.component.getConfFile(this.component.getHome());
+      const fe = fs.existsSync(fileName);
+      let generateFile = true;
+      if (fe && !force) {
+        this.logger.error(`Configuration file already exists '${fileName}', use --force to override`);
+        generateFile = false;
+      }
+      if (generateFile) {
+        const template = [
+          'module.exports = {',
+          '  tags: () => [],',
+          '  options: () => [],',
+          '  inherits: () => [],',
+          '  depends: () => [],',
+          '  variables: () => [],',
+          '  steps: () => [],',
+          '  components: () => []',
+          '}'
+        ];
+        fs.writeFileSync(fileName, template.join('\n'));
+        this.logger.con(template);
+      }
+    }
+  
+    /*
+    this.logger.con(this.component.getId(), repo, force);
+        const eh = path.join(this.getHome(), id);
+        if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
+    */
+
+  }
 
 }
 
