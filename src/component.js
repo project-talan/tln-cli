@@ -102,14 +102,6 @@ class Component {
     return { path: source, desc: desc };
   }
   //
-  getConfFile(source) {
-    return path.join(source, '.tln.conf');
-  }
-  //
-  getConfFolder(source, folder = '.tln') {
-    return path.join(source, folder);
-  }
-  //
   enumFolders(h) {
     let ids = [];
     fs.readdirSync(h).
@@ -131,7 +123,7 @@ class Component {
   mergeDescs(location, scan) {
     let desc = null;
     // load definitions from .tln.conf file
-    const conf = this.getConfFile(location);
+    const conf = utils.getConfFile(location);
     if (fs.existsSync(conf)) {
       desc = require(conf);
     }
@@ -175,9 +167,9 @@ class Component {
   }
 
   //
-  loadDescsFromFolder(location, folder = '.tln') {
+  loadDescsFromFolder(location, folder) {
     // add additional source from .tln folder with git repository
-    const confDir = this.getConfFolder(location, folder);
+    const confDir = utils.getConfFolder(location, folder);
     if (fs.existsSync(confDir)) {
       this.loadDescsFromFile(confDir, true);
     }
@@ -215,6 +207,48 @@ class Component {
     this.getIDs().forEach(function(id) {
       this.dive(id, false);
     }.bind(this));
+  }
+
+  // init component description from file or git repository
+  canCreateDescription(force) {
+    //const p
+  }
+  initDescription(repo, force) {
+    if (repo) {
+      // clone repo with tln configuration
+      if (fs.existsSync(utils.getConfFolder(this.getHome))) {
+      }
+    } else {
+      // generate local configuration file
+      const fileName = utils.getConfFile(this.getHome());
+      const fe = fs.existsSync(fileName);
+      let generateFile = true;
+      if (fe && !force) {
+        this.logger.error(`Configuration file already exists '${fileName}', use --force to override`);
+        generateFile = false;
+      }
+      if (generateFile) {
+        const template = [
+          'module.exports = {',
+          '  tags: () => [],',
+          '  options: () => [],',
+          '  inherits: () => [],',
+          '  depends: () => [],',
+          '  variables: () => [],',
+          '  steps: () => [],',
+          '  components: () => []',
+          '}'
+        ];
+        fs.writeFileSync(fileName, template.join('\n'));
+        this.logger.con(template);
+      }
+    }
+  
+    /*
+    this.logger.con(this.component.getId(), repo, force);
+        const eh = path.join(this.getHome(), id);
+    */
+
   }
 
   // find entity inside children or pop up to check parent and continue search there
@@ -267,7 +301,7 @@ class Component {
       // TODO find more elegant solution
       if (id !== '/') {
         const eh = path.join(this.getHome(), id);
-        if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
+        if (fs.existsSync(utils.getConfFile(eh)) || fs.existsSync(utils.getConfFolder(eh)) || descs.length || force) {
           component = new Component(this, id, id, eh, descs, this.logger);
           component.loadDescs();
           this.components.push(component);

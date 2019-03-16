@@ -17,21 +17,20 @@ class Appl {
     //
     let cwd = process.cwd();
     // find local dev env projects root
-    let projectsHome = process.env.PROJECTS_HOME;
-    if (!projectsHome) {
-      // otherwise use current folder as root
-      projectsHome = cwd;
+    let projectsHome = cwd;
+    // find topmost level folder with with tln descs
+    let p = projectsHome;
+    while(!utils.isRootPath(p)) {
+      p = path.dirname(p);
+      if (utils.isDescriptionPresent(p)) {
+        projectsHome = p;
+      }
     }
     // build chain of components from projects home to the current folder
     let folders = [];
-    if (cwd.startsWith(projectsHome)) {
-      const rel = path.relative(projectsHome, cwd);
-      if (rel) {
-        folders = rel.split(path.sep);
-      }
-    } else {
-      // running tln outside the projects home - use cwd
-      projectsHome = cwd;
+    const rel = path.relative(projectsHome, cwd);
+    if (rel) {
+      folders = rel.split(path.sep);
     }
     this.logger.info(utils.prefix(this, 'constructor'), 'operating system', utils.quote(os.type()), utils.quote(os.platform()), utils.quote(os.release()));
     this.logger.info(utils.prefix(this, 'constructor'), 'projects home:', projectsHome);
@@ -40,6 +39,7 @@ class Appl {
     //
     this.root = require('./component').createRoot(projectsHome, '/', this.logger);
     this.logger.trace('catalog folder', this.home);
+    this.logger.con(this.home);
     this.root.loadDescsFromFolder(this.home, 'presets');
     this.root.loadDescs();
     //
@@ -106,40 +106,7 @@ class Appl {
   //
   initComponentDescription(repo, force) {
     this.logger.trace(utils.prefix(this, this.initComponentDescription.name), utils.quote(repo), force);
-    if (repo) {
-      // clone repo with tln configuration
-    } else {
-      // generate local configuration file
-      const fileName = this.component.getConfFile(this.component.getHome());
-      const fe = fs.existsSync(fileName);
-      let generateFile = true;
-      if (fe && !force) {
-        this.logger.error(`Configuration file already exists '${fileName}', use --force to override`);
-        generateFile = false;
-      }
-      if (generateFile) {
-        const template = [
-          'module.exports = {',
-          '  tags: () => [],',
-          '  options: () => [],',
-          '  inherits: () => [],',
-          '  depends: () => [],',
-          '  variables: () => [],',
-          '  steps: () => [],',
-          '  components: () => []',
-          '}'
-        ];
-        fs.writeFileSync(fileName, template.join('\n'));
-        this.logger.con(template);
-      }
-    }
-  
-    /*
-    this.logger.con(this.component.getId(), repo, force);
-        const eh = path.join(this.getHome(), id);
-        if (fs.existsSync(this.getConfFile(eh)) || fs.existsSync(this.getConfFolder(eh)) || descs.length || force) {
-    */
-
+    this.component.initDescription(repo, force);
   }
 
 }

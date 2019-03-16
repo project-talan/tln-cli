@@ -18,13 +18,8 @@ class Variables {
   buildScope(name, value, delimiter = null) {
     let d = delimiter;
     if (!d) {
-      if ( os.platform() === 'win32') {
-        d = ';';
-      } else {
-        d = ':';
-      }
+      d = path.delimiter;
     }
-    //
     return { name: name, value: value, sep: path.sep, delimiter: d, env: {} };
   }
   //
