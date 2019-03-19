@@ -34,12 +34,12 @@ class Appl {
     }
     this.logger.info(utils.prefix(this, 'constructor'), 'operating system', utils.quote(os.type()), utils.quote(os.platform()), utils.quote(os.release()));
     this.logger.info(utils.prefix(this, 'constructor'), 'projects home:', projectsHome);
+    this.logger.info(utils.prefix(this, 'constructor'), 'presets location:', this.home);
     this.logger.info(utils.prefix(this, 'constructor'), 'cwd:', cwd);
     this.logger.info(utils.prefix(this, 'constructor'), 'folders:', folders);
     //
     this.root = require('./component').createRoot(projectsHome, '/', this.logger);
     this.logger.trace('catalog folder', this.home);
-    this.logger.con(this.home);
     this.root.loadDescsFromFolder(this.home, 'presets');
     this.root.loadDescs();
     //

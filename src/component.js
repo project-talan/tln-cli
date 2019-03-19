@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const environment = require('./environment');
 const variables = require('./variables');
 const options = require('./options');
@@ -210,13 +211,15 @@ class Component {
   }
 
   // init component description from file or git repository
-  canCreateDescription(force) {
-    //const p
-  }
   initDescription(repo, force) {
     if (repo) {
       // clone repo with tln configuration
-      if (fs.existsSync(utils.getConfFolder(this.getHome))) {
+      const folder = utils.getConfFolder(this.getHome());
+      if (fs.existsSync(folder)) {
+        this.logger.warn(`Git repository with tln configuration already exists '${folder}'. Use git pull to update it`);
+      } else {
+        
+        this.logger.con(execSync(`git clone ${repo} ${utils.tlnFolderName}`).toString());
       }
     } else {
       // generate local configuration file
@@ -232,8 +235,8 @@ class Component {
           'module.exports = {',
           '  tags: () => [],',
           '  options: () => [],',
-          '  inherits: () => [],',
-          '  depends: () => [],',
+          '  inherits: () => [/*git*/],',
+          '  depends: () => [/*java*/],',
           '  variables: () => [],',
           '  steps: () => [],',
           '  components: () => []',
@@ -243,12 +246,6 @@ class Component {
         this.logger.con(template);
       }
     }
-  
-    /*
-    this.logger.con(this.component.getId(), repo, force);
-        const eh = path.join(this.getHome(), id);
-    */
-
   }
 
   // find entity inside children or pop up to check parent and continue search there

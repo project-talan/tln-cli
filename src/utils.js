@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 module.exports = {
+  tlnFolderName: '.tln',
   prefix: function(obj, method) { 
     return `[${obj.constructor.name}::${method}]`; 
   },
