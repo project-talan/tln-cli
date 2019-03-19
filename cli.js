@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 
 const argv = require('yargs')
-    .usage('Multi-component management system\nUsage:\n $0 <command> [parameters] [options]')
+    .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
     .option('verbose', {
       alias: 'v',
