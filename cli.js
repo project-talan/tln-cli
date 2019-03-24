@@ -28,7 +28,7 @@ const argv = require('yargs')
         console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
       }
     )
-    .command('init [repo] [-f]', 'initialize configuration file in current folder or read config from git repo',
+    .command('init-conf [repo] [-f]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
           .positional('repo', {
@@ -46,7 +46,7 @@ const argv = require('yargs')
       (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
-        appl.initComponentDescription(argv.repo, argv.force);
+        appl.initComponentConfiguration(argv.repo, argv.force);
       }
     )
     .command('inspect [components]', 'display component internal structure',

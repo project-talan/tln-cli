@@ -211,7 +211,7 @@ class Component {
   }
 
   // init component description from file or git repository
-  initDescription(repo, force) {
+  initConfiguration(repo, force) {
     if (repo) {
       // clone repo with tln configuration
       const folder = utils.getConfFolder(this.getHome());
