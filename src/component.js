@@ -308,36 +308,6 @@ class Component {
     return component;
   }
 
-  /*/ build component environment variables
-  env(names = []) {
-    let r = {};
-    const vars = [];
-    // construct vars, collect names
-    this.descs.forEach(function(pair) {
-      if (pair.desc.variables) {
-        const v = variables.create();
-        v.register(pair.desc.variables());
-        names = v.names(names);
-        vars.push(v);
-      }
-    }.bind(this));
-    //
-    if (this.parent) {
-      r = this.parent.env(names);
-    } else {
-      names.forEach(function(n){
-        r[n] = process.env[n];
-      });
-    }
-    r['COMPONENT_HOME'] = this.getHome();
-    vars.forEach(function(v){
-      r = v.build(r);
-    });
-    //
-    return r;
-  }
-  /*/
-
   // Collect and combine all environment variables from parents, depends list and component itself
   // goal is to provide complete script execution environment
   getVariables(vars, origin = null, descId = null) {
@@ -449,20 +419,24 @@ class Component {
   //
 
   //
-  async execute(steps, filter, save, skip, argv) {
+  async execute(steps, filter, params) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs, interits, parents
+    const p = params.clone();
+    p.home = this.getHome();
     for(const step of steps) {
-      const home = this.getHome();
-      const scope2execute = this.findStep(step, filter, home, { vars: [], steps:[] }, []);
+      const scope2execute = this.findStep(step, filter, p.home, { vars: [], steps:[] }, []);
       //
       if (scope2execute.steps.length) {
         // prepare environment
-        const env = environment.create(this.logger, this.home);
+        const env = environment.create(this.logger, p.home);
         env.build(scope2execute.vars);
+        p.env = env.getEnv();
         //
-        for(const s of scope2execute.steps) {
-          await s.execute(home, { save: save, skip: skip, argv: argv, env: env.getEnv() });
+        for(const s of scope2execute.steps.reverse()) {
+          if (!! await s.execute(p)) {
+            break;
+          }
         }
       } else {
         this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');

@@ -24,8 +24,8 @@ class Script {
   //
   // ? should we force to create path to component when execute ?
   // TODO: add windows cmd script
-  async execute(cwd, params) {
-    const home = cwd;
+  async execute(params) {
+    const home = params.home;
     // prepare context
     const cntx = context.create(this.logger);
     cntx.updateEnv(params.env);
@@ -36,62 +36,66 @@ class Script {
     }
     //
     const r = this.fn(cntx);
-    let fl = null;
-    if (typeof r === 'string') {
-      // string represents script file name
-      fl = path.join(home, `${r}.sh`);
-    } else if (r instanceof Array) {
-      if (params.save) {
-        fl = path.join(home, `${this.name}.sh`);
-      } else {
-        fl = tempfile('.sh');
-      }
-      let envFiles = [];
-      for(const e of this.envFiles) {
-        envFiles.push(`if [ -f ${e} ]; then export \$(cat ${e} | grep -v ^# | xargs); fi`);
-      }
-      //
-      fs.writeFileSync(fl, ((['#!/bin/bash -e'].concat(envFiles)).concat(r)).join('\n'));
-      fs.chmodSync(fl, fs.constants.S_IXUSR);
-    }
-    if (fl) {
-      if (params.skip) {
-        // output script to the console
-        this.logger.con(fs.readFileSync(fl, 'utf-8'));
-      } else {
-        // run script from file
-        let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: cntx.getEnv()};
-        if (fs.existsSync(cwd)) {
-          opt.cwd = cwd;
+    const script = cntx.getScript();
+    if (script) {
+      let fl = null;
+      if (typeof script === 'string') {
+        // string represents script file name
+        fl = path.join(home, `${script}.sh`);
+      } else if (script instanceof Array) {
+        if (params.save) {
+          fl = path.join(home, `${this.name}.sh`);
+        } else {
+          fl = tempfile('.sh');
         }
-        let spawnPromise = (command, args, options) => {
-          return new Promise((resolve, reject) => {
-            const child = spawn(command, args, options)
-            /*/
-            child.stdout.on('data', (data) => {
-              this.logger.info(`stdout: ${data}`)
-            })
-            child.stderr.on('data', (data) => {
-              this.logger.info(`stderr: ${data}`)
-            })
-            /*/
+        let envFiles = [];
+        for(const e of this.envFiles) {
+          envFiles.push(`if [ -f ${e} ]; then export \$(cat ${e} | grep -v ^# | xargs); fi`);
+        }
+        //
+        fs.writeFileSync(fl, ((['#!/bin/bash -e'].concat(envFiles)).concat(script)).join('\n'));
+        fs.chmodSync(fl, fs.constants.S_IXUSR);
+      }
+      if (fl) {
+        if (params.skip) {
+          // output script to the console
+          this.logger.con(fs.readFileSync(fl, 'utf-8'));
+        } else {
+          // run script from file
+          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: cntx.getEnv()};
+          if (fs.existsSync(home)) {
+            opt.cwd = home;
+          }
+          let spawnPromise = (command, args, options) => {
+            return new Promise((resolve, reject) => {
+              const child = spawn(command, args, options)
+              /*/
+              child.stdout.on('data', (data) => {
+                this.logger.info(`stdout: ${data}`)
+              })
+              child.stderr.on('data', (data) => {
+                this.logger.info(`stderr: ${data}`)
+              })
+              /*/
 
-            child.on('close', (code) => {
-              /*/
-              if (code !== 0)
-                this.logger.error(`Command execution failed with code: ${code}`)
-              else
-                this.logger.info(`Command execution completed with code: ${code}`)
-              /*/
-              resolve()
+              child.on('close', (code) => {
+                /*/
+                if (code !== 0)
+                  this.logger.error(`Command execution failed with code: ${code}`)
+                else
+                  this.logger.info(`Command execution completed with code: ${code}`)
+                /*/
+                resolve()
+              })
             })
-          })
+          }
+          await spawnPromise(fl, [], opt);
         }
-        await spawnPromise(fl, [], opt);
+      } else {
+        this.logger.error(`${this.uid} could not save execution script: ${script}`);
       }
-    } else {
-      this.looger.error(`${this.uid} could not save execution script`);
     }
+    return r;
   }
 }
 

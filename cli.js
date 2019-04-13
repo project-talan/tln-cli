@@ -129,11 +129,12 @@ const argv = require('yargs')
       }, (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
+        const parameters = require('./src/parameters');
         //
         appl.configure()
           .then(async (filter) => {
             for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.save, argv.skip, argv);
+              await component.execute(argv.steps.split(':'), filter, parameters.create("", argv.save, argv.skip, argv, []));
             }
           });
 /*

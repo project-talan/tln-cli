@@ -4,6 +4,7 @@ class Context {
   constructor(logger) {
     this.logger = logger;
     this.env = {};
+    this.script = null;
   }
 
   getEnv() {
@@ -14,6 +15,14 @@ class Context {
     for (let [key, value] of Object.entries(vars)) {
       this.env[key] = value;
     }
+  }
+
+  setScript(script) {
+    this.script = script;
+  }
+
+  getScript(script) {
+    return this.script;
   }
 }
 
