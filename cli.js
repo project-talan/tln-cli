@@ -95,7 +95,7 @@ const argv = require('yargs')
       }
     )
     .command(
-      ['exec <steps> [components] [-r] [-s]', '$0'],
+      ['exec <steps> [components] [-r] [-s] [-k]', '$0'],
       'execute set of steps over set of components',
       (yargs) => {
         yargs
@@ -134,7 +134,7 @@ const argv = require('yargs')
         appl.configure()
           .then(async (filter) => {
             for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, parameters.create("", argv.save, argv.skip, argv, []));
+              await component.execute(argv.steps.split(':'), filter, argv.recursive, parameters.create("", argv.save, argv.skip, argv, []));
             }
           });
 /*

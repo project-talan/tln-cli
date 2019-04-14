@@ -232,15 +232,21 @@ class Component {
       }
       if (generateFile) {
         const template = [
-          'module.exports = {',
-          '  tags: () => [],',
-          '  options: () => [],',
-          '  inherits: () => [/*git*/],',
-          '  depends: () => [/*java*/],',
-          '  variables: () => [],',
-          '  steps: () => [],',
-          '  components: () => []',
-          '}'
+          "module.exports = {",
+          "  tags: (context) => [],",
+          "  options: (context) => [],",
+          "  inherits: (context) => [/*'git'*/],",
+          "  depends: (context) => [/*'java'*/],",
+          "  variables: (context) => [],",
+          "  steps: (context) => [",
+          "    /*{",
+          "      id: 'hi',",
+          "      desc: 'Say Hi from hi step',",
+          "      script: (context) => context.setScript(['echo Hi'])",
+          "    }*/",
+          "  ],",
+          "  components: (context) => []",
+          "}"
         ];
         fs.writeFileSync(fileName, template.join('\n'));
         this.logger.con(template);
@@ -419,7 +425,7 @@ class Component {
   //
 
   //
-  async execute(steps, filter, params) {
+  async execute(steps, filter, recursive, params) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs, interits, parents
     const p = params.clone();
@@ -439,8 +445,15 @@ class Component {
           }
         }
       } else {
-        this.logger.warn(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
+        this.logger.debug(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
       }
+    }
+    //
+    if (recursive) {
+      this.construct();
+      this.components.forEach( (component) => {
+        component.execute(steps, filter, recursive, params);
+      });
     }
   }
 
