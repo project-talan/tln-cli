@@ -242,7 +242,7 @@ class Component {
           "    /*{",
           "      id: 'hi',",
           "      desc: 'Say Hi from hi step',",
-          "      script: (context) => context.setScript(['echo Hi'])",
+          "      script: (context) => context.setScript(['echo Hi, home: ${COMPONENT_HOME}'])",
           "    }*/",
           "  ],",
           "  components: (context) => []",
@@ -422,10 +422,9 @@ class Component {
     }
     return r;
   }
-  //
 
   //
-  async execute(steps, filter, recursive, params) {
+  async execute(steps, filter, recursive, parallel, params) {
     this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
     // collect steps from descs, interits, parents
     const p = params.clone();
@@ -451,9 +450,13 @@ class Component {
     //
     if (recursive) {
       this.construct();
-      this.components.forEach( (component) => {
-        component.execute(steps, filter, recursive, params);
-      });
+      for(const component of this.components) {
+        if (parallel) {
+          component.execute(steps, filter, recursive, parallel, params);
+        } else {
+          await component.execute(steps, filter, recursive, parallel, params);
+        }
+      }
     }
   }
 

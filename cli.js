@@ -95,7 +95,7 @@ const argv = require('yargs')
       }
     )
     .command(
-      ['exec <steps> [components] [-r] [-s] [-k]', '$0'],
+      ['exec <steps> [components] [-r] [-s] [-k] [-p]', '$0'],
       'execute set of steps over set of components',
       (yargs) => {
         yargs
@@ -112,6 +112,12 @@ const argv = require('yargs')
             alias: 'recursive',
             default: false,
             describe: 'execute commands recursively for all direct child components',
+            type: 'boolean'
+          })
+          .option('p', {
+            alias: 'parallel',
+            default: false,
+            describe: 'execute commands for multiple components in parallel',
             type: 'boolean'
           })
           .option('s', {
@@ -134,7 +140,7 @@ const argv = require('yargs')
         appl.configure()
           .then(async (filter) => {
             for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.recursive, parameters.create("", argv.save, argv.skip, argv, []));
+              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.skip, argv, []));
             }
           });
 /*
