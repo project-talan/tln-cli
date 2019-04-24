@@ -1,12 +1,13 @@
 'use strict';
 
 class Parameters {
-  constructor(home, save, skip, argv, env) {
+  constructor(home, save, skip, argv, env, envFiles) {
     this.home = home;
     this.save = save;
     this.skip = skip;
     this.argv = argv;
     this.env = env;
+    this.envFiles = envFiles;
   }
 
   clone() {
@@ -15,6 +16,6 @@ class Parameters {
 
 }
 
-module.exports.create = (home, save, skip, argv, env) => {
-  return new Parameters(home, save, skip, argv, env);
+module.exports.create = (home, save, skip, argv, env, envFiles) => {
+  return new Parameters(home, save, skip, argv, env, envFiles);
 }

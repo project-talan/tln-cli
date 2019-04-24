@@ -94,6 +94,7 @@ const argv = require('yargs')
         });
       }
     )
+    // TODO add ability to define additional env files and environment variables
     .command(
       ['exec <steps> [components] [-r] [-s] [-k] [-p]', '$0'],
       'execute set of steps over set of components',
@@ -140,7 +141,7 @@ const argv = require('yargs')
         appl.configure()
           .then(async (filter) => {
             for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.skip, argv, []));
+              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.skip, argv, [], []));
             }
           });
 /*

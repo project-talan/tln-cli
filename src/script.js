@@ -13,7 +13,6 @@ class Script {
     this.uid = params.uid;
     this.name = params.name;
     this.options = params.options;
-    this.envFiles = params.envFiles;
     this.fn = params.fn;
   }
 
@@ -49,7 +48,7 @@ class Script {
           fl = tempfile('.sh');
         }
         let envFiles = [];
-        for(const e of this.envFiles) {
+        for(const e of params.envFiles) {
           envFiles.push(`if [ -f ${e} ]; then export \$(cat ${e} | grep -v ^# | xargs); fi`);
         }
         //
