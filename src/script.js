@@ -49,7 +49,7 @@ class Script {
         }
         let envFiles = [];
         for(const e of params.envFiles) {
-          envFiles.push(`if [ -f ${e} ]; then export \$(cat ${e} | grep -v ^# | xargs); fi`);
+          envFiles.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
         }
         //
         fs.writeFileSync(fl, ((['#!/bin/bash -e'].concat(envFiles)).concat(script)).join('\n'));
