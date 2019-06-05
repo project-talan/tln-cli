@@ -93,7 +93,8 @@ class Component {
     cout('inherits:');
     cout('depends:');
     cout('env:');
-    const vars = environment.create(this.logger, this.home).build(this.getVariables([]))
+    const v = this.getVariables([]);
+    const vars = environment.create(this.logger, this.getHome(), this.getId()).build(v);
     for(let v in vars) {
       cout(`  - ${v}:${vars[v]}`);
     }
@@ -235,8 +236,8 @@ class Component {
           "module.exports = {",
           "  tags: (context) => [],",
           "  options: (context) => [],",
-          "  inherits: (context) => [/*'git'*/],",
           "  depends: (context) => [/*'java'*/],",
+          "  inherits: (context) => [/*'git'*/],",
           "  variables: (context) => [],",
           "  steps: (context) => [",
           "    /*{",
@@ -316,7 +317,9 @@ class Component {
 
   // Collect and combine all environment variables from parents, depends list and component itself
   // goal is to provide complete script execution environment
-  getVariables(vars, origin = null, descId = null) {
+  // origin - path to component, which requests variables
+  // anchor - path to component, which provides variable
+  getVariables(vars, origin = null) {
     let orig = origin;
     if (!orig) {
       orig = this.getHome();
@@ -340,16 +343,12 @@ class Component {
         }
       }
     }
-    // look into componet's descs
+    // look into component's descs
     for(const pair of this.descs) {
-      if (!descId || (descId && (descId === pair.path))) {
-        if (!r.find(e => e.id === descId)) {
-          if (pair.desc.variables) {
-            const v = variables.create(this.getHome(), orig);
-            v.register(pair.desc.variables());
-            r.push({id: pair.path, vars: v});
-          }
-        }
+      if (pair.desc.variables) {
+        const v = variables.create(this.getHome(), orig);
+        v.register(pair.desc.variables());
+        r.push({id: pair.path, vars: v});
       }
     }
     return r;
@@ -367,6 +366,8 @@ class Component {
   */
   findStep(step, filter, home, result, tail) {
     let r = result;
+    // collect environment variables
+    r.vars = this.getVariables(r.vars);
     // first lookup inside parents
     if (this.parent) {
       r = this.parent.findStep(step, filter, home, r, [this.parent.getName()].concat(tail));
@@ -394,8 +395,6 @@ class Component {
 
       // third, check component's descriptions
       if (pair.desc.steps) {
-        // collect environment variables
-        r.vars = this.getVariables(r.vars, null, pair.path); // ???? Should it be null
         // steps' options
         let opts = options.create(this.logger);
         if (pair.desc.options) {
@@ -441,7 +440,7 @@ class Component {
       //
       if (scope2execute.steps.length) {
         // prepare environment
-        const env = environment.create(this.logger, p.home);
+        const env = environment.create(this.logger, p.home, this.getId());
         env.build(scope2execute.vars);
         // TODO merge env & envFiles inside parameters with already existing values
         p.env = env.getEnv();
