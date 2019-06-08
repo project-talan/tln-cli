@@ -56,12 +56,13 @@ class Appl {
   configure() {
     return new Promise( (resolve, reject) => {
       lsbRelease( (_, data) => {
-        data.os = os.type();
-        data.platform = os.platform();
-        data.version = os.release();
+        let info = (data) ? data : {};
+        info.os = os.type();
+        info.platform = os.platform();
+        info.version = os.release();
         //
-        this.logger.trace(utils.prefix(this, 'configure'), 'filter string:', data);
-        resolve(filter.create(this.logger, data));
+        this.logger.trace(utils.prefix(this, 'configure'), 'filter info:', info);
+        resolve(filter.create(this.logger, info));
       });
     });
   }

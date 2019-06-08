@@ -53,7 +53,7 @@ class Script {
         }
         //
         fs.writeFileSync(fl, ((['#!/bin/bash -e'].concat(envFiles)).concat(script)).join('\n'));
-        fs.chmodSync(fl, fs.constants.S_IXUSR);
+        fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
         if (params.skip) {
