@@ -35,9 +35,14 @@ class Component {
   }
   //
   getUid(chunks = []) {
-    let r = ['tln'];
+    let r = [];
     if (this.parent) {
-      r =  [this.parent.getUid(), this.id];
+      const pid = this.parent.getUid();
+      if (pid) {
+          r =  [pid, this.id];
+        } else {
+          r =  [this.id];
+        }
     }
     return r.concat(chunks).join('.');
   }
@@ -80,23 +85,36 @@ class Component {
 
   // print all information about component
   // TODO: list all possible steps
-  inspect(cout) {
-    cout(`id: ${this.id}`);
-    cout(`home: ${this.home}`);
-    cout('uid: ' + this.getUid());
+  async inspect(filter, cout) {
+    const id = this.getId();
+    const home = this.getHome();
+    const uid = this.getUid();
+    //
+    cout(`id: ${id}`);
+    cout(`home: ${home}`);
+    cout(`uid: ${uid}`);
     cout('parent:', (this.parent)?(this.parent.getId()):('none'));
     cout('descs:');
     this.descs.forEach( pair => {
-      cout(`  - ${pair.path}`);
+      cout(`  -"${pair.path}`);
     });
     cout('tags:');
     cout('inherits:');
     cout('depends:');
+    //
+    const execScope = this.findStep('*', filter, home, { vars: [], envFiles: [], steps:[] }, []);
     cout('env:');
-    const v = this.getVariables([]);
-    const vars = environment.create(this.logger, this.getHome(), this.getId()).build(v);
+    const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
     for(let v in vars) {
-      cout(`  - ${v}:${vars[v]}`);
+      cout(`  ${v}: ${vars[v]}`);
+    }
+    cout('envFiles:');
+    for(const ef of execScope.envFiles) {
+      cout(`  - ${ef}`);
+    }
+    cout('steps:');
+    for(const s of execScope.steps) {
+      cout(`  - ${s.name}`);
     }
   }
   //
@@ -239,6 +257,9 @@ class Component {
           "  depends: (context) => [/*'java'*/],",
           "  inherits: (context) => [/*'git'*/],",
           "  variables: (context) => [],",
+          "    /*{ type: 'set', name:'TLN_GIT_USER', value: (scope) => 'user.name' },",
+          "    { type: 'set', name:'TLN_GIT_EMAIL', value: (scope) => 'user.name@company.com' }*/",
+          "  ],",
           "  steps: (context) => [",
           "    /*{",
           "      id: 'hi',",
@@ -364,22 +385,23 @@ class Component {
     * @result - object which holds environment varaibles, environment files and collected steps
     * @tail - suffix is used for step uid formation
   */
-  findStep(step, filter, home, result, tail) {
+  findStep(step, filter, home, result) {
     let r = result;
     // collect environment variables
     r.vars = this.getVariables(r.vars);
     // first lookup inside parents
     if (this.parent) {
-      r = this.parent.findStep(step, filter, home, r, [this.parent.getName()].concat(tail));
+      r = this.parent.findStep(step, filter, home, r);
     }
     let i = -1; // calculate descs count to simplify scipts' names
     for(const pair of this.descs) {
+      i++;
       // second, lookup inside inherits list
       if (pair.desc.inherits) {
         for(const inh of pair.desc.inherits()) {
           const e = this.find(inh, false, this);
           if (e) {
-            r = e.findStep(step, filter, home, r, tail);
+            r = e.findStep(step, filter, home, r);
           } else {
             this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()));
           }
@@ -406,16 +428,16 @@ class Component {
             // are we meet underyling os, version and other filter's restrictions
             if (filter.validate(s)) {
               // check if step was already added
-              i++;
-              let suffix = [step];
+              let suffix = [s.id];
               if (i || (home !== this.getHome())) {
-                // suffix.push(`${i}`);
+                suffix.push(`${i}`);
               }
-              let scriptUid = this.getUid(suffix);
+              const scriptUid = s.id + '@' + this.getUid([`${i}`]);
+              const scriptName = s.id + '@' + this.getUid([]);
               if (!r.steps.find( es => es.getUid() === scriptUid )) {
                 r.steps.push( script.create(this.logger, { 
                   uid: scriptUid,
-                  name: (tail.concat(suffix)).join('.'),
+                  name: scriptName,
                   options:opts,
                   fn: s.script
                 }));
@@ -436,7 +458,7 @@ class Component {
     const p = params.clone();
     p.home = this.getHome();
     for(const step of steps) {
-      const scope2execute = this.findStep(step, filter, p.home, { vars: [], envFiles: [], steps:[] }, []);
+      const scope2execute = this.findStep(step, filter, p.home, { vars: [], envFiles: [], steps:[] });
       //
       if (scope2execute.steps.length) {
         // prepare environment

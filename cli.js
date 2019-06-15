@@ -62,12 +62,15 @@ const argv = require('yargs')
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
         let mark = ''
-        appl.resolve(argv.components).forEach(function(component) {
-          logger.trace('resolved', component.getId());
-          if (mark) console.log(mark);
-          mark = '*';
-          component.inspect(function(...args) { console.log.apply(console, args); });
-        });
+        appl.configure()
+          .then(async (filter) => {
+            for(const component of appl.resolve(argv.components)) {
+              logger.trace('resolved', component.getId());
+              if (mark) logger.con(mark);
+              mark = '***';
+              await component.inspect(filter, (...args) => { logger.con.apply(logger, args); });
+            }
+          });
       }
     )
     .command('ls [components] [-d]', 'display components hierarchy',
