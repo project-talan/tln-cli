@@ -4,11 +4,9 @@
 
 const os = require('os');
 const path = require('path');
-// tln2 --home
-// tln update - pull externl configurations
 
 const argv = require('yargs')
-    .usage('Multi-component management system\nUsage:\n $0 <command> [parameters] [options]')
+    .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
     .option('verbose', {
       alias: 'v',
@@ -30,7 +28,7 @@ const argv = require('yargs')
         console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
       }
     )
-    .command('init [repo] [-f]', 'initialize configuration file in current folder or read config from git repo',
+    .command('init-conf [repo] [-f]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
           .positional('repo', {
@@ -46,9 +44,9 @@ const argv = require('yargs')
           })
       },
       (argv) => {
-        const e = require(path.join(process.cwd(), '.tln.conf'));
-        console.log(e.steps);
-        e.steps.prereq();
+        const logger = require('./src/logger').create(argv.verbose);
+        const appl = require('./src/appl').create(logger, __dirname);
+        appl.initComponentConfiguration(argv.repo, argv.force);
       }
     )
     .command('inspect [components]', 'display component internal structure',
@@ -64,12 +62,15 @@ const argv = require('yargs')
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
         let mark = ''
-        appl.resolve(argv.components).forEach(function(component) {
-          logger.trace('resolved', component.getId());
-          if (mark) console.log(mark);
-          mark = '*';
-          component.inspect(function(...args) { console.log.apply(console, args); });
-        });
+        appl.configure()
+          .then(async (filter) => {
+            for(const component of appl.resolve(argv.components)) {
+              logger.trace('resolved', component.getId());
+              if (mark) logger.con(mark);
+              mark = '***';
+              await component.inspect(filter, (...args) => { logger.con.apply(logger, args); });
+            }
+          });
       }
     )
     .command('ls [components] [-d]', 'display components hierarchy',
@@ -96,8 +97,9 @@ const argv = require('yargs')
         });
       }
     )
+    // TODO add ability to define additional env files and environment variables
     .command(
-      ['exec <steps> [components] [-r] [-s]', '$0'],
+      ['exec <steps> [components] [-r] [-s] [-k] [-p]', '$0'],
       'execute set of steps over set of components',
       (yargs) => {
         yargs
@@ -116,6 +118,12 @@ const argv = require('yargs')
             describe: 'execute commands recursively for all direct child components',
             type: 'boolean'
           })
+          .option('p', {
+            alias: 'parallel',
+            default: false,
+            describe: 'execute commands for multiple components in parallel',
+            type: 'boolean'
+          })
           .option('s', {
             alias: 'save',
             default: false,
@@ -131,11 +139,12 @@ const argv = require('yargs')
       }, (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
-
+        const parameters = require('./src/parameters');
+        //
         appl.configure()
           .then(async (filter) => {
             for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.save, argv.skip);
+              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.skip, argv, [], []));
             }
           });
 /*
@@ -148,5 +157,4 @@ const argv = require('yargs')
 */
       }
     )
-    .argv
-;
+    .argv;

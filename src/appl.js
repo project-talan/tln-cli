@@ -17,24 +17,24 @@ class Appl {
     //
     let cwd = process.cwd();
     // find local dev env projects root
-    let projectsHome = process.env.PROJECTS_HOME;
-    if (!projectsHome) {
-      // otherwise use current folder as root
-      projectsHome = cwd;
+    let projectsHome = cwd;
+    // find topmost level folder with with tln descs
+    let p = projectsHome;
+    while(!utils.isRootPath(p)) {
+      p = path.dirname(p);
+      if (utils.isDescriptionPresent(p)) {
+        projectsHome = p;
+      }
     }
     // build chain of components from projects home to the current folder
     let folders = [];
-    if (cwd.startsWith(projectsHome)) {
-      const rel = path.relative(projectsHome, cwd);
-      if (rel) {
-        folders = rel.split(path.sep);
-      }
-    } else {
-      // running tln outside the projects home - use cwd
-      projectsHome = cwd;
+    const rel = path.relative(projectsHome, cwd);
+    if (rel) {
+      folders = rel.split(path.sep);
     }
     this.logger.info(utils.prefix(this, 'constructor'), 'operating system', utils.quote(os.type()), utils.quote(os.platform()), utils.quote(os.release()));
     this.logger.info(utils.prefix(this, 'constructor'), 'projects home:', projectsHome);
+    this.logger.info(utils.prefix(this, 'constructor'), 'presets location:', this.home);
     this.logger.info(utils.prefix(this, 'constructor'), 'cwd:', cwd);
     this.logger.info(utils.prefix(this, 'constructor'), 'folders:', folders);
     //
@@ -54,19 +54,25 @@ class Appl {
 
   //
   configure() {
-    return new Promise(function(resolve, reject){
-      lsbRelease(function (_, data) {
-        data.os = os.type();
-        data.platform = os.platform();
-        data.version = os.release();
+    return new Promise( (resolve, reject) => {
+      lsbRelease( (_, data) => {
+        let info = (data) ? data : {};
+        info.os = os.type();
+        info.platform = os.platform();
+        info.version = os.release();
         //
-        this.logger.trace(utils.prefix(this, 'configure'), 'filter string:', data);
-        resolve(filter.create(this.logger, data));
-      }.bind(this));
-    }.bind(this));
+        this.logger.trace(utils.prefix(this, 'configure'), 'filter info:', info);
+        resolve(filter.create(this.logger, info));
+      });
+    });
   }
 
-  //
+  // function is used during initial components lookup from command line parameter
+  // components are colon separated string of ids (paths)
+  // every id can be
+  // (1) exact component id, like git:        will be looked inside child hierarchy of current component
+  // (2) absolute path /java/openjdk-11.0.2:  lookup will start from root component
+  // (2) relative path static/html:           the same as (1)
   resolve(components) {
     this.logger.trace(utils.prefix(this, this.resolve.name), utils.quote(components));
     //
@@ -76,26 +82,32 @@ class Appl {
       ids = components.split(':');
     }
     if (ids.length) {
-      ids.forEach(function(id) {
+      ids.forEach( (id) => {
+        // split id into elements, identify is it absulute path
         this.logger.trace(utils.prefix(this, this.resolve.name), 'resolving ', utils.quote(id));
         // try to find inside child components
         let e = this.component.find(id, true);
         if (!e) {
           // try to use components in parent's child
           this.logger.trace('searching', `'${id}'`, 'using parent');
-          e = this.component.find(id, false, this.component);
+          e = this.component.find(id, true, this.component);
         }
         if (e) {
           r.push(e);
         } else {
-          this.logger.warn(`component with id=${id} was not found`);
+          this.logger.warn('component with id', utils.quote(id), 'was not found');
         }
-      }.bind(this));
+      } );
     } else {
-      // resolve to the cwd component
+      // resolve to the current folder component
       r.push(this.component);
     }
     return r;
+  }
+  //
+  initComponentConfiguration(repo, force) {
+    this.logger.trace(utils.prefix(this, this.initComponentConfiguration.name), utils.quote(repo), force);
+    this.component.initConfiguration(repo, force);
   }
 
 }
