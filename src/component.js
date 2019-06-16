@@ -286,6 +286,7 @@ class Component {
       // check if requested entity was already created or can be created
       entity = this.dive(id, false);
       if (!entity && recursive) {
+        // TODO check that we are NOT dive into floatUp child
         const ids = this.getIDs();
         this.logger.trace('collected ids', ids);
         //
@@ -385,12 +386,13 @@ class Component {
     * @result - object which holds environment varaibles, environment files and collected steps
     * @tail - suffix is used for step uid formation
   */
-  findStep(step, filter, home, result) {
+  findStep(step, filter, home, result, parent = null) {
+    this.logger.trace(utils.prefix(this, this.findStep.name), 'searching step', utils.quote(step), 'using home:', utils.quote(home), 'iside', utils.quote(this.getId()));
     let r = result;
     // collect environment variables
     r.vars = this.getVariables(r.vars);
     // first lookup inside parents
-    if (this.parent) {
+    if (this.parent && (this.parent != parent)) {
       r = this.parent.findStep(step, filter, home, r);
     }
     let i = -1; // calculate descs count to simplify scipts' names
@@ -401,7 +403,7 @@ class Component {
         for(const inh of pair.desc.inherits()) {
           const e = this.find(inh, false, this);
           if (e) {
-            r = e.findStep(step, filter, home, r);
+            r = e.findStep(step, filter, home, r, e.parent);
           } else {
             this.logger.warn(utils.quote(inh), 'component from inherits list was not resolved for', utils.quote(this.getId()));
           }
