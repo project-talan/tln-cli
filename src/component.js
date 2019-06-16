@@ -96,7 +96,7 @@ class Component {
     cout('parent:', (this.parent)?(this.parent.getId()):('none'));
     cout('descs:');
     this.descs.forEach( pair => {
-      cout(`  -"${pair.path}`);
+      cout(`  - ${pair.path}`);
     });
     cout('tags:');
     cout('inherits:');
