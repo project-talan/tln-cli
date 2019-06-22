@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 module.exports = {
   tlnFolderName: '.tln',
@@ -18,7 +19,8 @@ module.exports = {
   },
   isRootPath(p) {
     // TODO validate expression at windows box
-    return (p === path.sep);
+    const root = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
+    return (p === root);
   },
   getConfFile(p) {
     return path.join(p, '.tln.conf');
