@@ -256,7 +256,7 @@ class Component {
           "  options: (context) => [],",
           "  depends: (context) => [/*'java'*/],",
           "  inherits: (context) => [/*'git'*/],",
-          "  variables: (context) => [],",
+          "  variables: (context) => [",
           "    /*{ type: 'set', name:'TLN_GIT_USER', value: (scope) => 'user.name' },",
           "    { type: 'set', name:'TLN_GIT_EMAIL', value: (scope) => 'user.name@company.com' }*/",
           "  ],",
