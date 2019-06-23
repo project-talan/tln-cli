@@ -26,6 +26,8 @@ const argv = require('yargs')
         console.log(String.raw`                _/ |                                         `)
         console.log(String.raw`               |__/                                          `)
         console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
+        console.log(String.raw`  github: https://github.com/project-talan/tln-cli.git       `)
+
       }
     )
     .command('init-conf [repo] [-f]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',

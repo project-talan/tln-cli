@@ -125,10 +125,14 @@ class Component {
   enumFolders(h) {
     let ids = [];
     fs.readdirSync(h).
-    forEach(function(name) {
+    forEach( name => {
       const p = path.join(h, name);
-      if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
-        ids.push(name);
+      try {
+        if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
+          ids.push(name);
+        } 
+      } catch(err) {
+        this.logger.trace('Skip folder due to access restruction', p);
       }
     });
     return ids;
