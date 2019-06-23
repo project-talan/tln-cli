@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 'use strict';
 
 const os = require('os');
@@ -26,6 +24,8 @@ const argv = require('yargs')
         console.log(String.raw`                _/ |                                         `)
         console.log(String.raw`               |__/                                          `)
         console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
+        console.log(String.raw`  github: https://github.com/project-talan/tln-cli.git       `)
+
       }
     )
     .command('init-conf [repo] [-f]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
@@ -99,7 +99,7 @@ const argv = require('yargs')
     )
     // TODO add ability to define additional env files and environment variables
     .command(
-      ['exec <steps> [components] [-r] [-s] [-k] [-p]', '$0'],
+      ['exec <steps> [components] [-r] [-p] [-s] [-l]', '$0'],
       'execute set of steps over set of components',
       (yargs) => {
         yargs
@@ -130,13 +130,14 @@ const argv = require('yargs')
             describe: 'generate and save scripts inside component folder, otherwise temp folder will be used',
             type: 'boolean'
           })
-          .option('k', {
-            alias: 'skip',
+          .option('l', {
+            alias: 'validate',
             default: false,
-            describe: 'skip execution, dump scripts to the console',
+            describe: 'validate generated scripts without execution by dumping sources to the console',
             type: 'boolean'
           })
       }, (argv) => {
+        console.log(argv.verbose);
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
         const parameters = require('./src/parameters');
@@ -144,14 +145,14 @@ const argv = require('yargs')
         appl.configure()
           .then(async (filter) => {
             for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.skip, argv, [], []));
+              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.validate, argv, [], []));
             }
           });
 /*
         appl.configure()
           .then(filter => {
             appl.resolve(argv.components).forEach(function(component) {
-              component.execute(argv.steps.split(':'), filter, argv.save, argv.skip);
+              component.execute(argv.steps.split(':'), filter, argv.save, argv.validate);
             });
           });
 */
