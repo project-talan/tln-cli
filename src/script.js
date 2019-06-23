@@ -56,7 +56,7 @@ class Script {
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
-        if (params.skip) {
+        if (params.validate) {
           // output script to the console
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
