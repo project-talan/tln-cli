@@ -85,36 +85,44 @@ class Component {
 
   // print all information about component
   // TODO: list all possible steps
-  async inspect(filter, cout) {
+  async inspect(filter, yaml, cout) {
     const id = this.getId();
     const home = this.getHome();
     const uid = this.getUid();
     //
-    cout(`id: ${id}`);
-    cout(`home: ${home}`);
-    cout(`uid: ${uid}`);
-    cout('parent:', (this.parent)?(this.parent.getId()):('none'));
-    cout('descs:');
+    let r = {};
+    r.id = id;
+    r.home = home;
+    r.uid = uid;
+    r.parent = (this.parent)?(this.parent.getId()):(null);
+    r.desc = [];
     this.descs.forEach( pair => {
-      cout(`  - ${pair.path}`);
+      r.desc.push(`${pair.path}`);
     });
-    cout('tags:');
-    cout('inherits:');
-    cout('depends:');
+    r.tags = [];
+    r.inherits = [];
+    r.depends = [];
     //
     const execScope = this.findStep('*', filter, home, { vars: [], envFiles: [], steps:[] }, []);
-    cout('env:');
+    r.env = {};
     const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
     for(let v in vars) {
-      cout(`  ${v}: ${vars[v]}`);
+      r.env[v] = vars[v];
     }
+    r.dotenvs = [];
     cout('envFiles:');
     for(const ef of execScope.envFiles) {
-      cout(`  - ${ef}`);
+      r.dotenvs.push(ef);
     }
-    cout('steps:');
+    r.steps = [];
     for(const s of execScope.steps) {
-      cout(`  - ${s.name}`);
+      r.steps.push(s.name);
+    }
+    if (yaml) {
+      cout((require('yaml')).stringify(r));
+  
+    } else {
+      cout(JSON.stringify(r, null, 2));
     }
   }
   //

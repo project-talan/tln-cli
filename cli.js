@@ -57,6 +57,12 @@ const argv = require('yargs')
             default: '',
             type: 'string'
           })
+          .option('y', {
+            alias: 'yaml',
+            default: false,
+            describe: 'output using yaml format instead of json',
+            type: 'boolean'
+          })
       },
       (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
@@ -68,7 +74,7 @@ const argv = require('yargs')
               logger.trace('resolved', component.getId());
               if (mark) logger.con(mark);
               mark = '***';
-              await component.inspect(filter, (...args) => { logger.con.apply(logger, args); });
+              await component.inspect(filter, argv.yaml, (...args) => { logger.con.apply(logger, args); });
             }
           });
       }
@@ -137,7 +143,6 @@ const argv = require('yargs')
             type: 'boolean'
           })
       }, (argv) => {
-        console.log(argv.verbose);
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
         const parameters = require('./src/parameters');
@@ -148,14 +153,6 @@ const argv = require('yargs')
               await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.validate, argv, [], []));
             }
           });
-/*
-        appl.configure()
-          .then(filter => {
-            appl.resolve(argv.components).forEach(function(component) {
-              component.execute(argv.steps.split(':'), filter, argv.save, argv.validate);
-            });
-          });
-*/
       }
     )
     .argv;
