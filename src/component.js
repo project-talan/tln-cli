@@ -110,7 +110,6 @@ class Component {
       r.env[v] = vars[v];
     }
     r.dotenvs = [];
-    cout('envFiles:');
     for(const ef of execScope.envFiles) {
       r.dotenvs.push(ef);
     }
@@ -262,28 +261,13 @@ class Component {
         generateFile = false;
       }
       if (generateFile) {
-        const template = [
-          "module.exports = {",
-          "  tags: (context) => [],",
-          "  options: (context) => [],",
-          "  depends: (context) => [/*'java'*/],",
-          "  inherits: (context) => [/*'git'*/],",
-          "  variables: (context) => [",
-          "    /*{ type: 'set', name:'TLN_GIT_USER', value: (scope) => 'user.name' },",
-          "    { type: 'set', name:'TLN_GIT_EMAIL', value: (scope) => 'user.name@company.com' }*/",
-          "  ],",
-          "  steps: (context) => [",
-          "    /*{",
-          "      id: 'hi',",
-          "      desc: 'Say Hi from hi step',",
-          "      script: (context) => context.setScript(['echo Hi, home: ${COMPONENT_HOME}'])",
-          "    }*/",
-          "  ],",
-          "  components: (context) => []",
-          "}"
-        ];
-        fs.writeFileSync(fileName, template.join('\n'));
-        this.logger.con(template);
+        fs.copyFile(`${__dirname}/.tln.conf.template`, fileName, (err) => {
+          if (err) {
+            this.logger.error(err);
+          } else {
+            this.logger.con('done');
+          }
+        });
       }
     }
   }
@@ -381,7 +365,7 @@ class Component {
     for(const pair of this.descs) {
       if (pair.desc.variables) {
         const v = variables.create(this.getHome(), orig);
-        v.register(pair.desc.variables());
+        pair.desc.variables(null, v);
         r.push({id: pair.path, vars: v});
       }
     }
@@ -401,13 +385,11 @@ class Component {
   findStep(step, filter, home, result, parent = null) {
     this.logger.trace(utils.prefix(this, this.findStep.name), 'searching step', utils.quote(step), 'using home:', utils.quote(home), 'iside', utils.quote(this.getId()));
     let r = result;
-    // collect environment variables
-    r.vars = this.getVariables(r.vars);
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
       r = this.parent.findStep(step, filter, home, r);
     }
-    let i = -1; // calculate descs count to simplify scipts' names
+    let i = -1; // calculate descs count to simplify scripts' names
     for(const pair of this.descs) {
       i++;
       // second, lookup inside inherits list
@@ -462,6 +444,8 @@ class Component {
         }
       }
     }
+    // collect environment variables
+    r.vars = this.getVariables(r.vars);
     return r;
   }
 

@@ -15,7 +15,7 @@ class Variables {
     this.items = [];
   }
 
-  buildScope(name, value, delimiter = null) {
+  buildData(name, value, delimiter = null) {
     let d = delimiter;
     if (!d) {
       d = path.delimiter;
@@ -25,71 +25,60 @@ class Variables {
   //
   set(name, value) {
     if (typeof value === 'function') {
-      this.items.push({ scope: this.buildScope(name, value), callback: value });
+      this.items.push({ data: this.buildData(name, value), callback: value });
     } else {
-      this.items.push({ scope: this.buildScope(name, value), callback: (scope) => {
-        return scope.value;
+      this.items.push({ data: this.buildData(name, value), callback: (tln, data) => {
+        return data.value;
       } });
     }
+    return this;
   }
 
   //
   append(name, value, delimiter = null) {
-    this.items.push({ scope: this.buildScope(name, value, delimiter), callback: (scope) => {
-      let v = scope.value;
+    this.items.push({ data: this.buildData(name, value, delimiter), callback: (tln, data) => {
+      let v = data.value;
       if (typeof v === 'function') {
-        v = v(scope);
+        v = v(tln, data);
       }
-      if (scope.env[scope.name]) {
-        return `${scope.env[scope.name]}${scope.delimiter}${v}`;
+      if (data.env[data.name]) {
+        return `${data.env[data.name]}${data.delimiter}${v}`;
       }
       return v;
     }});
+    return this;
   }
 
   //
   prepend(name, value, delimiter = null ) {
-    this.items.push({ scope: this.buildScope(name, value, delimiter), callback: (scope) => {
-      let v = scope.value;
+    this.items.push({ data: this.buildData(name, value, delimiter), callback: (tln, data) => {
+      let v = data.value;
       if (typeof v === 'function') {
-        v = v(scope);
+        v = v(tln, data);
       }
-      if (scope.env[scope.name]) {
-        return `${v}${scope.delimiter}${scope.env[scope.name]}`;
+      if (data.env[data.name]) {
+        return `${v}${data.delimiter}${data.env[data.name]}`;
       }
       return v;
     }});
+    return this;
   }
 
   //
   names(n) {
     this.items.forEach(function(e){
-      n.push(e.scope.name);
+      n.push(e.data.name);
     });
     return utils.uniquea(n);
   }
-  //
-
-  register(arr) {
-    for(const item of arr) {
-      if (item.type === 'set') {
-        this.set(item.name, item.value);
-      } else if (item.type === 'append') {
-        this.append(item.name, item.value);
-      } else if (item.type === 'prepend') {
-        this.prepend(item.name, item.value);
-      }
-    }
-  }
-
   //
   build(env) {
     env['COMPONENT_ANCHOR'] = this.anchor;
     env['COMPONENT_ORIGIN'] = this.origin;
     for(const e of this.items) {
-      let scope = e.scope;
-      scope.env = env;
-      env[e.scope.name] = e.callback(scope);
+      let data = e.data;
+      data.env = env;
+      env[e.data.name] = e.callback(null, data);
     }
     delete env['COMPONENT_ANCHOR'];
     delete env['COMPONENT_ORIGIN'];
