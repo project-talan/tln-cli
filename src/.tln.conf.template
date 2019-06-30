@@ -1,0 +1,26 @@
+// tln: tln.logger[.con() | .trace() | etc]",
+module.exports = {
+  tags: (tln, tags) => {
+    //tags.add('tag1').add(['tag1', 'tag2']);
+  },
+  options: (tln, options) => [],
+  dotenvs: (tln, dotenvs) => [/*'.env'*/],
+  depends: (tln) => [/*'java'*/],
+  inherits: (tln) => [/*'git'*/],
+  variables: (tln, variables) => {
+    /*
+    variables
+      .set('TLN_GIT_USER', (tln, data) => 'user.name')
+      .append()
+      .prepend('PATH', (tln, data) => `${data.env['COMPONENT_ORIGIN']}${data.sep}bin`);
+    */
+  },
+  steps: (tln, steps) => [
+    /*{",
+      id: 'hi',
+      desc: 'Say Hi from hi step',
+      script: (tln, script) => context.setScript(['echo Hi, home: ${COMPONENT_HOME}']),
+    }*/
+  ],
+  components: (tln, components) => [],
+}

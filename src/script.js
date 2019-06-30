@@ -6,6 +6,7 @@ const { spawn } = require('child_process');
 const tempfile = require('tempfile');
 const utils = require('./utils');
 const context = require('./context');
+const os = require('os');
 
 class Script {
   constructor(logger, params) {
@@ -24,6 +25,7 @@ class Script {
   // ? should we force to create path to component when execute ?
   // TODO: add windows cmd script
   async execute(params) {
+    const scriptExtention = (os.platform() === 'win32')?('cmd'):('sh');
     const home = params.home;
     // prepare context
     const cntx = context.create(this.logger);
@@ -40,12 +42,12 @@ class Script {
       let fl = null;
       if (typeof script === 'string') {
         // string represents script file name
-        fl = path.join(home, `${script}.sh`);
+        fl = path.join(home, `${script}.${scriptExtention}`);
       } else if (script instanceof Array) {
         if (params.save) {
-          fl = path.join(home, `${this.name}.sh`);
+          fl = path.join(home, `${this.name}.${scriptExtention}`);
         } else {
-          fl = tempfile('.sh');
+          fl = tempfile(`.${scriptExtention}`);
         }
         let envFiles = [];
         for(const e of params.envFiles) {

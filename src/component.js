@@ -85,36 +85,43 @@ class Component {
 
   // print all information about component
   // TODO: list all possible steps
-  async inspect(filter, cout) {
+  async inspect(filter, yaml, cout) {
     const id = this.getId();
     const home = this.getHome();
     const uid = this.getUid();
     //
-    cout(`id: ${id}`);
-    cout(`home: ${home}`);
-    cout(`uid: ${uid}`);
-    cout('parent:', (this.parent)?(this.parent.getId()):('none'));
-    cout('descs:');
+    let r = {};
+    r.id = id;
+    r.home = home;
+    r.uid = uid;
+    r.parent = (this.parent)?(this.parent.getId()):(null);
+    r.desc = [];
     this.descs.forEach( pair => {
-      cout(`  - ${pair.path}`);
+      r.desc.push(`${pair.path}`);
     });
-    cout('tags:');
-    cout('inherits:');
-    cout('depends:');
+    r.tags = [];
+    r.inherits = [];
+    r.depends = [];
     //
     const execScope = this.findStep('*', filter, home, { vars: [], envFiles: [], steps:[] }, []);
-    cout('env:');
+    r.env = {};
     const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
     for(let v in vars) {
-      cout(`  ${v}: ${vars[v]}`);
+      r.env[v] = vars[v];
     }
-    cout('envFiles:');
+    r.dotenvs = [];
     for(const ef of execScope.envFiles) {
-      cout(`  - ${ef}`);
+      r.dotenvs.push(ef);
     }
-    cout('steps:');
+    r.steps = [];
     for(const s of execScope.steps) {
-      cout(`  - ${s.name}`);
+      r.steps.push(s.name);
+    }
+    if (yaml) {
+      cout((require('yaml')).stringify(r));
+  
+    } else {
+      cout(JSON.stringify(r, null, 2));
     }
   }
   //
@@ -254,28 +261,13 @@ class Component {
         generateFile = false;
       }
       if (generateFile) {
-        const template = [
-          "module.exports = {",
-          "  tags: (context) => [],",
-          "  options: (context) => [],",
-          "  depends: (context) => [/*'java'*/],",
-          "  inherits: (context) => [/*'git'*/],",
-          "  variables: (context) => [",
-          "    /*{ type: 'set', name:'TLN_GIT_USER', value: (scope) => 'user.name' },",
-          "    { type: 'set', name:'TLN_GIT_EMAIL', value: (scope) => 'user.name@company.com' }*/",
-          "  ],",
-          "  steps: (context) => [",
-          "    /*{",
-          "      id: 'hi',",
-          "      desc: 'Say Hi from hi step',",
-          "      script: (context) => context.setScript(['echo Hi, home: ${COMPONENT_HOME}'])",
-          "    }*/",
-          "  ],",
-          "  components: (context) => []",
-          "}"
-        ];
-        fs.writeFileSync(fileName, template.join('\n'));
-        this.logger.con(template);
+        fs.copyFile(`${__dirname}/.tln.conf.template`, fileName, (err) => {
+          if (err) {
+            this.logger.error(err);
+          } else {
+            this.logger.con('done');
+          }
+        });
       }
     }
   }
@@ -373,7 +365,7 @@ class Component {
     for(const pair of this.descs) {
       if (pair.desc.variables) {
         const v = variables.create(this.getHome(), orig);
-        v.register(pair.desc.variables());
+        pair.desc.variables(null, v);
         r.push({id: pair.path, vars: v});
       }
     }
@@ -393,13 +385,11 @@ class Component {
   findStep(step, filter, home, result, parent = null) {
     this.logger.trace(utils.prefix(this, this.findStep.name), 'searching step', utils.quote(step), 'using home:', utils.quote(home), 'iside', utils.quote(this.getId()));
     let r = result;
-    // collect environment variables
-    r.vars = this.getVariables(r.vars);
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
       r = this.parent.findStep(step, filter, home, r);
     }
-    let i = -1; // calculate descs count to simplify scipts' names
+    let i = -1; // calculate descs count to simplify scripts' names
     for(const pair of this.descs) {
       i++;
       // second, lookup inside inherits list
@@ -434,10 +424,11 @@ class Component {
             // are we meet underyling os, version and other filter's restrictions
             if (filter.validate(s)) {
               // check if step was already added
-              let suffix = [s.id];
+/*               let suffix = [s.id];
               if (i || (home !== this.getHome())) {
                 suffix.push(`${i}`);
               }
+ */              
               const scriptUid = s.id + '@' + this.getUid([`${i}`]);
               const scriptName = s.id + '@' + this.getUid([]);
               if (!r.steps.find( es => es.getUid() === scriptUid )) {
@@ -447,13 +438,14 @@ class Component {
                   options:opts,
                   fn: s.script
                 }));
-              } else {
               }
             }
           }
         }
       }
     }
+    // collect environment variables
+    r.vars = this.getVariables(r.vars);
     return r;
   }
 
