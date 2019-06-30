@@ -424,10 +424,11 @@ class Component {
             // are we meet underyling os, version and other filter's restrictions
             if (filter.validate(s)) {
               // check if step was already added
-              let suffix = [s.id];
+/*               let suffix = [s.id];
               if (i || (home !== this.getHome())) {
                 suffix.push(`${i}`);
               }
+ */              
               const scriptUid = s.id + '@' + this.getUid([`${i}`]);
               const scriptName = s.id + '@' + this.getUid([]);
               if (!r.steps.find( es => es.getUid() === scriptUid )) {
@@ -437,7 +438,6 @@ class Component {
                   options:opts,
                   fn: s.script
                 }));
-              } else {
               }
             }
           }
