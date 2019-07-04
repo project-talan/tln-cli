@@ -1,7 +1,11 @@
 // tln: tln.logger[.con() | .trace() | etc]",
 module.exports = {
   tags: (tln, tags) => {
-    //tags.add('tag1').add(['tag1', 'tag2']);
+    /*
+    tags
+      .add('tag1')
+      .add(['tag1', 'tag2']);
+    */
   },
   options: (tln, options) => [],
   dotenvs: (tln, dotenvs) => [/*'.env'*/],
@@ -16,11 +20,17 @@ module.exports = {
     */
   },
   steps: (tln, steps) => [
-    /*{",
+    /*
+    {,
       id: 'hi',
       desc: 'Say Hi from hi step',
       script: (tln, script) => context.setScript(['echo Hi, home: ${COMPONENT_HOME}']),
-    }*/
+    }
+    */
   ],
-  components: (tln, components) => [],
+  components: (tln, components) => [
+    /*
+    { id: 'sub-component' }
+    */
+  ]
 }
