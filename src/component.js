@@ -416,7 +416,7 @@ class Component {
         // steps' options
         let opts = options.create(this.logger);
         if (pair.desc.options) {
-          opts = options.create(this.logger, pair.desc.options());
+          pair.desc.options(null, opts);
         }
         for(const s of pair.desc.steps()) {
           // is it our step
@@ -428,7 +428,7 @@ class Component {
               if (i || (home !== this.getHome())) {
                 suffix.push(`${i}`);
               }
- */              
+ */
               const scriptUid = s.id + '@' + this.getUid([`${i}`]);
               const scriptName = s.id + '@' + this.getUid([]);
               if (!r.steps.find( es => es.getUid() === scriptUid )) {

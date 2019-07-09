@@ -1,36 +1,39 @@
 // tln: tln.logger[.con() | .trace() | etc]",
 module.exports = {
-  tags: (tln, tags) => {
+  tags: (tln) => [/*'tag'*/],
+  options: (tln, options) => {
     /*
-    tags
-      .add('tag1')
-      .add(['tag1', 'tag2']);
+      options
+        .add( 'origin',         // option name
+              'TLN_GIT_ORIGIN', // variable that will be populated
+              'Origin url',     // description, default value
+              null              // default value
+        );
     */
   },
-  options: (tln, options) => [],
-  dotenvs: (tln, dotenvs) => [/*'.env'*/],
+  dotenvs: (tln) => [/*'.env'*/],
   depends: (tln) => [/*'java'*/],
   inherits: (tln) => [/*'git'*/],
   variables: (tln, variables) => {
     /*
     variables
       .set('TLN_GIT_USER', (tln, data) => 'user.name')
-      .append()
+      .append('PATH', (tln, data) => `${data.env['COMPONENT_ORIGIN']}${data.sep}lib`)
       .prepend('PATH', (tln, data) => `${data.env['COMPONENT_ORIGIN']}${data.sep}bin`);
     */
   },
-  steps: (tln, steps) => [
+  steps: (tln) => [
     /*
     {,
       id: 'hi',
       desc: 'Say Hi from hi step',
-      script: (tln, script) => context.setScript(['echo Hi, home: ${COMPONENT_HOME}']),
+      script: (tln, script) => script.set(['echo Hi, home: ${COMPONENT_HOME}'])
     }
     */
   ],
-  components: (tln, components) => [
+  components: (tln) => [
     /*
-    { id: 'sub-component' }
+    { id: 'sub-component', tags: (tln) => [], ... }
     */
   ]
 }
