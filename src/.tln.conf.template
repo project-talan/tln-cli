@@ -24,7 +24,7 @@ module.exports = {
   },
   steps: (tln) => [
     /*
-    {,
+    {
       id: 'hi',
       desc: 'Say Hi from hi step',
       script: (tln, script) => script.set(['echo Hi, home: ${COMPONENT_HOME}'])
