@@ -36,8 +36,8 @@ class Script {
       fs.mkdirSync(home, { recursive: true });
     }
     //
-    const r = this.fn(cntx);
-    const script = cntx.getScript();
+    const r = this.fn(null, cntx);
+    const script = cntx.get();
     if (script) {
       let fl = null;
       if (typeof script === 'string') {

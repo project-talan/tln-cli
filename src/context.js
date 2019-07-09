@@ -17,11 +17,11 @@ class Context {
     }
   }
 
-  setScript(script) {
+  set(script) {
     this.script = script;
   }
 
-  getScript(script) {
+  get(script) {
     return this.script;
   }
 }

@@ -1,9 +1,14 @@
 'use strict';
 
 class Options {
-  constructor(logger, desc) {
+  constructor(logger) {
     this.logger = logger;
-    this.desc = desc;
+    this.desc = [];
+  }
+
+  add(id, variable, desc, def) {
+    this.desc.push({id: id, variable: variable, desc: desc, default: def});
+    return this;
   }
 
   parse(argv) {
@@ -22,6 +27,6 @@ class Options {
 
 }
 
-module.exports.create = (logger, desc = []) => {
-  return new Options(logger, desc);
+module.exports.create = (logger) => {
+  return new Options(logger);
 }

@@ -32,7 +32,7 @@ const argv = require('yargs')
     .command('init-conf [repo] [-f]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
-          .positional('repo', {
+          .option('repo', {
             describe: 'git repository url',
             default: '',
             type: 'string'
