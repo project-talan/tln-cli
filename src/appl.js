@@ -105,9 +105,9 @@ class Appl {
     return r;
   }
   //
-  initComponentConfiguration(repo, force) {
+  initComponentConfiguration(repo, force, orphan) {
     this.logger.trace(utils.prefix(this, this.initComponentConfiguration.name), utils.quote(repo), force);
-    this.component.initConfiguration(repo, force);
+    this.component.initConfiguration(repo, force, orphan);
   }
 
 }

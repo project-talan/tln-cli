@@ -26,7 +26,6 @@ const argv = require('yargs')
         console.log(String.raw`               |__/                                          `)
         console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
         console.log(String.raw`  github: https://github.com/project-talan/tln-cli.git       `)
-
       }
     )
     .command('init-conf [repo] [-f]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
@@ -43,11 +42,17 @@ const argv = require('yargs')
             describe: 'force override',
             type: 'boolean'
           })
+          .option('n', {
+            alias: 'orphan',
+            default: false,
+            describe: 'remove help information from template',
+            type: 'boolean'
+          })
       },
       (argv) => {
         const logger = require('./src/logger').create(argv.verbose);
         const appl = require('./src/appl').create(logger, __dirname);
-        appl.initComponentConfiguration(argv.repo, argv.force);
+        appl.initComponentConfiguration(argv.repo, argv.force, argv.orphan);
       }
     )
     .command('inspect [components]', 'display component internal structure',

@@ -241,14 +241,13 @@ class Component {
   }
 
   // init component description from file or git repository
-  initConfiguration(repo, force) {
+  initConfiguration(repo, force, orphan) {
     if (repo) {
       // clone repo with tln configuration
       const folder = utils.getConfFolder(this.getHome());
       if (fs.existsSync(folder)) {
         this.logger.warn(`Git repository with tln configuration already exists '${folder}'. Use git pull to update it`);
       } else {
-        
         this.logger.con(execSync(`git clone ${repo} ${utils.tlnFolderName}`).toString());
       }
     } else {
@@ -261,13 +260,20 @@ class Component {
         generateFile = false;
       }
       if (generateFile) {
-        fs.copyFile(`${__dirname}/.tln.conf.template`, fileName, (err) => {
-          if (err) {
-            this.logger.error(err);
-          } else {
-            this.logger.con('done');
-          }
-        });
+        const templateFileName = `${__dirname}/.tln.conf.template`;
+        if (orphan) {
+          const reg = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
+          fs.writeFileSync(fileName, fs.readFileSync(templateFileName).toString().replace(reg, ''));
+          this.logger.con('done');
+        } else {
+          fs.copyFile(templateFileName, fileName, (err) => {
+            if (err) {
+              this.logger.error(err);
+            } else {
+              this.logger.con('done');
+            }
+          });
+        }
       }
     }
   }
