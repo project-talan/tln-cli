@@ -1,7 +1,7 @@
 # Talan CLI
 
 * Multi-project management system
-* Helps to deal with Monolity-SOA-Microservices architecure, split & merge repositories
+* Helps to deal with Monolith-SOA-Microservices architecure, split & merge repositories
 * Manage complex structure of projects using hierarchy of components
 * Component re-usage by configuring 'inherits' list
 * Prepare necessary execution environment using 'depends' list
