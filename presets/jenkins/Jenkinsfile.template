@@ -144,12 +144,12 @@ node {
   }
   //
   stage('Deploy & Publish') {
-  /*
+    /*/
     if (pullRequest){
     } else {
       // upload, create docker, publish
     }
     //archiveArtifacts artifacts: 'path/2/artifact'
-  */
+    /*/
   }
 }
