@@ -411,8 +411,8 @@ class Component {
       }
       // collect environment files
       let envFiles = [];
-      if (pair.desc.envs) {
-        envFiles = pair.desc.envs();
+      if (pair.desc.dotenvs) {
+        envFiles = pair.desc.dotenvs();
       }
       const relativePath = path.relative(home, this.getHome());
       r.envFiles = r.envFiles.concat(envFiles.map((v, i, a) => path.join(relativePath, v)));
