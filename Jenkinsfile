@@ -96,13 +96,15 @@ node {
   }
   //
   stage('Build') {
-  /*
-  */
+    sh """
+      npm i
+    """
   }
   //
   stage('Unit tests') {
-  /*
-  */
+    sh """
+      npm test
+    """
   }
   //
   stage('SonarQube analysis') {
