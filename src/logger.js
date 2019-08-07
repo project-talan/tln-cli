@@ -1,6 +1,7 @@
 'use strict';
 
 class Logger {
+
   constructor(verbose) {
     this.verbose = 3 - verbose;
     const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
@@ -23,7 +24,6 @@ class Logger {
   fatal(...args) { this.logger.fatal.apply(this.logger, args); }
 
   con(...args) { console.log.apply(console, args); }
-
 }
 
 module.exports.create = (verbose) => {

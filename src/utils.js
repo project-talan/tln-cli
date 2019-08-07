@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 
 module.exports = {
-  tlnFolderName: '.tln',
+/*
   prefix: function(obj, method) { 
     return `[${obj.constructor.name}::${method}]`; 
   },
@@ -17,6 +17,7 @@ module.exports = {
       return cmp(arr, item, pos);
     });
   },
+*/
   isRootPath(p) {
     // TODO validate expression at windows box
     const root = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
@@ -28,7 +29,7 @@ module.exports = {
   getConfFolder(p, folder = '.tln') {
     return path.join(p, folder);
   },
-  isDescriptionPresent(p) {
+  isConfPresent(p) {
     return (fs.existsSync(module.exports.getConfFile(p)) || fs.existsSync(module.exports.getConfFolder(p)));
   }
 }
