@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -20,6 +21,10 @@ afterEach(function () {
 describe('utils', function() {
   const componentHome = path.join('path', 'to', 'component', 'home');
 
+  it('Identify root of file system', function() {
+    const rootFolder = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
+    expect(utils.isRootPath(rootFolder)).to.be.true;
+  });
   it('Get configuration file name', function() {
     expect(utils.getConfFile(componentHome)).to.be.equal(path.join(componentHome, '.tln.conf'));
   });
