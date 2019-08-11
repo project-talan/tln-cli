@@ -9,48 +9,6 @@ const utils = require('./utils');
 const filter = require('./filter');
 
 class Appl {
-  constructor(logger, home) {
-    this.logger = logger;
-    this.home = home;
-    this.root = null;
-    this.component = null;
-    //
-    let cwd = process.cwd();
-    // find local dev env projects root
-    let projectsHome = cwd;
-    // find topmost level folder with with tln descs
-    let p = projectsHome;
-    while(!utils.isRootPath(p)) {
-      p = path.dirname(p);
-      if (utils.isDescriptionPresent(p)) {
-        projectsHome = p;
-      }
-    }
-    // build chain of components from projects home to the current folder
-    let folders = [];
-    const rel = path.relative(projectsHome, cwd);
-    if (rel) {
-      folders = rel.split(path.sep);
-    }
-    this.logger.info(utils.prefix(this, 'constructor'), 'operating system', utils.quote(os.type()), utils.quote(os.platform()), utils.quote(os.release()));
-    this.logger.info(utils.prefix(this, 'constructor'), 'projects home:', projectsHome);
-    this.logger.info(utils.prefix(this, 'constructor'), 'presets location:', this.home);
-    this.logger.info(utils.prefix(this, 'constructor'), 'cwd:', cwd);
-    this.logger.info(utils.prefix(this, 'constructor'), 'folders:', folders);
-    //
-    this.root = require('./component').createRoot(projectsHome, '/', this.logger);
-    this.logger.trace('catalog folder', this.home);
-    this.root.loadDescsFromFolder(this.home, 'presets');
-    this.root.loadDescs();
-    //
-    this.component = this.root;
-    folders.forEach(function(folder) {
-      this.component = this.component.dive(folder, true);
-    }.bind(this));
-    //
-    this.logger.trace(utils.prefix(this, 'constructor'), 'root component:', utils.quote(this.root.getId()), this.root.descs);
-    this.logger.trace(utils.prefix(this, 'constructor'), 'current component:', utils.quote(this.component.getId()), this.component.descs);
-  }
 
   //
   configure() {
@@ -103,11 +61,6 @@ class Appl {
       r.push(this.component);
     }
     return r;
-  }
-  //
-  initComponentConfiguration(repo, force, orphan) {
-    this.logger.trace(utils.prefix(this, this.initComponentConfiguration.name), utils.quote(repo), force);
-    this.component.initConfiguration(repo, force, orphan);
   }
 
 }

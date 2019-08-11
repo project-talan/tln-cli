@@ -10,6 +10,10 @@ const argv = require('yargs')
     .option('verbose', {
       alias: 'v', count: true, default: 0
     })
+    .option('presets-dest', {
+      describe: 'Presets will be deployed using path, defined by this option',
+      default: null
+    })
     .command(
       'about',
       'dislay project information',
@@ -29,7 +33,7 @@ const argv = require('yargs')
       }
     )
     .command(
-      'init-conf [repo] [-f] [-n]',
+      'init-conf [repo] [-f] [-l]',
       'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
@@ -38,24 +42,21 @@ const argv = require('yargs')
             default: '', type: 'string'
           })
           .option('f', {
-            describe: 'force override',
+            describe: 'force override config file, if exists',
             alias: 'force', default: false, type: 'boolean'
           })
-          .option('n', {
-            describe: 'remove help information from template',
-            alias: 'orphan', default: false, type: 'boolean'
+          .option('l', {
+            describe: 'remove help information from the template',
+            alias: 'lightweight', default: false, type: 'boolean'
           })
       },
       (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        appl.initComponentConfiguration(argv.repo, argv.force, argv.orphan);
-        */
+        require('./src/appl').create(argv.verbose, __dirname, argv.presetsDest)
+          .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
     .command(
-      'inspect [components]',
+      'inspect [components] [-y]',
       'display component internal structure',
       (yargs) => {
         yargs
