@@ -4,6 +4,7 @@
 const os = require('os');
 const path = require('path');
 
+const cwd = process.cwd();
 const argv = require('yargs')
     .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
@@ -51,13 +52,13 @@ const argv = require('yargs')
           })
       },
       (argv) => {
-        require('./src/appl').create(argv.verbose, __dirname, argv.presetsDest)
+        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
           .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
     .command(
       'inspect [components] [-y]',
-      'display component internal structure',
+      'Display component internal structure',
       (yargs) => {
         yargs
           .positional('components', {
@@ -70,20 +71,10 @@ const argv = require('yargs')
           })
       },
       (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        let mark = ''
-        appl.configure()
-          .then(async (filter) => {
-            for(const component of appl.resolve(argv.components)) {
-              logger.trace('resolved', component.getId());
-              if (mark) logger.con(mark);
-              mark = '***';
-              await component.inspect(filter, argv.yaml, (...args) => { logger.con.apply(logger, args); });
-            }
+        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+          .resolve(argv.components).forEach( (component) => {
+            component.inspectComponent({/*filter, */ yaml: argv.yaml}, (...args) => { component.logger.con.apply(component.logger, args); });
           });
-        */
       }
     )
     .command(

@@ -3,8 +3,9 @@
 const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
+const mockfs = require('mock-fs');
 
-describe('appl', function() {
+describe('application', function() {
 
   before(function() {
   });
@@ -19,6 +20,20 @@ describe('appl', function() {
   })
 
   it('Application can be created', function() {
-    expect(require('./appl').create(0, process.cwd(), null)).to.be.an('object');
+    /*
+    mockfs({
+      'home': {
+        'projects': {
+          'project1': {
+            'component1': {
+            }
+          },
+          '.tln.conf': '{}'
+        }
+      },
+    });
+    */
+    expect(require('./appl').create(0, process.cwd(), process.cwd(), null)).to.be.an('object');
+    //mockfs.restore();
   });
 });

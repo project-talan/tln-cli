@@ -4,12 +4,13 @@ const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
 const mockfs = require('mock-fs');
+var JSONfn = require('json-fn');
 
 const path = require('path');
 
 describe('component', function() {
 
-  let component = null;
+  let c = null;
 
   before(function() {
   });
@@ -45,6 +46,11 @@ describe('component', function() {
     const folders = component.enumFolders('.');
     expect(folders.length).to.be.equal(6);
     mockfs.restore();
+  });
+  it('Merge descs from hierarchy of folders', function() {
+    const desc = component.mergeDescs(path.join(process.cwd(), 'presets'), true);
+    expect(desc.components()).to.not.equal(null);
+    expect(desc.components().length).to.not.equal(0);
   });
 
 });

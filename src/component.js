@@ -2,9 +2,17 @@
 
 const path = require('path');
 const fs = require('fs');
+var JSONfn = require('json-fn');
+
+const utils = require('./utils');
 
 class Component {
-  constructor(logger, home, parent, id, descs) {
+  constructor(logger, home, parent, id, descriptions) {
+    this.logger = logger;
+    this.home = home;
+    this.parent = parent;
+    this.id = id;
+    this.descriptions = descriptions;
   }
 
   /*
@@ -50,10 +58,6 @@ class Component {
     */
   }
 
-  /*
-  * Collect list of folder where descriptions should be merged
-  * params:
-  */
   enumFolders(location) {
     let ids = [];
     fs.readdirSync(location).forEach( name => {
@@ -70,11 +74,134 @@ class Component {
   };
 
   /*
+  * Recursively scan input folder and mege all available descriptions
+  * params:
+  */
+  mergeDescs(location, recursive) {
+    let desc = null;
+    // load definitions from .tln.conf file
+    const conf = utils.getConfFile(location);
+    if (fs.existsSync(conf)) {
+      const d = require(conf);
+      desc = JSONfn.clone(d);
+      delete require.cache[require.resolve(conf)];
+    }
+    if (recursive) {
+      // enum folders recursively and merge all description information all together
+      if (!desc) {
+        desc = {};
+      }
+      //
+      let components = [];
+      if (desc.components) {
+        components = desc.components();
+      }
+      //
+      this.enumFolders(location).forEach( (folder) => {
+        let component = this.mergeDescs(path.join(location, folder), recursive);
+        const i = components.findIndex(function (c) {return c.id === folder;});
+        if (i >= 0) {
+          // merge descs
+          this.logger.fatal('recursive merge of folders is not implemented');
+        } else {
+          // add
+          component.id = folder
+          components.push(component);
+        }
+      });
+      // reassign
+      desc.components = function(){ return components; };
+    }
+    return desc;
+  }
+
+  /*
+  *
+  * params:
+  */
+  buildDescriptionPair(source, destination, description) {
+    return {source: source, destination: destination, description: description};
+  }
+
+  /*
+  *
+  * params:
+  */
+  loadDescriptions() {
+    this.loadDescriptionsFromFolder(this.home, this.home);
+    this.loadDescriptionsFromFile(this.home, this.home, false);
+  }
+
+  /*
+  *
+  * params:
+  */
+  loadDescriptionsFromFile(location, destination, recursive) {
+    let description = this.mergeDescs(location, recursive);
+    if (description) {
+      this.descriptions.push(this.buildDescriptionPair(location, destination, description));
+    }
+  }
+
+  /*
+  *
+  * params:
+  */
+  loadDescriptionsFromFolder(location, destination, folder) {
+    // add additional source from .tln folder with git repository
+    const confDir = utils.getConfFolder(location, folder);
+    if (fs.existsSync(confDir)) {
+      this.loadDescriptionsFromFile(confDir, destination, true);
+    }
+  }
+
+  /*
+  * Print all information about component
+  * params:
+  */
+  inspectComponent(options, cout) {
+
+    let r = {};
+    r.id = this.id;
+    r.home = this.home;
+    //r.uuid = this.uuid;
+    r.parent = (this.parent)?(this.parent.id):(null);
+    r.descriptions = [];
+    this.descriptions.forEach( description => {
+      r.descriptions.push({source: description.source, destination: description.destination});
+    });
+    r.tags = [];
+    r.inherits = [];
+    r.depends = [];
+    /*/
+    const execScope = this.findStep('*', filter, home, { vars: [], envFiles: [], steps:[] }, []);
+    r.env = {};
+    const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
+    for(let v in vars) {
+      r.env[v] = vars[v];
+    }
+    r.dotenvs = [];
+    for(const ef of execScope.envFiles) {
+      r.dotenvs.push(ef);
+    }
+    r.steps = [];
+    for(const s of execScope.steps) {
+      r.steps.push(s.name);
+    }
+    /*/
+    if (options.yaml) {
+      cout((require('yaml')).stringify(r));
+    } else {
+      cout(JSON.stringify(r, null, 2));
+    }
+  }
+
+
+  /*
   * Create one child component
   * params:
   */
   dive(id, force) {
-    console.log(this.enumFolders(path.join(__dirname, '..', 'presets')));
 /*
     // check if entity was already created
     let component = this.components.find( (c) => { return c.getId() === id; });
@@ -111,13 +238,11 @@ class Component {
 }
 
 module.exports.createRoot = (logger, home, presetsSrc, presetsDest) => {
-    /*
-    this.root.loadDescsFromFolder(this.home, 'presets');
-    this.root.loadDescs();
-    */
-
-  return new Component(logger, home, null, '/', []);
+  const root = new Component(logger, home, null, '/', []);
+  root.loadDescriptionsFromFolder(presetsSrc, presetsDest, 'presets');
+  root.loadDescriptions();
+  return root;
 }
-module.exports.create = (logger, home, parent, id, descs) => {
-  return new Component(logger, home, parent, id, descs);
+module.exports.create = (logger, home, parent, id, descriptions) => {
+  return new Component(logger, home, parent, id, descriptions);
 }
