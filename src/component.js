@@ -12,7 +12,9 @@ class Component {
     this.home = home;
     this.parent = parent;
     this.id = id;
+    // this.uuid = ;
     this.descriptions = descriptions;
+    this.components = [];
   }
 
   /*
@@ -198,13 +200,13 @@ class Component {
 
 
   /*
-  * Create one child component
+  * Create one child component, based on description and | or information from folders
   * params:
   */
   dive(id, force) {
-/*
     // check if entity was already created
-    let component = this.components.find( (c) => { return c.getId() === id; });
+    let component = this.components.find( (c) => { return c.id === id; });
+    //
     if (!component) {
       // collect description from already loaded sources
       const descs = [];
