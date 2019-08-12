@@ -51,7 +51,7 @@ class Appl {
     this.rootComponent = require('./component').createRoot(this.logger, projectsHome, cliHome, psDest);
     this.currentComponent = this.rootComponent;
     folders.forEach((folder) => {
-      // this.currentComponent = this.currentComponent.dive(folder, true);
+      this.currentComponent = this.currentComponent.dive(folder, true);
     });
   }
 
