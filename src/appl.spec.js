@@ -3,17 +3,37 @@
 const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
+const mockfs = require('mock-fs');
 
-//
-beforeEach(function () {
-})
+describe('application', function() {
 
-afterEach(function () {
-})
+  before(function() {
+  });
 
-//
-describe('appl', function() {
+  after(function() {
+  });
+
+  beforeEach(function () {
+  })
+
+  afterEach(function () {
+  })
+
   it('Application can be created', function() {
-    expect(require('./appl').create(process.cwd(), 0)).to.be.an('object');
+    /*
+    mockfs({
+      'home': {
+        'projects': {
+          'project1': {
+            'component1': {
+            }
+          },
+          '.tln.conf': '{}'
+        }
+      },
+    });
+    */
+    expect(require('./appl').create(0, process.cwd(), process.cwd(), null)).to.be.an('object');
+    //mockfs.restore();
   });
 });

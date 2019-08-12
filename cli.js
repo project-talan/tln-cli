@@ -4,11 +4,16 @@
 const os = require('os');
 const path = require('path');
 
+const cwd = process.cwd();
 const argv = require('yargs')
     .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
     .option('verbose', {
       alias: 'v', count: true, default: 0
+    })
+    .option('presets-dest', {
+      describe: 'Presets will be deployed using path, defined by this option',
+      default: null
     })
     .command(
       'about',
@@ -29,7 +34,7 @@ const argv = require('yargs')
       }
     )
     .command(
-      'init-conf [repo] [-f] [-n]',
+      'init-conf [repo] [-f] [-l]',
       'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
@@ -38,25 +43,22 @@ const argv = require('yargs')
             default: '', type: 'string'
           })
           .option('f', {
-            describe: 'force override',
+            describe: 'force override config file, if exists',
             alias: 'force', default: false, type: 'boolean'
           })
-          .option('n', {
-            describe: 'remove help information from template',
-            alias: 'orphan', default: false, type: 'boolean'
+          .option('l', {
+            describe: 'remove help information from the template',
+            alias: 'lightweight', default: false, type: 'boolean'
           })
       },
       (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        appl.initComponentConfiguration(argv.repo, argv.force, argv.orphan);
-        */
+        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+          .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
     .command(
-      'inspect [components]',
-      'display component internal structure',
+      'inspect [components] [-y]',
+      'Display component internal structure',
       (yargs) => {
         yargs
           .positional('components', {
@@ -69,20 +71,10 @@ const argv = require('yargs')
           })
       },
       (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        let mark = ''
-        appl.configure()
-          .then(async (filter) => {
-            for(const component of appl.resolve(argv.components)) {
-              logger.trace('resolved', component.getId());
-              if (mark) logger.con(mark);
-              mark = '***';
-              await component.inspect(filter, argv.yaml, (...args) => { logger.con.apply(logger, args); });
-            }
+        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+          .resolve(argv.components).forEach( (component) => {
+            component.inspectComponent({/*filter, */ yaml: argv.yaml}, (...args) => { component.logger.con.apply(component.logger, args); });
           });
-        */
       }
     )
     .command(

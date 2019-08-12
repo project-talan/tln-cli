@@ -10,16 +10,20 @@ const sinon = require('sinon');
 
 const utils = require('./utils');
 
-//
-beforeEach(function () {
-})
-
-afterEach(function () {
-})
-
-//
 describe('utils', function() {
   const componentHome = path.join('path', 'to', 'component', 'home');
+
+  before(function() {
+  });
+
+  after(function() {
+  });
+
+  beforeEach(function () {
+  })
+
+  afterEach(function () {
+  })
 
   it('Identify root of file system', function() {
     const rootFolder = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
