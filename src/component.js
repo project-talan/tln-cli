@@ -209,32 +209,27 @@ class Component {
     //
     if (!component) {
       // collect description from already loaded sources
-      const descs = [];
-      this.descs.forEach( (pair) => {
+      const descriptions = [];
+      this.descriptions.forEach( (d) => {
         let components = [];
-        if (pair.desc.components) {
-          components = pair.desc.components();
+        if (d.description.components) {
+          components = d.description.components();
         }
         //
         const component = components.find( (c) => { return c.id === id; });
         if (component) {
-          descs.push(this.buildDescPair(pair.path, component));
+          descriptions.push(this.buildDescriptionPair(d.source, d.destination, component));
         }
       });
       // create child entity
-      // TODO find more elegant solution
-      if (id !== '/') {
-        const eh = path.join(this.getHome(), id);
-        if (fs.existsSync(utils.getConfFile(eh)) || fs.existsSync(utils.getConfFolder(eh)) || descs.length || force) {
-          component = new Component(this, id, id, eh, descs, this.logger);
-          component.loadDescs();
-          this.components.push(component);
-        }
+      const eh = path.join(this.home, id);
+      if (utils.isConfPresent(eh) || descriptions.length || force) {
+        component = new Component(this.logger, eh, this, id, descriptions);
+        component.loadDescriptions();
+        this.components.push(component);
       }
     }
     return component;
-*/
-    return null;
   }
 
 }
