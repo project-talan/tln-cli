@@ -18,17 +18,23 @@ module.exports = {
     });
   },
 */
+  tlnFolderName: '.tln',
+  tlnConfTemplate: '.tln.conf.template',
+  //
   isRootPath(p) {
     // TODO validate expression at windows box
     const root = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
     return (p === root);
   },
+  //
   getConfFile(p) {
     return path.join(p, '.tln.conf');
   },
+  //
   getConfFolder(p, folder = '.tln') {
     return path.join(p, folder);
   },
+  //
   isConfPresent(p) {
     return (fs.existsSync(module.exports.getConfFile(p)) || fs.existsSync(module.exports.getConfFolder(p)));
   }
