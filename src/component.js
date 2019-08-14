@@ -231,6 +231,78 @@ class Component {
     return component;
   }
 
+  /*
+  * Collect list of childs using all possible sources: descriptions, file system
+  * params:
+  */
+ getIDs() {
+    // collect ids
+    let ids = [];
+    // ... from already created components
+    this.components.forEach((c) => { ids.push(c.id); });
+    // ... from descs
+    this.descriptions.forEach((d) => {
+      let components = [];
+      if (d.description.components) {
+        components = d.description.components();
+      }
+      //
+      components.forEach(function (c) {
+        ids.push(c.id);
+      });
+    });
+    // ... from file system
+    if (fs.existsSync(this.home)) {
+      ids = ids.concat(this.enumFolders(this.home));
+    }
+    // remove duplicates
+    ids = utils.uniquea(ids);
+    this.logger.trace('ids', ids);
+    return ids;
+  }
+
+  /*
+  * Create all children components from available descriptions
+  * params:
+  */
+  construct() {
+    this.getIDs().forEach((id) => {
+      this.dive(id, false);
+    });
+  }
+
+  /*
+  * Print hierarchy of components
+  * params:
+  */
+ print(cout, depth, offset = '', last = false) {
+    // output yourself
+    let status = '';
+    if (!fs.existsSync(this.home)) {
+      status = '*'
+    }
+    cout(`${offset} ${this.id} ${status}`);
+    //
+    if (depth !== 0) {
+      this.construct();
+      let cnt = this.components.length;
+      let no = offset;
+      if (offset.length) {
+        if (this.components.length) {
+          no = offset.substring(0, offset.length - 1) + '│';
+        }
+        if (last) {
+          no = offset.substring(0, offset.length - 1) + ' ';
+        }
+      }
+      this.components.forEach(function (entity) {
+        cnt--;
+        const delim = (cnt) ? (' ├') : (' └');
+        entity.print(cout, depth - 1, `${no}${delim}`, cnt === 0);
+      });
+    }
+  }
+
 }
 
 module.exports.createRoot = (logger, home, presetsSrc, presetsDest) => {

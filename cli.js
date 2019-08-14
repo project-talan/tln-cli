@@ -17,7 +17,7 @@ const argv = require('yargs')
     })
     .command(
       'about',
-      'dislay project information',
+      'Dislay project information',
       (yargs) => {
       },
       (argv) => {
@@ -39,15 +39,15 @@ const argv = require('yargs')
       (yargs) => {
         yargs
           .option('repo', {
-            describe: 'git repository url',
+            describe: 'Git repository url',
             default: '', type: 'string'
           })
           .option('f', {
-            describe: 'force override config file, if exists',
+            describe: 'Force override config file, if exists',
             alias: 'force', default: false, type: 'boolean'
           })
           .option('l', {
-            describe: 'remove help information from the template',
+            describe: 'Remove help information from the template',
             alias: 'lightweight', default: false, type: 'boolean'
           })
       },
@@ -62,11 +62,11 @@ const argv = require('yargs')
       (yargs) => {
         yargs
           .positional('components', {
-            describe: 'delimited by colon components, i.e. boost:bootstrap',
+            describe: 'Delimited by colon components, i.e. boost:bootstrap',
             default: '', type: 'string'
           })
           .option('y', {
-            describe: 'output using yaml format instead of json',
+            describe: 'Output using yaml format instead of json',
             alias: 'yaml', default: false, type: 'boolean'
           })
       },
@@ -79,11 +79,11 @@ const argv = require('yargs')
     )
     .command(
       'ls [components] [-d]',
-      'display components hierarchy',
+      'Display components hierarchy',
       (yargs) => {
         yargs
           .positional('components', {
-            describe: 'delimited by colon components, i.e. boost:bootstrap',
+            describe: 'Delimited by colon components, i.e. boost:bootstrap',
             default: '', type: 'string'
           })
           .option('d', {
@@ -92,14 +92,10 @@ const argv = require('yargs')
           })
       },
       (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        appl.resolve(argv.components).forEach(function(component) {
-          logger.trace('resolved', component.getId());
-          component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
-        });
-        */
+        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+          .resolve(argv.components).forEach( (component) => {
+            component.print(function(...args) { component.logger.con.apply(component.logger, args); }, argv.depth);
+          });
       }
     )
     // TODO add ability to define additional env files and environment variables

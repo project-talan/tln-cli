@@ -12,14 +12,15 @@ module.exports = {
   quote: function(str) { 
     return `'${str}'`; 
   },
+*/
+  tlnFolderName: '.tln',
+  tlnConfTemplate: '.tln.conf.template',
+  //
   uniquea: function(arr, cmp = function(a, i, p){ return a.indexOf(i) == p; }){
     return arr.filter(function(item, pos) {
       return cmp(arr, item, pos);
     });
   },
-*/
-  tlnFolderName: '.tln',
-  tlnConfTemplate: '.tln.conf.template',
   //
   isRootPath(p) {
     // TODO validate expression at windows box
