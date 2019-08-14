@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 var JSONfn = require('json-fn');
 
 const utils = require('./utils');
@@ -22,27 +23,26 @@ class Component {
   * params:
   */
   initConfiguration(options) {
-    /*
-    if (repo) {
+    if (options.repo) {
       // clone repo with tln configuration
-      const folder = utils.getConfFolder(this.getHome());
+      const folder = utils.getConfFolder(this.home);
       if (fs.existsSync(folder)) {
         this.logger.warn(`Git repository with tln configuration already exists '${folder}'. Use git pull to update it`);
       } else {
-        this.logger.con(execSync(`git clone ${repo} ${utils.tlnFolderName}`).toString());
+        this.logger.con(execSync(`git clone ${options.repo} ${utils.tlnFolderName}`).toString());
       }
     } else {
       // generate local configuration file
-      const fileName = utils.getConfFile(this.getHome());
+      const fileName = utils.getConfFile(this.home);
       const fe = fs.existsSync(fileName);
       let generateFile = true;
-      if (fe && !force) {
+      if (fe && !options.force) {
         this.logger.error(`Configuration file already exists '${fileName}', use --force to override`);
         generateFile = false;
       }
       if (generateFile) {
-        const templateFileName = `${__dirname}/.tln.conf.template`;
-        if (orphan) {
+        const templateFileName = path.join(__dirname, utils.tlnConfTemplate);
+        if (options.lightweight) {
           const reg = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
           fs.writeFileSync(fileName, fs.readFileSync(templateFileName).toString().replace(reg, ''));
           this.logger.con('done');
@@ -57,7 +57,6 @@ class Component {
         }
       }
     }
-    */
   }
 
   enumFolders(location) {
