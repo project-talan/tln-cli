@@ -6,6 +6,7 @@ const { execSync } = require('child_process');
 var JSONfn = require('json-fn');
 
 const utils = require('./utils');
+const script = require('./script');
 
 class Component {
   constructor(logger, home, parent, id, descriptions) {
@@ -13,7 +14,16 @@ class Component {
     this.home = home;
     this.parent = parent;
     this.id = id;
-    // this.uuid = ;
+    this.uuid = 'tln';
+    if (this.parent) {
+      let ids = [this.id];
+      let p = this.parent;
+      while(p){
+        ids.push(p.id);
+        p = p.parent;
+      }
+      this.uuid = ids.join('.');
+    }
     this.descriptions = descriptions;
     this.components = [];
   }
@@ -235,7 +245,7 @@ class Component {
   * Collect list of childs using all possible sources: descriptions, file system
   * params:
   */
- getIDs() {
+  getIDs() {
     // collect ids
     let ids = [];
     // ... from already created components
@@ -275,7 +285,7 @@ class Component {
   * Print hierarchy of components
   * params:
   */
- print(cout, depth, offset = '', last = false) {
+  print(cout, depth, offset = '', last = false) {
     // output yourself
     let status = '';
     if (!fs.existsSync(this.home)) {
@@ -303,6 +313,37 @@ class Component {
     }
   }
 
+  /*
+  * 
+  * params:
+  */
+  async execute(command, file, recursive) {
+    if (fs.existsSync(this.home)) {
+      if (recursive) {
+        this.construct();
+        for (const component of this.components) {
+          await component.execute(command, file, recursive);
+        }
+      }
+      const scriptToExecute = script.create(this.logger, this.uuid, null, (tln, s) => {
+        if (command) {
+          s.set([command]);
+        } else if (file) {
+          s.set(file)
+        } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
+      });
+      await scriptToExecute.execute({
+        home: this.home,
+        argv: {},
+        envFiles: [],
+        env: {},
+        name: this.id,
+        uuid: this.uuid,
+        save: false,
+        validate: false
+      });
+    }
+  }
 }
 
 module.exports.createRoot = (logger, home, presetsSrc, presetsDest) => {
