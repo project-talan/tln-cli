@@ -51,7 +51,7 @@ class Script {
       let fl = null;
       if (typeof body === 'string') {
         // string represents script file name
-        fl = path.join(home, `${body}`);
+        fl = body;
       } else if (body instanceof Array) {
         if (params.save) {
           fl = path.join(home, `${this.name}.${this.ext}`);

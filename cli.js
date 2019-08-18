@@ -78,9 +78,9 @@ const argv = require('yargs')
           .option('i', { describe: 'define input script to execute', alias: 'input', type: 'string' })
           .conflicts('c', 'i')
       }, (argv) => {
-        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
-          .resolve(argv.components).forEach((component) => {
-            component.execute(argv.command, argv.input, argv.recursive);
+        const appl = require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest);
+        appl.resolve(argv.components).forEach((component) => {
+            component.execute(argv.command, path.join(appl.currentComponent.home, argv.input), argv.recursive);
           });
       }
     )
