@@ -245,7 +245,7 @@ class Component {
         let e = component.find(parts, strictSearch);
         if (!(e || strictSearch)) {
           // try to use components in parent's child
-          e = component.find(id, strictSearch, component);
+          e = component.find(parts, strictSearch, component);
         }
         //
         if (e) {
