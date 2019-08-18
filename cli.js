@@ -79,12 +79,12 @@ const argv = require('yargs')
           .conflicts('c', 'i')
       }, (argv) => {
         const appl = require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest);
-        appl.resolve(argv.components).forEach((component) => {
+        appl.resolve(argv.components).forEach( async (component) => {
             let input = argv.input;
             if (input) {
               input = path.join(appl.currentComponent.home, argv.input);
             }
-            component.execute(argv.command, input, argv.recursive);
+            await component.execute(argv.command, input, argv.recursive);
           });
       }
     )
