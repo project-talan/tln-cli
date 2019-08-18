@@ -51,40 +51,7 @@ class Component {
     return this.home;
   }
   //
-  isItMe(e) {
-    return ((this.getId() === e.getId()) && (this.getHome() === e.getHome()));
-  }
 
-
-  // find entity inside children or pop up to check parent and continue search there
-  find(id, recursive, floatUp = null){
-    this.logger.trace(utils.prefix(this, this.find.name), 'searching', utils.quote(id), 'inside', utils.quote(this.getId()), (floatUp)?'using parent':'within children');
-    let entity = null;
-    if (this.getId() === id) {
-      entity = this;
-    } else {
-      // check if requested entity was already created or can be created
-      entity = this.dive(id, false);
-      if (!entity && recursive) {
-        // TODO check that we are NOT dive into floatUp child
-        const ids = this.getIDs();
-        this.logger.trace('collected ids', ids);
-        //
-        ids.find(function(item) {
-          const e = this.dive(item, false);
-          if (e && !this.isItMe(e)) {
-            entity = e.find(id, recursive, null);
-          }
-          return (entity != null);
-        }.bind(this));
-      }
-      //
-      if (floatUp && this.parent) {
-        entity = this.parent.find(id, recursive, this);
-      }
-    }
-    return entity;
-  }
   
 
   // Collect and combine all environment variables from parents, depends list and component itself

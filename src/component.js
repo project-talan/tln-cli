@@ -28,6 +28,12 @@ class Component {
     this.components = [];
   }
 
+  getRoot() {
+    if (this.parent) {
+      return this.parent.getRoot();
+    }
+    return this;
+  }
   /*
   * Init component description from file or git repository
   * params:
@@ -166,6 +172,96 @@ class Component {
     }
   }
 
+  isItMe(component) {
+    return ((this.id === component.id) && (this.home === component.home));
+  }
+
+  /*
+  * Find entity inside children or pop up to check parent and continue search there
+  * params:
+  */
+  find(parts, strictSearch, floatUp = null) {
+    let component = null;
+    if (parts.length) {
+      const id = parts[0];
+      if (this.id === id) {
+        component = this;
+      } else {
+        // check if requested entity was already created or can be created
+        component = this.dive(id, false);
+        if (component) {
+          // should we dive deeper
+          if (parts.length > 1) {
+            component = component.find(parts.slice(1), strictSearch);
+          }
+        } else {
+          if (!strictSearch) {
+            const ids = this.getIDs();
+            //
+            ids.find((item) => {
+              const c = this.dive(item, false);
+              if (c && (!floatUp || (floatUp && !floatUp.isItMe(c)) )) {
+                component = c.find(parts.slice(), strictSearch);
+              }
+              return (component != null);
+            });
+          }
+          // let's try to search at one level upper
+          if (floatUp && this.parent) {
+            component = this.parent.find(parts.slice(), strictSearch, this);
+          }
+        }
+      }
+    }
+    return component;
+  }
+
+
+  /*
+  * Find corresponding component for every ID from array
+  * params:
+  */
+  resolve(ids) {
+    let result = [];
+    if (ids.length) {
+      ids.forEach((id) => {
+        let component = this;
+        // split id into elements, identify is it absulute path, relative or just standalone id
+        let parts = id.split('/');
+        let strictSearch = true;
+        if (parts.length > 1) {
+          if (parts[0]) {
+            // relative path
+          } else {
+            // absolute path
+            component = this.getRoot();
+            parts.shift();
+          }
+        } else {
+          // standalone id
+          strictSearch = false;
+        }
+        // try to find inside child components
+        let e = component.find(parts, strictSearch);
+        if (!(e || strictSearch)) {
+          // try to use components in parent's child
+          e = component.find(id, strictSearch, component);
+        }
+        //
+        if (e) {
+          result.push(e);
+        } else {
+          this.logger.warn('component with id: [', id, '] was not found');
+        }
+      });
+    } else {
+      // resolve to the current folder component
+      result.push(this.currentComponent);
+    }
+    return result;
+  }
+
+
   /*
   * Print all information about component
   * params:
@@ -230,7 +326,7 @@ class Component {
           descriptions.push(this.buildDescriptionPair(d.source, d.destination, component));
         }
       });
-      // create child entity
+      // create child entity, should we get home from description?
       const eh = path.join(this.home, id);
       if (utils.isConfPresent(eh) || descriptions.length || force) {
         component = new Component(this.logger, eh, this, id, descriptions);

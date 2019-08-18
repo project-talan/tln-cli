@@ -64,7 +64,6 @@ class Appl {
   }
 
   /*
-  *
   * Function is used during initial components lookup from command line parameter
   * components are colon separated string of ids (paths)
   * every id can be
@@ -74,36 +73,14 @@ class Appl {
   * params:
   */
   resolve(components) {
-    this.logger.trace(`List to resolve [${components}]`);
-    let r = [];
     let ids = [];
     if (components) {
       ids = components.split(':');
     }
     if (ids.length) {
-      /*
-      ids.forEach( (id) => {
-        // split id into elements, identify is it absulute path
-        this.logger.trace(utils.prefix(this, this.resolve.name), 'resolving ', utils.quote(id));
-        // try to find inside child components
-        let e = this.component.find(id, true);
-        if (!e) {
-          // try to use components in parent's child
-          this.logger.trace('searching', `'${id}'`, 'using parent');
-          e = this.component.find(id, true, this.component);
-        }
-        if (e) {
-          r.push(e);
-        } else {
-          this.logger.warn('component with id', utils.quote(id), 'was not found');
-        }
-      });
-      */
-    } else {
-      // resolve to the current folder component
-      r.push(this.currentComponent);
+      return this.currentComponent.resolve(ids);
     }
-    return r;
+    return [this.currentComponent];
   }
 
 }
