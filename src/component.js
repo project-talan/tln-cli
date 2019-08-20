@@ -228,6 +228,9 @@ class Component {
         let component = this;
         // split id into elements, identify is it absulute path, relative or just standalone id
         let parts = id.split('/');
+        if (id === '/') {
+          parts = ['', '/']
+        }
         let strictSearch = true;
         if (parts.length > 1) {
           if (parts[0]) {
