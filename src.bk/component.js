@@ -170,44 +170,6 @@ class Component {
     return r;
   }
 
-  //
-  async execute(steps, filter, recursive, parallel, params) {
-    this.logger.trace(utils.prefix(this, this.execute.name), utils.quote(this.getId()), 'component executes', steps);
-    // collect steps from descs, interits, parents
-    const p = params.clone();
-    p.home = this.getHome();
-    for(const step of steps) {
-      const scope2execute = this.findStep(step, filter, p.home, { vars: [], envFiles: [], steps:[] });
-      //
-      if (scope2execute.steps.length) {
-        // prepare environment
-        const env = environment.create(this.logger, p.home, this.getId());
-        env.build(scope2execute.vars);
-        // TODO merge env & envFiles inside parameters with already existing values
-        p.env = env.getEnv();
-        p.envFiles = scope2execute.envFiles;
-        //
-        for(const s of scope2execute.steps.reverse()) {
-          if (!! await s.execute(p)) {
-            break;
-          }
-        }
-      } else {
-        this.logger.debug(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
-      }
-    }
-    //
-    if (recursive) {
-      this.construct();
-      for(const component of this.components) {
-        if (parallel) {
-          component.execute(steps, filter, recursive, parallel, params);
-        } else {
-          await component.execute(steps, filter, recursive, parallel, params);
-        }
-      }
-    }
-  }
 
 }
 

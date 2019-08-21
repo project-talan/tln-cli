@@ -38,5 +38,15 @@ module.exports = {
   //
   isConfPresent(p) {
     return (fs.existsSync(module.exports.getConfFile(p)) || fs.existsSync(module.exports.getConfFolder(p)));
+  },
+  //
+  parseEnv(env) {
+    let r = {};
+    for (const e of env) {
+      const pair = e.split('=');
+      r[pair[0]] = pair[1]?pair[1]:'';
+    }
+    return r;
   }
+
 }

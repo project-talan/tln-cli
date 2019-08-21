@@ -3,6 +3,8 @@
 
 const os = require('os');
 const path = require('path');
+const context = require('./src/context');
+const utils = require('./src/utils');
 
 const cwd = process.cwd();
 const argv = require('yargs')
@@ -11,7 +13,10 @@ const argv = require('yargs')
     .option('verbose', { alias: 'v', count: true, default: 0 })
     .option('r', { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
     .option('p', { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
-.option('presets-dest', { describe: 'Presets will be deployed using path, defined by this option', default: null })
+    .option('l', { describe: 'validate generated scripts without execution by dumping sources to the console', alias: 'validate', default: false, type: 'boolean' })
+    .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+    .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
+    .option('presets-dest', { describe: 'Presets will be deployed using path, defined by this option', default: null })
     .command(
       'about', 'Dislay project information',
       (yargs) => {
@@ -82,10 +87,11 @@ const argv = require('yargs')
         const appl = require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest);
         const input = (argv.input)?(path.join(appl.currentComponent.home, argv.input)):(argv.input);
         appl.resolve(argv.components).forEach(async (component) => {
+          const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
           if (argv.parallel) {
-            component.execute(argv.command, input, argv.recursive);
+            component.execute(argv.command, input, argv.recursive, cntx);
           } else {
-            await component.execute(argv.command, input, argv.recursive);
+            await component.execute(argv.command, input, argv.recursive, cntx);
           }
         });
       }
@@ -98,7 +104,6 @@ const argv = require('yargs')
           .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
           .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
           .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
-          .option('l', { describe: 'validate generated scripts without execution by dumping sources to the console', alias: 'validate', default: false, type: 'boolean' })
           .demandOption(['steps'], 'Please provide steps(s) you need to run')
         }, (argv) => {
           require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)

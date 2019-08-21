@@ -23,23 +23,15 @@ class Script {
   /*
   * Build and execute script
   * params:
-  * - home: cwd were script will be executed
-  * - argv: execution options
-  * - envFiles: array of env files need to be included into script
-  * - env: environment varaibles which will be used during execution
-  * - name: script name
-  * - uuid: exectutor component identifier
-  * - save: generated script will be saved into file
-  * - validate: script content will be dump to the console without execution
   */
-  async execute(params) {
-    const home = params.home;
+  async execute(context) {
+    const home = context.home;
     // prepare environment
-    let env = { ...this.env, ...params.env };
+    let envFromOptions = {};
     if (this.options) {
-      const envFromOptions = this.options.parse(params.argv);
-      env = {...env, ...envFromOptions};
+      envFromOptions = this.options.parse(context.argv);
     }
+    const env = { ...this.env, ...envFromOptions, ...context.env };
     // create component location if not exists
     if (!fs.existsSync(home)) {
       fs.mkdirSync(home, { recursive: true });
@@ -53,14 +45,14 @@ class Script {
         // string represents script file name
         fl = body;
       } else if (body instanceof Array) {
-        if (params.save) {
+        if (context.save) {
           fl = path.join(home, `${this.name}.${this.ext}`);
         } else {
           fl = tempfile(`.${this.ext}`);
         }
         let envFiles = [];
         // TODO create variant for windows environment
-        for (const e of params.envFiles) {
+        for (const e of context.envFile) {
           envFiles.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
         }
         //
@@ -68,7 +60,7 @@ class Script {
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
-        if (params.validate) {
+        if (context.validate) {
           // output script to the console
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
@@ -102,7 +94,7 @@ class Script {
           await spawnPromise(fl, [], opt);
         }
       } else {
-        this.logger.error(`${params.uuid} could not save execution script: ${body}`);
+        this.logger.error(`${context.uuid} could not save execution script: ${body}`);
       }
     }
     return result;
