@@ -12,9 +12,9 @@ class Appl {
   *
   * params:
   */
-  constructor(verbose, cwd, cliHome, presetsDest) {
+  constructor(logger, cwd, cliHome, presetsDest) {
     this.presetsDest = presetsDest;
-    this.logger = require('./logger').create(verbose);
+    this.logger = logger;
     //
     // evaluate projects' root and current component
     let projectsHome = cwd;
@@ -82,6 +82,6 @@ class Appl {
 
 }
 
-module.exports.create = (verbose, cwd, cliHome, presetsDest) => {
-  return new Appl(verbose, cwd, cliHome, presetsDest);
+module.exports.create = (logger, cwd, cliHome, presetsDest) => {
+  return new Appl(logger, cwd, cliHome, presetsDest);
 }

@@ -45,7 +45,8 @@ const argv = require('yargs')
           .option('l', { describe: 'Remove help information from the template', alias: 'lightweight', default: false, type: 'boolean' })
       },
       (argv) => {
-        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+        const log = logger.create(argv.verbose);
+        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
           .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
@@ -73,7 +74,8 @@ const argv = require('yargs')
           .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
       },
       (argv) => {
-        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+        const log = logger.create(argv.verbose);
+        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
           .resolve(argv.components).forEach( (component) => {
             component.inspectComponent({/*filter, */ yaml: argv.yaml}, (...args) => { component.logger.con.apply(component.logger, args); });
           });
@@ -87,7 +89,8 @@ const argv = require('yargs')
           .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
       },
       (argv) => {
-        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+        const log = logger.create(argv.verbose);
+        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
           .resolve(argv.components).forEach( (component) => {
             component.print(function(...args) { component.logger.con.apply(component.logger, args); }, argv.depth);
           });
@@ -101,39 +104,45 @@ const argv = require('yargs')
           .option('c', { describe: 'Shell command to execute', alias: 'command', type: 'string' })
           .option('i', { describe: 'Script name to execute', alias: 'input', type: 'string' })
           .conflicts('c', 'i')
-      }, (argv) => {
-        const appl = require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest);
+      }, 
+      async (argv) => {
+        const log = logger.create(argv.verbose);
+        const appl = require('./src/appl').create(log, cwd, __dirname, argv.presetsDest);
         const input = (argv.input)?(path.join(appl.currentComponent.home, argv.input)):(argv.input);
-        appl.resolve(argv.components).forEach(async (component) => {
+        for(const component of appl.resolve(argv.components)) {
           const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
           if (argv.parallel) {
             component.execute(argv.command, input, argv.recursive, cntx);
           } else {
             await component.execute(argv.command, input, argv.recursive, cntx);
           }
-        });
+        }
       }
     )
     // TODO add ability to define additional env files and environment variables
     .command(
       ['$0 <steps> [components] [-r] [-p] [-s] [-l]'], 'execute set of steps over set of components',
-    (yargs) => {
+      (yargs) => {
         yargs
           .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
           .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
           .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
           .demandOption(['steps'], 'Please provide steps(s) you need to run')
-        }, (argv) => {
-          require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
-            .resolve(argv.components).forEach(async (component) => {
-              const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
-              const steps = argv.steps.split(':');
-              if (argv.parallel) {
-                component.run(steps, argv.recursive, cntx);
-              } else {
-                await component.run(steps, argv.recursive, cntx);
-              }
-            });
+      },
+      async (argv) => {
+        const log = logger.create(argv.verbose);
+        const f = filter.create(log);
+        await f.configure();
+        const appl = require('./src/appl').create(log, cwd, __dirname, argv.presetsDest);
+        for (const component of appl.resolve(argv.components)) {
+          const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
+          const steps = argv.steps.split(':');
+          if (argv.parallel) {
+            component.run(steps, f, argv.recursive, cntx);
+          } else {
+            await component.run(steps, f, argv.recursive, cntx);
+          }
+        }
       }
     )
     .argv;

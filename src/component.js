@@ -455,12 +455,13 @@ class Component {
     * Collect all available steps from component own descriptions, hierarchy of parens and from inherits list
     * Result is array of scripts and contexts
     * @step - step id to execute
+    * @filter - aims to gather subset of steps 
     * @home - component current folder
     * @cntx - execution context
     * @result - object which holds environment varaibles, environment files and collected steps
     * @parent - parameter is used to prevent add step from component more than one time
   */
-  findStep(step, home, cntx, result, parent = null) {
+  findStep(step, filter, home, cntx, result, parent = null) {
     let r = result;
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
@@ -495,21 +496,22 @@ class Component {
           // is it our step
           if ((s.id === step) || (step === '*')) {
             // are we meet underyling os, version and other filter's restrictions
-            //if (filter.validate(s)) {
-            // check if step was already added
-            /*               let suffix = [s.id];
-                        if (i || (home !== this.getHome())) {
-                          suffix.push(`${i}`);
-                        }
-            */
-            const scriptUid = s.id + '@' + this.getUuid([`${i}`]);
-            const scriptName = s.id + '@' + this.getUuid([]);
-            if (!r.find(es => es.script.uuid === scriptUid)) {
-              r.push(
-                {
-                  script: script.create(this.logger, this.uuid, opts, s.script),
-                  cntx: cntx,
-                });
+            if (filter.validate(s.filter)) {
+              // check if step was already added
+              /*               let suffix = [s.id];
+                          if (i || (home !== this.getHome())) {
+                            suffix.push(`${i}`);
+                          }
+              */
+              const scriptUid = s.id + '@' + this.getUuid([`${i}`]);
+              const scriptName = s.id + '@' + this.getUuid([]);
+              if (!r.find(es => es.script.uuid === scriptUid)) {
+                r.push(
+                  {
+                    script: script.create(this.logger, this.uuid, opts, s.script),
+                    cntx: cntx,
+                  });
+              }
             }
           }
         }
@@ -524,10 +526,10 @@ class Component {
    * Run step based on information from descriptions
    * params:
   */
- async run(steps, recursive, cntx) {
+ async run(steps, filter, recursive, cntx) {
     // collect steps from descs, interits, parents
     for(const step of steps) {
-      const list2execute = this.findStep(step, this.home, cntx.clone(), []);
+      const list2execute = this.findStep(step, filter, this.home, cntx.clone(), []);
       //
       if (list2execute.length) {
         for(const item of list2execute) {

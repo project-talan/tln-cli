@@ -12,7 +12,10 @@ class Filter {
 
   //
   validate(pattern) {
-    return (this.filter.match(pattern) !== null);
+    if (pattern) {
+      return (this.filter.match(pattern) !== null);
+    }
+    return true;
   }
 
   configure() {
