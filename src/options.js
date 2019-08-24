@@ -6,8 +6,8 @@ class Options {
     this.desc = [];
   }
 
-  add(id, variable, desc, def) {
-    this.desc.push({id: id, variable: variable, desc: desc, default: def});
+  add(id, variable, description, def) {
+    this.desc.push({id: id, variable: variable, description: description, default: def});
     return this;
   }
 

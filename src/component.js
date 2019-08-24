@@ -7,6 +7,7 @@ var JSONfn = require('json-fn');
 
 const utils = require('./utils');
 const script = require('./script');
+const options = require('./options');
 
 class Component {
   constructor(logger, home, parent, id, descriptions) {
@@ -28,12 +29,25 @@ class Component {
     this.components = [];
   }
 
-  getRoot() {
+  /*
+  * 
+  * params:
+  */
+ getRoot() {
     if (this.parent) {
       return this.parent.getRoot();
     }
     return this;
   }
+
+  /*
+  * 
+  * params:
+  */
+  getUuid(chunks = []) {
+    return [this.uuid].concat(chunks).join('.');
+  }
+
   /*
   * Init component description from file or git repository
   * params:
@@ -221,7 +235,7 @@ class Component {
   * Find corresponding component for every ID from array
   * params:
   */
-  resolve(ids) {
+  resolve(ids, resolveEmptyToThis = false) {
     let result = [];
     if (ids.length) {
       ids.forEach((id) => {
@@ -259,7 +273,9 @@ class Component {
       });
     } else {
       // resolve to the current folder component
-      result.push(this.currentComponent);
+      if (resolveEmptyToThis) {
+        result.push(this);
+      }
     }
     return result;
   }
@@ -420,7 +436,7 @@ class Component {
       if (recursive) {
         this.construct();
         for (const component of this.components) {
-          await component.execute(command, file, recursive, cntx.clone());
+          await component.execute(command, file, recursive, cntx.clone(component.home));
         }
       }
       const scriptToExecute = script.create(this.logger, this.uuid, null, (tln, s) => {
@@ -434,48 +450,108 @@ class Component {
     }
   }
 
-  /*
-  * Run step based in information from descriptions
-  * params:
+  /**
+    *
+    * Collect all available steps from component own descriptions, hierarchy of parens and from inherits list
+    * Result is array of scripts and contexts
+    * @step - step id to execute
+    * @home - component current folder
+    * @cntx - execution context
+    * @result - object which holds environment varaibles, environment files and collected steps
+    * @parent - parameter is used to prevent add step from component more than one time
   */
- /*
- async run(steps, filter, recursive, parallel, params) {
+  findStep(step, home, cntx, result, parent = null) {
+    let r = result;
+    // first lookup inside parents
+    if (this.parent && (this.parent != parent)) {
+      r = this.parent.findStep(step, home, cntx, r);
+    }
+    let i = -1; // calculate descs count to simplify scripts' names
+    for (const d of this.descriptions) {
+      i++;
+      // second, lookup inside inherits list
+      if (d.description.inherits) {
+        const inheritComponents = this.resolve(d.description.inherits());
+        for (const component of inheritComponents) {
+          r = component.findStep(step, home, cntx.clone(component.home), component.parent);
+        }
+      }
+      // collect environment files
+      let dontenvs = [];
+      if (d.description.dotenvs) {
+        dontenvs = d.description.dotenvs();
+      }
+      const relativePath = path.relative(home, this.home);
+      cntx.addDotenvs(dontenvs.map((v, i, a) => path.join(relativePath, v)));
+
+      // third, check component's descriptions
+      if (d.description.steps) {
+        // steps' options
+        let opts = options.create(this.logger);
+        if (d.description.options) {
+          d.description.options(null, opts);
+        }
+        for (const s of d.description.steps()) {
+          // is it our step
+          if ((s.id === step) || (step === '*')) {
+            // are we meet underyling os, version and other filter's restrictions
+            //if (filter.validate(s)) {
+            // check if step was already added
+            /*               let suffix = [s.id];
+                        if (i || (home !== this.getHome())) {
+                          suffix.push(`${i}`);
+                        }
+            */
+            const scriptUid = s.id + '@' + this.getUuid([`${i}`]);
+            const scriptName = s.id + '@' + this.getUuid([]);
+            if (!r.find(es => es.script.uuid === scriptUid)) {
+              r.push(
+                {
+                  script: script.create(this.logger, this.uuid, opts, s.script),
+                  cntx: cntx,
+                });
+            }
+          }
+        }
+      }
+    }
+    // collect environment variables
+    //r.vars = this.getVariables(r.vars);
+    return r;
+  }
+
+  /**
+   * Run step based on information from descriptions
+   * params:
+  */
+ async run(steps, recursive, cntx) {
     // collect steps from descs, interits, parents
-    const p = params.clone();
-    p.home = this.getHome();
     for(const step of steps) {
-      const scope2execute = this.findStep(step, filter, p.home, { vars: [], envFiles: [], steps:[] });
+      const list2execute = this.findStep(step, this.home, cntx.clone(), []);
       //
-      if (scope2execute.steps.length) {
-        // prepare environment
-        const env = environment.create(this.logger, p.home, this.getId());
-        env.build(scope2execute.vars);
-        // TODO merge env & envFiles inside parameters with already existing values
-        p.env = env.getEnv();
-        p.envFiles = scope2execute.envFiles;
-        //
-        for(const s of scope2execute.steps.reverse()) {
-          if (!! await s.execute(p)) {
+      if (list2execute.length) {
+        for(const item of list2execute) {
+          if (!! await item.script.execute(item.cntx)){
             break;
           }
         }
       } else {
-        this.logger.debug(utils.quote(step), 'step was not found for', utils.quote(this.getId()), 'component');
+        this.logger.con(`Nothing to execute`);
       }
     }
     //
     if (recursive) {
       this.construct();
       for(const component of this.components) {
+        const c = context.clone(component.home);
         if (parallel) {
-          component.execute(steps, filter, recursive, parallel, params);
+          component.execute(steps, recursive, c);
         } else {
-          await component.execute(steps, filter, recursive, parallel, params);
+          await component.execute(steps, recursive, c);
         }
       }
     }
   }
-  */
 
 }
 

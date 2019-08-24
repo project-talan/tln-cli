@@ -108,20 +108,14 @@ const argv = require('yargs')
         }, (argv) => {
           require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
             .resolve(argv.components).forEach(async (component) => {
+              const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
+              const steps = argv.steps.split(':');
               if (argv.parallel) {
-                //component.run(argv.command, input, argv.recursive);
+                component.run(steps, argv.recursive, cntx);
               } else {
-                //await component.run(argv.command, input, argv.recursive);
+                await component.run(steps, argv.recursive, cntx);
               }
             });
-        /*
-        appl.configure()
-          .then(async (filter) => {
-            for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.validate, argv, [], []));
-            }
-          });
-        */
       }
     )
     .argv;

@@ -77,10 +77,7 @@ class Appl {
     if (components) {
       ids = components.split(':');
     }
-    if (ids.length) {
-      return this.currentComponent.resolve(ids);
-    }
-    return [this.currentComponent];
+    return this.currentComponent.resolve(ids, true);
   }
 
 }

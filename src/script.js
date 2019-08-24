@@ -50,13 +50,13 @@ class Script {
         } else {
           fl = tempfile(`.${this.ext}`);
         }
-        let envFiles = [];
+        let dotenvs = [];
         // TODO create variant for windows environment
-        for (const e of context.envFile) {
-          envFiles.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
+        for (const e of context.dotenvs) {
+          dotenvs.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
         }
         //
-        fs.writeFileSync(fl, this.prefix.concat(envFiles).concat(body).join('\n'));
+        fs.writeFileSync(fl, this.prefix.concat(dotenvs).concat(body).join('\n'));
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
