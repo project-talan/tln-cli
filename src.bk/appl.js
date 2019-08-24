@@ -10,15 +10,6 @@ const filter = require('./filter');
 class Appl {
 
   //
-  configure() {
-    return new Promise( (resolve, reject) => {
-      lsbRelease( (_, data) => {
-        //
-        this.logger.trace(utils.prefix(this, 'configure'), 'filter info:', info);
-        resolve(filter.create(this.logger, info));
-      });
-    });
-  }
 
 
 }

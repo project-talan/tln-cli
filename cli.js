@@ -7,8 +7,6 @@ const logger = require('./src/logger');
 const context = require('./src/context');
 const utils = require('./src/utils');
 const filter = require('./src/filter');
-const getos = require('getos');
-
 
 const cwd = process.cwd();
 const argv = require('yargs')
@@ -57,14 +55,14 @@ const argv = require('yargs')
         yargs
           .option('pattern', { describe: 'Match pattern will filter baseline', default: null, type: 'string' })
       },
-      (argv) => {
+      async (argv) => {
         const log = logger.create(argv.verbose);
         const f = filter.create(log);
+        await f.configure();
         log.con(f.filter);
-        getos((e,os) => {
-          if(e) return log.con(e)
-          log.con("Your OS is:" +JSON.stringify(os));
-        });
+        if (argv.pattern) {
+          log.con( argv.pattern, f.validate(argv.pattern)?'match':'not match');
+        }
       }
     )
     .command(
