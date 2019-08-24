@@ -3,8 +3,12 @@
 
 const os = require('os');
 const path = require('path');
+const logger = require('./src/logger');
 const context = require('./src/context');
 const utils = require('./src/utils');
+const filter = require('./src/filter');
+const getos = require('getos');
+
 
 const cwd = process.cwd();
 const argv = require('yargs')
@@ -45,6 +49,22 @@ const argv = require('yargs')
       (argv) => {
         require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
           .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
+      }
+    )
+    .command(
+      'filter [--pattern]', 'Display current platform definition, which will be used during steps filtering',
+      (yargs) => {
+        yargs
+          .option('pattern', { describe: 'Match pattern will filter baseline', default: null, type: 'string' })
+      },
+      (argv) => {
+        const log = logger.create(argv.verbose);
+        const f = filter.create(log);
+        log.con(f.filter);
+        getos((e,os) => {
+          if(e) return log.con(e)
+          log.con("Your OS is:" +JSON.stringify(os));
+        });
       }
     )
     .command(
