@@ -1,5 +1,4 @@
-'use strict';
-
+'use strict'
 const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -8,6 +7,7 @@ var JSONfn = require('json-fn');
 const utils = require('./utils');
 const script = require('./script');
 const options = require('./options');
+const variables = require('./variables');
 
 class Component {
   constructor(logger, home, parent, id, descriptions) {
@@ -295,12 +295,13 @@ class Component {
     r.depends = [];
     //
     const steps = this.findStep('*', filter, this.home, cntx.clone(), []);
-    /*/
+    //
     r.env = {};
-    const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
+    const {vars, env} = this.buildEnvironment(this.getVariables());
     for(let v in vars) {
       r.env[v] = vars[v];
     }
+    /*/
     r.dotenvs = [];
     for(const ef of execScope.envFiles) {
       r.dotenvs.push(ef);
@@ -392,6 +393,65 @@ class Component {
     });
   }
 
+
+   /**
+    * Collect and combine all environment variables from parents, depends list and component itself
+    * goal is to provide complete script execution environment
+    * @var - array of collecting variables
+    * @origin - path to component, which requests variables
+  */
+  getVariables(vars = [], origin = null) {
+    let orig = origin;
+    if (!orig) {
+      orig = this.home;
+    }
+    let r = vars;
+    // get variables form hierarchy of parents
+    if (this.parent) {
+      r = this.parent.getVariables(r, orig);
+    }
+    // for each depends list
+    for (const d of this.descriptions) {
+      if (d.description.depends) {
+        const dependsComponents = this.resolve(d.description.depends());
+        for (const component of dependsComponents) {
+          r = component.getVariables(r);
+        }
+      }
+    }
+    // look into component's descs
+    for (const d of this.descriptions) {
+      if (d.description.variables) {
+        const v = variables.create(this.home, orig);
+        d.description.variables(null, v);
+        r.push({source: d.source, vars: v});
+      }
+    }
+    return r;
+  }
+
+   /**
+    * @variables - 
+  */
+  buildEnvironment(variables) {
+    let names = [];
+    let env = {};
+    //
+    env['COMPONENT_HOME'] = this.home;
+    env['COMPONENT_ID'] = this.id;
+    for (const v of variables.reverse()) {
+      names = v.vars.names(names);
+      env = v.vars.build(env);
+    }
+    //
+    let r = {};
+    names.forEach(n => {
+      r[n] = env[n];
+    })
+    return {vars: r, env:env};
+  }
+
+
   /*
   * Print hierarchy of components
   * params:
@@ -436,6 +496,7 @@ class Component {
           await component.execute(command, file, recursive, cntx.clone(component.home));
         }
       }
+      // TODO: collect environment variables and dotenvs
       const scriptToExecute = script.create(this.logger, this.uuid, null, (tln, s) => {
         if (command) {
           s.set([command]);
