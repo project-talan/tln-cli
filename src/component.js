@@ -528,7 +528,7 @@ class Component {
     let r = result;
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
-      r = this.parent.findStep(step, filter, home, cntx, r);
+      r = this.parent.findStep(step, filter, home, cntx.clone(), r);
     }
     let i = -1; // calculate descs count to simplify scripts' names
     for (const d of this.descriptions) {
@@ -537,7 +537,7 @@ class Component {
       if (d.description.inherits) {
         const inheritComponents = this.resolve(d.description.inherits());
         for (const component of inheritComponents) {
-          r = component.findStep(step, filter, home, cntx.clone(component.home), r, component.parent);
+          r = component.findStep(step, filter, home, cntx.clone(), r, component.parent);
         }
       }
       // collect environment files
