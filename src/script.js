@@ -26,14 +26,14 @@ class Script {
   * Build and execute script
   * params:
   */
-  async execute(context) {
+  async execute(context, environment = {}) {
     const home = context.home;
     // prepare environment
     let envFromOptions = {};
     if (this.options) {
       envFromOptions = this.options.parse(context.argv);
     }
-    const env = { ...this.env, ...envFromOptions, ...context.env };
+    this.env = {...environment, ...envFromOptions, ...context.env};
     // create component location if not exists
     if (!fs.existsSync(home)) {
       fs.mkdirSync(home, { recursive: true });
@@ -67,7 +67,7 @@ class Script {
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
           // run script from file
-          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: env};
+          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: this.env};
           if (fs.existsSync(home)) {
             opt.cwd = home;
           }

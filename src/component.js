@@ -107,9 +107,13 @@ class Component {
     // load definitions from .tln.conf file
     const conf = utils.getConfFile(location);
     if (fs.existsSync(conf)) {
+      //
+      desc = require(conf);
+      /*/
       const d = require(conf);
       desc = JSONfn.clone(d);
       delete require.cache[require.resolve(conf)];
+      /*/
     }
     if (recursive) {
       // enum folders recursively and merge all description information all together
@@ -435,7 +439,7 @@ class Component {
   */
   buildEnvironment(variables) {
     let names = [];
-    let env = {};
+    let env = process.env;
     //
     env['COMPONENT_HOME'] = this.home;
     env['COMPONENT_ID'] = this.id;
@@ -497,14 +501,15 @@ class Component {
         }
       }
       // TODO: collect environment variables and dotenvs
-      const scriptToExecute = script.create(this.logger, this.uuid, null, (tln, s) => {
+      const scriptToExecute = script.create(this.logger, this.uuid, this.id, null, (tln, s) => {
         if (command) {
           s.set([command]);
         } else if (file) {
           s.set(file)
         } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       });
-      await scriptToExecute.execute(cntx);
+      const {vars, env} = this.buildEnvironment(this.getVariables());
+      await scriptToExecute.execute(cntx, env);
     }
   }
 
@@ -588,10 +593,11 @@ class Component {
     // collect steps from descs, interits, parents
     for(const step of steps) {
       const list2execute = this.findStep(step, filter, this.home, cntx.clone(), []);
+      const {vars, env} = this.buildEnvironment(this.getVariables());
       //
       if (list2execute.length) {
         for(const item of list2execute) {
-          if (!! await item.script.execute(item.cntx)){
+          if (!! await item.script.execute(item.cntx, env)){
             break;
           }
         }
