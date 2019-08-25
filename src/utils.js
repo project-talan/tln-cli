@@ -12,14 +12,15 @@ module.exports = {
   quote: function(str) { 
     return `'${str}'`; 
   },
+*/
+  tlnFolderName: '.tln',
+  tlnConfTemplate: '.tln.conf.template',
+  //
   uniquea: function(arr, cmp = function(a, i, p){ return a.indexOf(i) == p; }){
     return arr.filter(function(item, pos) {
       return cmp(arr, item, pos);
     });
   },
-*/
-  tlnFolderName: '.tln',
-  tlnConfTemplate: '.tln.conf.template',
   //
   isRootPath(p) {
     // TODO validate expression at windows box
@@ -37,5 +38,15 @@ module.exports = {
   //
   isConfPresent(p) {
     return (fs.existsSync(module.exports.getConfFile(p)) || fs.existsSync(module.exports.getConfFolder(p)));
+  },
+  //
+  parseEnv(env) {
+    let r = {};
+    for (const e of env) {
+      const pair = e.split('=');
+      r[pair[0]] = pair[1]?pair[1]:'';
+    }
+    return r;
   }
+
 }

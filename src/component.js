@@ -1,11 +1,13 @@
-'use strict';
-
+'use strict'
 const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
 var JSONfn = require('json-fn');
 
 const utils = require('./utils');
+const script = require('./script');
+const options = require('./options');
+const variables = require('./variables');
 
 class Component {
   constructor(logger, home, parent, id, descriptions) {
@@ -13,9 +15,31 @@ class Component {
     this.home = home;
     this.parent = parent;
     this.id = id;
-    // this.uuid = ;
+    this.uuid = 'tln';
+    if (this.parent) {
+      this.uuid = [this.parent.uuid, this.id].join('.');
+    }
     this.descriptions = descriptions;
     this.components = [];
+  }
+
+  /*
+  * 
+  * params:
+  */
+ getRoot() {
+    if (this.parent) {
+      return this.parent.getRoot();
+    }
+    return this;
+  }
+
+  /*
+  * 
+  * params:
+  */
+  getUuid(chunks = []) {
+    return [this.uuid].concat(chunks).join('.');
   }
 
   /*
@@ -83,9 +107,13 @@ class Component {
     // load definitions from .tln.conf file
     const conf = utils.getConfFile(location);
     if (fs.existsSync(conf)) {
+      //
+      desc = require(conf);
+      /*/
       const d = require(conf);
       desc = JSONfn.clone(d);
       delete require.cache[require.resolve(conf)];
+      /*/
     }
     if (recursive) {
       // enum folders recursively and merge all description information all together
@@ -156,14 +184,109 @@ class Component {
     }
   }
 
+  isItMe(component) {
+    return ((this.id === component.id) && (this.home === component.home));
+  }
+
+  /*
+  * Find entity inside children or pop up to check parent and continue search there
+  * params:
+  */
+  find(parts, strictSearch, floatUp = null) {
+    let component = null;
+    if (parts.length) {
+      const id = parts[0];
+      if (this.id === id) {
+        component = this;
+      } else {
+        // check if requested entity was already created or can be created
+        component = this.dive(id, false);
+        if (component) {
+          // should we dive deeper
+          if (parts.length > 1) {
+            component = component.find(parts.slice(1), strictSearch);
+          }
+        } else {
+          if (!strictSearch) {
+            const ids = this.getIDs();
+            //
+            ids.find((item) => {
+              const c = this.dive(item, false);
+              if (c && (!floatUp || (floatUp && !floatUp.isItMe(c)) )) {
+                component = c.find(parts.slice(), strictSearch);
+              }
+              return (component != null);
+            });
+          }
+          // let's try to search at one level upper
+          if (floatUp && this.parent) {
+            component = this.parent.find(parts.slice(), strictSearch, this);
+          }
+        }
+      }
+    }
+    return component;
+  }
+
+
+  /*
+  * Find corresponding component for every ID from array
+  * params:
+  */
+  resolve(ids, resolveEmptyToThis = false) {
+    let result = [];
+    if (ids.length) {
+      ids.forEach((id) => {
+        let component = this;
+        // split id into elements, identify is it absulute path, relative or just standalone id
+        let parts = id.split('/');
+        if (id === '/') {
+          parts = ['', '/']
+        }
+        let strictSearch = true;
+        if (parts.length > 1) {
+          if (parts[0]) {
+            // relative path
+          } else {
+            // absolute path
+            component = this.getRoot();
+            parts.shift();
+          }
+        } else {
+          // standalone id
+          strictSearch = false;
+        }
+        // try to find inside child components
+        let e = component.find(parts, strictSearch);
+        if (!(e || strictSearch)) {
+          // try to use components in parent's child
+          e = component.find(parts, strictSearch, component);
+        }
+        //
+        if (e) {
+          result.push(e);
+        } else {
+          this.logger.warn('component with id: [', id, '] was not found');
+        }
+      });
+    } else {
+      // resolve to the current folder component
+      if (resolveEmptyToThis) {
+        result.push(this);
+      }
+    }
+    return result;
+  }
+
+
   /*
   * Print all information about component
   * params:
   */
-  inspectComponent(options, cout) {
-
+  inspectComponent(filter, cntx, yaml, cout) {
     let r = {};
     r.id = this.id;
+    r.uuid = this.uuid;
     r.home = this.home;
     //r.uuid = this.uuid;
     r.parent = (this.parent)?(this.parent.id):(null);
@@ -174,23 +297,26 @@ class Component {
     r.tags = [];
     r.inherits = [];
     r.depends = [];
-    /*/
-    const execScope = this.findStep('*', filter, home, { vars: [], envFiles: [], steps:[] }, []);
+    //
+    const steps = this.findStep('*', filter, this.home, cntx.clone(), []);
+    //
     r.env = {};
-    const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
+    const {vars, env} = this.buildEnvironment(this.getVariables());
     for(let v in vars) {
       r.env[v] = vars[v];
     }
+    /*/
     r.dotenvs = [];
     for(const ef of execScope.envFiles) {
       r.dotenvs.push(ef);
     }
-    r.steps = [];
-    for(const s of execScope.steps) {
-      r.steps.push(s.name);
-    }
     /*/
-    if (options.yaml) {
+    r.steps = [];
+    for(const step of steps) {
+      r.steps.push(step.script.uuid);
+    }
+    //
+    if (yaml) {
       cout((require('yaml')).stringify(r));
     } else {
       cout(JSON.stringify(r, null, 2));
@@ -220,7 +346,7 @@ class Component {
           descriptions.push(this.buildDescriptionPair(d.source, d.destination, component));
         }
       });
-      // create child entity
+      // create child entity, should we get home from description?
       const eh = path.join(this.home, id);
       if (utils.isConfPresent(eh) || descriptions.length || force) {
         component = new Component(this.logger, eh, this, id, descriptions);
@@ -229,6 +355,268 @@ class Component {
       }
     }
     return component;
+  }
+
+  /*
+  * Collect list of childs using all possible sources: descriptions, file system
+  * params:
+  */
+  getIDs() {
+    // collect ids
+    let ids = [];
+    // ... from already created components
+    this.components.forEach((c) => { ids.push(c.id); });
+    // ... from descs
+    this.descriptions.forEach((d) => {
+      let components = [];
+      if (d.description.components) {
+        components = d.description.components();
+      }
+      //
+      components.forEach(function (c) {
+        ids.push(c.id);
+      });
+    });
+    // ... from file system
+    if (fs.existsSync(this.home)) {
+      ids = ids.concat(this.enumFolders(this.home));
+    }
+    // remove duplicates
+    ids = utils.uniquea(ids);
+    this.logger.trace('ids', ids);
+    return ids;
+  }
+
+  /*
+  * Create all children components from available descriptions
+  * params:
+  */
+  construct() {
+    this.getIDs().forEach((id) => {
+      this.dive(id, false);
+    });
+  }
+
+
+   /**
+    * Collect and combine all environment variables from parents, depends list and component itself
+    * goal is to provide complete script execution environment
+    * @var - array of collecting variables
+    * @origin - path to component, which requests variables
+  */
+  getVariables(vars = [], origin = null) {
+    let orig = origin;
+    if (!orig) {
+      orig = this.home;
+    }
+    let r = vars;
+    // get variables form hierarchy of parents
+    if (this.parent) {
+      r = this.parent.getVariables(r, orig);
+    }
+    // for each depends list
+    for (const d of this.descriptions) {
+      if (d.description.depends) {
+        const dependsComponents = this.resolve(d.description.depends());
+        for (const component of dependsComponents) {
+          r = component.getVariables(r);
+        }
+      }
+    }
+    // look into component's descs
+    for (const d of this.descriptions) {
+      if (d.description.variables) {
+        const v = variables.create(this.home, orig);
+        d.description.variables(null, v);
+        r.push({source: d.source, vars: v});
+      }
+    }
+    return r;
+  }
+
+   /**
+    * @variables - 
+  */
+  buildEnvironment(variables) {
+    let names = [];
+    let env = process.env;
+    //
+    env['COMPONENT_HOME'] = this.home;
+    env['COMPONENT_ID'] = this.id;
+    for (const v of variables.reverse()) {
+      names = v.vars.names(names);
+      env = v.vars.build(env);
+    }
+    //
+    let r = {};
+    names.forEach(n => {
+      r[n] = env[n];
+    })
+    return {vars: r, env:env};
+  }
+
+
+  /*
+  * Print hierarchy of components
+  * params:
+  */
+  print(cout, depth, offset = '', last = false) {
+    // output yourself
+    let status = '';
+    if (!fs.existsSync(this.home)) {
+      status = '*'
+    }
+    cout(`${offset} ${this.id} ${status}`);
+    //
+    if (depth !== 0) {
+      this.construct();
+      let cnt = this.components.length;
+      let no = offset;
+      if (offset.length) {
+        if (this.components.length) {
+          no = offset.substring(0, offset.length - 1) + '│';
+        }
+        if (last) {
+          no = offset.substring(0, offset.length - 1) + ' ';
+        }
+      }
+      this.components.forEach(function (entity) {
+        cnt--;
+        const delim = (cnt) ? (' ├') : (' └');
+        entity.print(cout, depth - 1, `${no}${delim}`, cnt === 0);
+      });
+    }
+  }
+
+  /*
+  * Execute shell command from string or from input file
+  * params:
+  */
+  async execute(command, file, recursive, cntx) {
+    if (fs.existsSync(this.home)) {
+      if (recursive) {
+        this.construct();
+        for (const component of this.components) {
+          await component.execute(command, file, recursive, cntx.clone(component.home));
+        }
+      }
+      // TODO: collect environment variables and dotenvs
+      const scriptToExecute = script.create(this.logger, this.uuid, this.id, null, (tln, s) => {
+        if (command) {
+          s.set([command]);
+        } else if (file) {
+          s.set(file)
+        } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
+      });
+      const {vars, env} = this.buildEnvironment(this.getVariables());
+      await scriptToExecute.execute(cntx, env);
+    }
+  }
+
+  /**
+    *
+    * Collect all available steps from component own descriptions, hierarchy of parens and from inherits list
+    * Result is array of scripts and contexts
+    * @step - step id to execute
+    * @filter - aims to gather subset of steps 
+    * @home - component current folder
+    * @cntx - execution context
+    * @result - object which holds environment varaibles, environment files and collected steps
+    * @parent - parameter is used to prevent add step from component more than one time
+  */
+  findStep(step, filter, home, cntx, result, parent = null) {
+    let r = result;
+    // first lookup inside parents
+    if (this.parent && (this.parent != parent)) {
+      r = this.parent.findStep(step, filter, home, cntx.clone(), r);
+    }
+    let i = -1; // calculate descs count to simplify scripts' names
+    for (const d of this.descriptions) {
+      i++;
+      // second, lookup inside inherits list
+      if (d.description.inherits) {
+        const inheritComponents = this.resolve(d.description.inherits());
+        for (const component of inheritComponents) {
+          r = component.findStep(step, filter, home, cntx.clone(), r, component.parent);
+        }
+      }
+      // collect environment files
+      let dontenvs = [];
+      if (d.description.dotenvs) {
+        dontenvs = d.description.dotenvs();
+      }
+      const relativePath = path.relative(home, this.home);
+      cntx.addDotenvs(dontenvs.map((v, i, a) => path.join(relativePath, v)));
+
+      // third, check component's descriptions
+      if (d.description.steps) {
+        // steps' options
+        let opts = options.create(this.logger);
+        if (d.description.options) {
+          d.description.options(null, opts);
+        }
+        for (const s of d.description.steps()) {
+          // is it our step
+          if ((s.id === step) || (step === '*')) {
+            // are we meet underyling os, version and other filter's restrictions
+            if (filter.validate(s.filter)) {
+              // check if step was already added
+              /*               let suffix = [s.id];
+                          if (i || (home !== this.getHome())) {
+                            suffix.push(`${i}`);
+                          }
+              */
+              const scriptUuid = s.id + '@' + this.getUuid([`${i}`]);
+              const scriptName = s.id + '@' + this.getUuid([]);
+              if (!r.find(es => es.script.uuid === scriptUuid)) {
+                r.push(
+                  {
+                    script: script.create(this.logger, scriptUuid, scriptName, opts, s.script),
+                    cntx: cntx,
+                  });
+              }
+            }
+          }
+        }
+      }
+    }
+    // collect environment variables
+    //r.vars = this.getVariables(r.vars);
+    return r;
+  }
+
+  /**
+   * Run step based on information from descriptions
+   * params:
+  */
+ async run(steps, filter, recursive, cntx) {
+    // collect steps from descs, interits, parents
+    for(const step of steps) {
+      const list2execute = this.findStep(step, filter, this.home, cntx.clone(), []);
+      const {vars, env} = this.buildEnvironment(this.getVariables());
+      //
+      if (list2execute.length) {
+        for(const item of list2execute) {
+          if (!! await item.script.execute(item.cntx, env)){
+            break;
+          }
+        }
+      } else {
+        this.logger.con(`Nothing to execute`);
+      }
+    }
+    //
+    if (recursive) {
+      this.construct();
+      for(const component of this.components) {
+        const c = context.clone(component.home);
+        if (parallel) {
+          component.execute(steps, recursive, c);
+        } else {
+          await component.execute(steps, recursive, c);
+        }
+      }
+    }
   }
 
 }

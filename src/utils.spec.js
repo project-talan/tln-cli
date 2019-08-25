@@ -25,16 +25,23 @@ describe('utils', function() {
   afterEach(function () {
   })
 
+  it('Remove all duplicates from the array', function() {
+    expect(utils.uniquea(['a', 'b', 'a', 'c', 'c', 'a', 'b', 'd'])).to.eql(['a', 'b', 'c', 'd']);
+  });
+
   it('Identify root of file system', function() {
     const rootFolder = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
     expect(utils.isRootPath(rootFolder)).to.be.true;
   });
+
   it('Get configuration file name', function() {
     expect(utils.getConfFile(componentHome)).to.be.equal(path.join(componentHome, '.tln.conf'));
   });
+
   it('Get configuration folder name', function() {
     expect(utils.getConfFolder(componentHome)).to.be.equal(path.join(componentHome, '.tln'));
   });
+
   it('Check if configurations (file or/and folder) present', function() {
     let existsSyncStub = sinon.stub(fs, 'existsSync').callsFake(function (p) {
       return false;

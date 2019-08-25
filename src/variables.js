@@ -1,7 +1,6 @@
 'use strict';
 
 const utils = require('./utils');
-const os = require('os');
 const path = require('path');
 
 function getDelimiter(delimiter = null) {
@@ -9,6 +8,10 @@ function getDelimiter(delimiter = null) {
 }
 
 class Variables {
+  /**
+   * @anchor - path to component, which owns variables
+   * @origin - path to component, which requests variables
+  */
   constructor(anchor, origin) {
     this.anchor = anchor;
     this.origin = origin;
@@ -27,46 +30,52 @@ class Variables {
     if (typeof value === 'function') {
       this.items.push({ data: this.buildData(name, value), callback: value });
     } else {
-      this.items.push({ data: this.buildData(name, value), callback: (tln, data) => {
-        return data.value;
-      } });
+      this.items.push({
+        data: this.buildData(name, value), callback: (tln, data) => {
+          return data.value;
+        }
+      });
     }
     return this;
   }
 
   //
   append(name, value, delimiter = null) {
-    this.items.push({ data: this.buildData(name, value, delimiter), callback: (tln, data) => {
-      let v = data.value;
-      if (typeof v === 'function') {
-        v = v(tln, data);
+    this.items.push({
+      data: this.buildData(name, value, delimiter), callback: (tln, data) => {
+        let v = data.value;
+        if (typeof v === 'function') {
+          v = v(tln, data);
+        }
+        if (data.env[data.name]) {
+          return `${data.env[data.name]}${data.delimiter}${v}`;
+        }
+        return v;
       }
-      if (data.env[data.name]) {
-        return `${data.env[data.name]}${data.delimiter}${v}`;
-      }
-      return v;
-    }});
+    });
     return this;
   }
 
   //
-  prepend(name, value, delimiter = null ) {
-    this.items.push({ data: this.buildData(name, value, delimiter), callback: (tln, data) => {
-      let v = data.value;
-      if (typeof v === 'function') {
-        v = v(tln, data);
+  prepend(name, value, delimiter = null) {
+    this.items.push({
+      data: this.buildData(name, value, delimiter), callback: (tln, data) => {
+        let v = data.value;
+        if (typeof v === 'function') {
+          v = v(tln, data);
+        }
+        if (data.env[data.name]) {
+          return `${v}${data.delimiter}${data.env[data.name]}`;
+        }
+        return v;
       }
-      if (data.env[data.name]) {
-        return `${v}${data.delimiter}${data.env[data.name]}`;
-      }
-      return v;
-    }});
+    });
     return this;
   }
 
   //
   names(n) {
-    this.items.forEach(function(e){
+    this.items.forEach(function (e) {
       n.push(e.data.name);
     });
     return utils.uniquea(n);
@@ -75,7 +84,7 @@ class Variables {
   build(env) {
     env['COMPONENT_ANCHOR'] = this.anchor;
     env['COMPONENT_ORIGIN'] = this.origin;
-    for(const e of this.items) {
+    for (const e of this.items) {
       let data = e.data;
       data.env = env;
       env[e.data.name] = e.callback(null, data);

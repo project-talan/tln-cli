@@ -3,21 +3,24 @@
 
 const os = require('os');
 const path = require('path');
+const logger = require('./src/logger');
+const context = require('./src/context');
+const utils = require('./src/utils');
+const filter = require('./src/filter');
 
 const cwd = process.cwd();
 const argv = require('yargs')
     .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
-    .option('verbose', {
-      alias: 'v', count: true, default: 0
-    })
-    .option('presets-dest', {
-      describe: 'Presets will be deployed using path, defined by this option',
-      default: null
-    })
+    .option('verbose', { alias: 'v', count: true, default: 0 })
+    .option('r', { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
+    .option('p', { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
+    .option('l', { describe: 'validate generated scripts without execution by dumping sources to the console', alias: 'validate', default: false, type: 'boolean' })
+    .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+    .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
+    .option('presets-dest', { describe: 'Presets will be deployed using path, defined by this option', default: null })
     .command(
-      'about',
-      'dislay project information',
+      'about', 'Dislay project information',
       (yargs) => {
       },
       (argv) => {
@@ -34,117 +37,115 @@ const argv = require('yargs')
       }
     )
     .command(
-      'init-conf [repo] [-f] [-l]',
-      'Generate initial configuration file in current folder or checkout git repo with shared configuration',
+      'init-conf [repo] [-f] [-l]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
-          .option('repo', {
-            describe: 'git repository url',
-            default: '', type: 'string'
-          })
-          .option('f', {
-            describe: 'force override config file, if exists',
-            alias: 'force', default: false, type: 'boolean'
-          })
-          .option('l', {
-            describe: 'remove help information from the template',
-            alias: 'lightweight', default: false, type: 'boolean'
-          })
+          .option('repo', { describe: 'Git repository url', default: '', type: 'string' })
+          .option('f', { describe: 'Force override config file, if exists', alias: 'force', default: false, type: 'boolean' })
+          .option('l', { describe: 'Remove help information from the template', alias: 'lightweight', default: false, type: 'boolean' })
       },
       (argv) => {
-        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+        const log = logger.create(argv.verbose);
+        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
           .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
     .command(
-      'inspect [components] [-y]',
-      'Display component internal structure',
+      'filter [--pattern]', 'Display current platform definition, which will be used during steps filtering',
       (yargs) => {
         yargs
-          .positional('components', {
-            describe: 'delimited by colon components, i.e. boost:bootstrap',
-            default: '', type: 'string'
-          })
-          .option('y', {
-            describe: 'output using yaml format instead of json',
-            alias: 'yaml', default: false, type: 'boolean'
-          })
+          .option('pattern', { describe: 'Match pattern will filter baseline', default: null, type: 'string' })
       },
-      (argv) => {
-        require('./src/appl').create(argv.verbose, cwd, __dirname, argv.presetsDest)
+      async (argv) => {
+        const log = logger.create(argv.verbose);
+        const f = filter.create(log);
+        await f.configure();
+        log.con(f.filter);
+        if (argv.pattern) {
+          log.con(argv.pattern, f.validate(argv.pattern)?'match':'not match');
+        }
+      }
+    )
+    .command(
+      'inspect [components] [-y]', 'Display component internal structure',
+      (yargs) => {
+        yargs
+          .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+          .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
+      },
+      async (argv) => {
+        const log = logger.create(argv.verbose);
+        const f = filter.create(log);
+        await f.configure();
+        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
           .resolve(argv.components).forEach( (component) => {
-            component.inspectComponent({/*filter, */ yaml: argv.yaml}, (...args) => { component.logger.con.apply(component.logger, args); });
+            const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, false);
+            component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
           });
       }
     )
     .command(
-      'ls [components] [-d]',
-      'display components hierarchy',
+      'ls [components] [-d]', 'Display components hierarchy',
       (yargs) => {
         yargs
-          .positional('components', {
-            describe: 'delimited by colon components, i.e. boost:bootstrap',
-            default: '', type: 'string'
-          })
-          .option('d', {
-            describe: 'depth level',
-            alias: 'depth', default: -1, type: 'number'
-          })
+          .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+          .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
       },
       (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        appl.resolve(argv.components).forEach(function(component) {
-          logger.trace('resolved', component.getId());
-          component.print(function(...args) { console.log.apply(console, args); }, argv.depth);
-        });
-        */
+        const log = logger.create(argv.verbose);
+        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
+          .resolve(argv.components).forEach( (component) => {
+            component.print(function(...args) { component.logger.con.apply(component.logger, args); }, argv.depth);
+          });
+      }
+    )
+    .command(
+      'exec [components] [-r] [-p] [-c] [-i]', 'Execute specified command or script',
+      (yargs) => {
+        yargs
+          .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+          .option('c', { describe: 'Shell command to execute', alias: 'command', type: 'string' })
+          .option('i', { describe: 'Script name to execute', alias: 'input', type: 'string' })
+          .conflicts('c', 'i')
+      }, 
+      async (argv) => {
+        const log = logger.create(argv.verbose);
+        const appl = require('./src/appl').create(log, cwd, __dirname, argv.presetsDest);
+        const input = (argv.input)?(path.join(appl.currentComponent.home, argv.input)):(argv.input);
+        for(const component of appl.resolve(argv.components)) {
+          const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
+          if (argv.parallel) {
+            component.execute(argv.command, input, argv.recursive, cntx);
+          } else {
+            await component.execute(argv.command, input, argv.recursive, cntx);
+          }
+        }
       }
     )
     // TODO add ability to define additional env files and environment variables
     .command(
-      ['exec <steps> [components] [-r] [-p] [-s] [-l]', '$0'],
-      'execute set of steps over set of components',
+      ['$0 <steps> [components] [-r] [-p] [-s] [-l]'], 'execute set of steps over set of components',
       (yargs) => {
         yargs
-          .positional('steps', {
-            describe: 'delimited by colon steps, i.e build:test',
-            type: 'string'
-          })
-          .positional('components', {
-            describe: 'delimited by colon components, i.e. boost:bootstrap',
-            default: '', type: 'string'
-          })
-          .option('r', {
-            describe: 'execute commands recursively for all direct child components',
-            alias: 'recursive', default: false, type: 'boolean'
-          })
-          .option('p', {
-            describe: 'execute commands for multiple components in parallel',
-            alias: 'parallel', default: false, type: 'boolean'
-          })
-          .option('s', {
-            describe: 'generate and save scripts inside component folder, otherwise temp folder will be used',
-            alias: 'save', default: false, type: 'boolean'
-          })
-          .option('l', {
-            describe: 'validate generated scripts without execution by dumping sources to the console',
-            alias: 'validate', default: false, type: 'boolean'
-          })
-      }, (argv) => {
-        /*
-        const logger = require('./src/logger').create(argv.verbose);
-        const appl = require('./src/appl').create(logger, __dirname);
-        const parameters = require('./src/parameters');
-        //
-        appl.configure()
-          .then(async (filter) => {
-            for(const component of appl.resolve(argv.components)) {
-              await component.execute(argv.steps.split(':'), filter, argv.recursive, argv.parallel, parameters.create("", argv.save, argv.validate, argv, [], []));
-            }
-          });
-        */
+          .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
+          .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+          .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
+          .demandOption(['steps'], 'Please provide steps(s) you need to run')
+      },
+      async (argv) => {
+        const log = logger.create(argv.verbose);
+        const f = filter.create(log);
+        await f.configure();
+        const appl = require('./src/appl').create(log, cwd, __dirname, argv.presetsDest);
+        for (const component of appl.resolve(argv.components)) {
+          const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
+          const steps = argv.steps.split(':');
+          if (argv.parallel) {
+            component.run(steps, f, argv.recursive, cntx);
+          } else {
+            await component.run(steps, f, argv.recursive, cntx);
+          }
+        }
       }
     )
     .argv;
