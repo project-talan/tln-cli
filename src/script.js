@@ -7,8 +7,10 @@ const { spawn } = require('child_process');
 const tempfile = require('tempfile');
 
 class Script {
-  constructor(logger, uuid, options, builder) {
+  constructor(logger, uuid, name, options, builder) {
     this.logger = logger;
+    this.uuid = uuid;
+    this.name = name;
     this.options = options;
     this.builder = builder;
     this.env = {};
@@ -117,8 +119,8 @@ class Script {
   }
 }
 
-module.exports.create = (logger, uuid, options, builder) => {
-  return new Script(logger, uuid, options, builder);
+module.exports.create = (logger, uuid, name, options, builder) => {
+  return new Script(logger, uuid, name, options, builder);
 }
 
 /*

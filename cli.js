@@ -62,7 +62,7 @@ const argv = require('yargs')
         await f.configure();
         log.con(f.filter);
         if (argv.pattern) {
-          log.con( argv.pattern, f.validate(argv.pattern)?'match':'not match');
+          log.con(argv.pattern, f.validate(argv.pattern)?'match':'not match');
         }
       }
     )
@@ -73,11 +73,14 @@ const argv = require('yargs')
           .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
           .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
       },
-      (argv) => {
+      async (argv) => {
         const log = logger.create(argv.verbose);
+        const f = filter.create(log);
+        await f.configure();
         require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
           .resolve(argv.components).forEach( (component) => {
-            component.inspectComponent({/*filter, */ yaml: argv.yaml}, (...args) => { component.logger.con.apply(component.logger, args); });
+            const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, false);
+            component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
           });
       }
     )

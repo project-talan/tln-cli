@@ -17,13 +17,7 @@ class Component {
     this.id = id;
     this.uuid = 'tln';
     if (this.parent) {
-      let ids = [this.id];
-      let p = this.parent;
-      while(p){
-        ids.push(p.id);
-        p = p.parent;
-      }
-      this.uuid = ids.join('.');
+      this.uuid = [this.parent.uuid, this.id].join('.');
     }
     this.descriptions = descriptions;
     this.components = [];
@@ -285,7 +279,7 @@ class Component {
   * Print all information about component
   * params:
   */
-  inspectComponent(options, cout) {
+  inspectComponent(filter, cntx, yaml, cout) {
     let r = {};
     r.id = this.id;
     r.home = this.home;
@@ -298,8 +292,9 @@ class Component {
     r.tags = [];
     r.inherits = [];
     r.depends = [];
+    //
+    const steps = this.findStep('*', filter, this.home, cntx.clone(), []);
     /*/
-    const execScope = this.findStep('*', filter, home, { vars: [], envFiles: [], steps:[] }, []);
     r.env = {};
     const vars = environment.create(this.logger, home, this.getId()).build(execScope.vars);
     for(let v in vars) {
@@ -309,12 +304,13 @@ class Component {
     for(const ef of execScope.envFiles) {
       r.dotenvs.push(ef);
     }
-    r.steps = [];
-    for(const s of execScope.steps) {
-      r.steps.push(s.name);
-    }
     /*/
-    if (options.yaml) {
+    r.steps = [];
+    for(const step of steps) {
+      r.steps.push(step.script.uuid);
+    }
+    //
+    if (yaml) {
       cout((require('yaml')).stringify(r));
     } else {
       cout(JSON.stringify(r, null, 2));
@@ -474,7 +470,7 @@ class Component {
       if (d.description.inherits) {
         const inheritComponents = this.resolve(d.description.inherits());
         for (const component of inheritComponents) {
-          r = component.findStep(step, filter, home, cntx.clone(component.home), component.parent);
+          r = component.findStep(step, filter, home, cntx.clone(component.home), r, component.parent);
         }
       }
       // collect environment files
@@ -503,12 +499,12 @@ class Component {
                             suffix.push(`${i}`);
                           }
               */
-              const scriptUid = s.id + '@' + this.getUuid([`${i}`]);
+              const scriptUuid = s.id + '@' + this.getUuid([`${i}`]);
               const scriptName = s.id + '@' + this.getUuid([]);
-              if (!r.find(es => es.script.uuid === scriptUid)) {
+              if (!r.find(es => es.script.uuid === scriptUuid)) {
                 r.push(
                   {
-                    script: script.create(this.logger, this.uuid, opts, s.script),
+                    script: script.create(this.logger, scriptUuid, scriptName, opts, s.script),
                     cntx: cntx,
                   });
               }
