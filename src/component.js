@@ -282,6 +282,7 @@ class Component {
   inspectComponent(filter, cntx, yaml, cout) {
     let r = {};
     r.id = this.id;
+    r.uuid = this.uuid;
     r.home = this.home;
     //r.uuid = this.uuid;
     r.parent = (this.parent)?(this.parent.id):(null);
