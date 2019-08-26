@@ -301,7 +301,7 @@ class Component {
     const steps = this.findStep('*', filter, this.home, cntx.clone(), []);
     //
     r.env = {};
-    const {vars, env} = this.buildEnvironment(this.getVariables());
+    const {vars/*, env*/} = this.buildEnvironment(this.getVariables());
     for(let v in vars) {
       r.env[v] = vars[v];
     }
@@ -508,7 +508,7 @@ class Component {
           s.set(file)
         } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       });
-      const {vars, env} = this.buildEnvironment(this.getVariables());
+      const {/*vars, */env} = this.buildEnvironment(this.getVariables());
       await scriptToExecute.execute(cntx, env);
     }
   }
@@ -593,7 +593,7 @@ class Component {
     // collect steps from descs, interits, parents
     for(const step of steps) {
       const list2execute = this.findStep(step, filter, this.home, cntx.clone(), []);
-      const {vars, env} = this.buildEnvironment(this.getVariables());
+      const {/*vars, */env} = this.buildEnvironment(this.getVariables());
       //
       if (list2execute.length) {
         for(const item of list2execute) {

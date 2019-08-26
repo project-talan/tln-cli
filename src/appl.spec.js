@@ -20,7 +20,7 @@ describe('application', function() {
   afterEach(function () {
   })
 
-  it('Application can be created', function() {
+  it.skip('Application can be created', function() {
     /*
     mockfs({
       'home': {
