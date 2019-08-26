@@ -439,7 +439,7 @@ class Component {
   */
   buildEnvironment(variables) {
     let names = [];
-    let env = process.env;
+    let env = {...process.env};
     //
     env['COMPONENT_HOME'] = this.home;
     env['COMPONENT_ID'] = this.id;

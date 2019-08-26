@@ -9,6 +9,11 @@ const utils = require('./src/utils');
 const filter = require('./src/filter');
 
 const cwd = process.cwd();
+if (process.env['Path']) {
+  const p = process.env['Path'];
+  delete process.env['Path'];
+  process.env['PATH'] = p;
+}
 const argv = require('yargs')
     .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
