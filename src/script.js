@@ -1,69 +1,73 @@
 'use strict';
 
-const path = require('path');
+const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const { spawn } = require('child_process');
 const tempfile = require('tempfile');
-const utils = require('./utils');
-const context = require('./context');
-const os = require('os');
 
 class Script {
-  constructor(logger, params) {
+  constructor(logger, uuid, name, options, builder) {
     this.logger = logger;
-    this.uid = params.uid;
-    this.name = params.name;
-    this.options = params.options;
-    this.fn = params.fn;
+    this.uuid = uuid;
+    this.name = name;
+    this.options = options;
+    this.builder = builder;
+    this.env = {};
+    this.body = null;
+    this.ext = (os.platform() === 'win32') ? ('cmd') : ('sh');
+    this.prefix = (os.platform() === 'win32') ? (['echo off']) : (['#!/bin/bash -e']);
   }
 
-  getUid() {
-    return this.uid;
+  set(body) {
+    this.body = body;
   }
-
-  //
-  // ? should we force to create path to component when execute ?
-  // TODO: add windows cmd script
-  async execute(params) {
-    const scriptExtention = (os.platform() === 'win32')?('cmd'):('sh');
-    const home = params.home;
-    // prepare context
-    const cntx = context.create(this.logger);
-    cntx.updateEnv(params.env);
-    cntx.updateEnv(this.options.parse(params.argv));
+  /*
+  * Build and execute script
+  * params:
+  */
+  async execute(context, environment = {}) {
+    const home = context.home;
+    // prepare environment
+    let envFromOptions = {};
+    if (this.options) {
+      envFromOptions = this.options.parse(context.argv);
+    }
+    this.env = {...environment, ...envFromOptions, ...context.env};
     // create component location if not exists
     if (!fs.existsSync(home)) {
       fs.mkdirSync(home, { recursive: true });
     }
-    //
-    const r = this.fn(null, cntx);
-    const script = cntx.get();
-    if (script) {
+    // TODO: pass proxy object instead of script itself
+    const result = this.builder(null, this);
+    const body = this.body;
+    if (body) {
       let fl = null;
-      if (typeof script === 'string') {
+      if (typeof body === 'string') {
         // string represents script file name
-        fl = path.join(home, `${script}.${scriptExtention}`);
-      } else if (script instanceof Array) {
-        if (params.save) {
-          fl = path.join(home, `${this.name}.${scriptExtention}`);
+        fl = body;
+      } else if (body instanceof Array) {
+        if (context.save) {
+          fl = path.join(home, `${this.name}.${this.ext}`);
         } else {
-          fl = tempfile(`.${scriptExtention}`);
+          fl = tempfile(`.${this.ext}`);
         }
-        let envFiles = [];
-        for(const e of params.envFiles) {
-          envFiles.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
+        let dotenvs = [];
+        // TODO create variant for windows environment
+        for (const e of context.dotenvs) {
+          dotenvs.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
         }
         //
-        fs.writeFileSync(fl, ((['#!/bin/bash -e'].concat(envFiles)).concat(script)).join('\n'));
+        fs.writeFileSync(fl, this.prefix.concat(dotenvs).concat(body).join('\n'));
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
-        if (params.validate) {
+        if (context.validate) {
           // output script to the console
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
           // run script from file
-          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: cntx.getEnv()};
+          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: this.env};
           if (fs.existsSync(home)) {
             opt.cwd = home;
           }
@@ -78,7 +82,6 @@ class Script {
                 this.logger.info(`stderr: ${data}`)
               })
               /*/
-
               child.on('close', (code) => {
                 /*/
                 if (code !== 0)
@@ -93,13 +96,43 @@ class Script {
           await spawnPromise(fl, [], opt);
         }
       } else {
-        this.logger.error(`${this.uid} could not save execution script: ${script}`);
+        this.logger.error(`${context.uuid} could not save execution script: ${body}`);
       }
     }
-    return r;
+    return result;
+
+
+
+
+
+
+    /*     if (fs.existsSync(this.home)) {
+      if (recursive) {
+        this.construct();
+        this.components.forEach(function (component) {
+          component.executeCommand(command, recursive);
+        })
+      }
+      this.logger.con(execSync(command, { cwd: this.home }).toString());
+    }
+ */
   }
 }
 
-module.exports.create = (logger, params) => {
-  return new Script(logger, params);
+module.exports.create = (logger, uuid, name, options, builder) => {
+  return new Script(logger, uuid, name, options, builder);
 }
+
+/*
+const utils = require('./utils');
+const context = require('./context');
+
+
+  //
+  // ? should we force to create path to component when execute ?
+  // TODO: add windows cmd script
+  async execute(params) {
+    //
+  }
+
+*/

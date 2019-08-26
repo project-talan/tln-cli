@@ -1,27 +1,41 @@
 'use strict';
 
+const os = require('os');
+const getos = require('getos');
+const utils = require('./utils');
+
 class Filter {
-  constructor(logger, config) {
+  constructor(logger) {
     this.logger = logger;
-    this.config = config;
-    this.desc = '';
-    for(let n in this.config) {
-      this.desc = `${this.desc} ${this.config[n]}`;
-    }
-    this.desc = this.desc.toLowerCase();
+    this.data = [os.type(), os.platform(), os.release()];
   }
 
   //
-  validate(node) {
-    if (node && node.filter) {
-      const r = this.desc.match(node.filter);
-      return (r !== null);
+  validate(pattern) {
+    if (pattern) {
+      return (this.filter.match(pattern) !== null);
     }
     return true;
   }
 
+  configure() {
+    return new Promise( (resolve, reject) => {
+      getos((e,os) => {
+        if(e) {
+          this.logger.error(e);
+        } else {
+          Object.keys(os).forEach( k => {
+            this.data.push(os[k]);
+          });
+          this.filter = utils.uniquea(this.data.map( v => v.toLowerCase())).join(';');
+        }
+        resolve();
+      });
+    });
+  }
+
 }
 
-module.exports.create = (logger, config) => {
-  return new Filter(logger, config);
+module.exports.create = (logger) => {
+  return new Filter(logger);
 }

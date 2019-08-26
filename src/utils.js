@@ -5,30 +5,48 @@ const fs = require('fs');
 const os = require('os');
 
 module.exports = {
-  tlnFolderName: '.tln',
+/*
   prefix: function(obj, method) { 
     return `[${obj.constructor.name}::${method}]`; 
   },
   quote: function(str) { 
     return `'${str}'`; 
   },
+*/
+  tlnFolderName: '.tln',
+  tlnConfTemplate: '.tln.conf.template',
+  //
   uniquea: function(arr, cmp = function(a, i, p){ return a.indexOf(i) == p; }){
     return arr.filter(function(item, pos) {
       return cmp(arr, item, pos);
     });
   },
+  //
   isRootPath(p) {
     // TODO validate expression at windows box
     const root = (os.platform == "win32") ? `${process.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
     return (p === root);
   },
+  //
   getConfFile(p) {
     return path.join(p, '.tln.conf');
   },
+  //
   getConfFolder(p, folder = '.tln') {
     return path.join(p, folder);
   },
-  isDescriptionPresent(p) {
+  //
+  isConfPresent(p) {
     return (fs.existsSync(module.exports.getConfFile(p)) || fs.existsSync(module.exports.getConfFolder(p)));
+  },
+  //
+  parseEnv(env) {
+    let r = {};
+    for (const e of env) {
+      const pair = e.split('=');
+      r[pair[0]] = pair[1]?pair[1]:'';
+    }
+    return r;
   }
+
 }

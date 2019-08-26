@@ -1,31 +1,27 @@
 'use strict';
 
 class Context {
-  constructor(logger) {
-    this.logger = logger;
-    this.env = {};
-    this.script = null;
+  constructor(home, name, uuid, argv, env, dotenvs, save, validate) {
+    this.home = home;           // cwd were script will be executed
+    this.name = name;           // script name
+    this.uuid = uuid;           // source component identifier
+    this.argv = argv;           // command line parameters
+    this.env = { ...env };      // environment varaibles which will be used during execution
+    this.dotenvs = dotenvs;     // array of env files need to be included into script
+    this.save = save;           // generated script will be saved into file
+    this.validate = validate;   // script content will be dump to the console without execution
   }
 
-  getEnv() {
-    return this.env;
+  addDotenvs(donenvs) {
+    this.dotenvs = this.dotenvs.concat(donenvs);
   }
 
-  updateEnv(vars) {
-    for (let [key, value] of Object.entries(vars)) {
-      this.env[key] = value;
-    }
+  clone(home = null) {
+    return module.exports.create((home)?home:this.home, this.name, this.uuid, this.argv, this.env, this.dotenvs, this.save, this.validate );
   }
 
-  set(script) {
-    this.script = script;
-  }
-
-  get(script) {
-    return this.script;
-  }
 }
 
-module.exports.create = (logger) => {
-  return new Context(logger);
+module.exports.create = (home, name, uuid, argv, env, dotenvs, save, validate) => {
+  return new Context(home, name, uuid, argv, {...env}, [...dotenvs], save, validate);
 }

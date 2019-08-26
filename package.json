@@ -1,10 +1,19 @@
 {
   "name": "tln-cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Multi-projects management tool",
   "main": "cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "nyc --reporter=text --reporter=lcov mocha **/*spec.js"
+  },
+  "nyc": {
+    "all": true,
+    "include": [
+      "src/**/*.js"
+    ],
+    "exclude": [
+      "**/*.spec.js"
+    ]
   },
   "bin": {
     "tln": "./cli.js"
@@ -25,10 +34,18 @@
   },
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
+    "getos": "^3.1.1",
+    "json-fn": "^1.1.1",
     "log4js": "^3.0.6",
-    "lsb-release": "^0.1.0",
     "tempfile": "^2.0.0",
     "yaml": "^1.6.0",
     "yargs": "^12.0.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.2.0",
+    "mock-fs": "^4.10.1",
+    "nyc": "^14.1.1",
+    "sinon": "^7.4.1"
   }
 }
