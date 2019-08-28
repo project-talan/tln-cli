@@ -10,12 +10,21 @@ class Tln {
   *
   * params:
   */
-  constructor(logger) {
+  constructor(logger, filter) {
     this.logger = logger;
+    this.filter = filter;
+  }
+
+  /*
+    *
+    * params:
+    */
+  getOsInfo() {
+    return {...this.filter.osInfo};
   }
 
 }
 
-module.exports.create = (logger) => {
-  return new Tln(logger);
+module.exports.create = (logger, filter) => {
+  return new Tln(logger, filter);
 }

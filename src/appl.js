@@ -12,7 +12,7 @@ class Appl {
   *
   * params:
   */
-  constructor(logger, cwd, cliHome, presetsDest) {
+  constructor(logger, tln, cwd, cliHome, presetsDest) {
     this.presetsDest = presetsDest;
     this.logger = logger;
     //
@@ -48,7 +48,7 @@ class Appl {
     this.logger.info('Cwd:', cwd);
     this.logger.info('Folders:', folders);
     //
-    this.rootComponent = require('./component').createRoot(this.logger, projectsHome, cliHome, psDest);
+    this.rootComponent = require('./component').createRoot(this.logger, tln, projectsHome, cliHome, psDest);
     this.currentComponent = this.rootComponent;
     folders.forEach((folder) => {
       this.currentComponent = this.currentComponent.dive(folder, true);
@@ -82,6 +82,6 @@ class Appl {
 
 }
 
-module.exports.create = (logger, cwd, cliHome, presetsDest) => {
-  return new Appl(logger, cwd, cliHome, presetsDest);
+module.exports.create = (logger, tln, cwd, cliHome, presetsDest) => {
+  return new Appl(logger, tln, cwd, cliHome, presetsDest);
 }

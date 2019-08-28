@@ -7,13 +7,26 @@ const logger = require('./src/logger');
 const context = require('./src/context');
 const utils = require('./src/utils');
 const filter = require('./src/filter');
+const tln = require('./src/tln');
+const appl = require('./src/appl');
 
+// workaround for windows Path definition
 const cwd = process.cwd();
 if (process.env['Path']) {
   const p = process.env['Path'];
   delete process.env['Path'];
   process.env['PATH'] = p;
 }
+
+const scope = async(verbose, presetsDest) => {
+  const l = logger.create(verbose);
+  const f = filter.create(l);
+  await f.configure();
+  const t = tln.create(l, f);
+  const a = appl.create(l, t, process.cwd(), __dirname, presetsDest);
+  return {l: l, f: f, t: t, a: a};
+}
+
 const argv = require('yargs')
     .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
@@ -49,10 +62,9 @@ const argv = require('yargs')
           .option('f', { describe: 'Force override config file, if exists', alias: 'force', default: false, type: 'boolean' })
           .option('l', { describe: 'Remove help information from the template', alias: 'lightweight', default: false, type: 'boolean' })
       },
-      (argv) => {
-        const log = logger.create(argv.verbose);
-        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
-          .initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
+      async (argv) => {
+        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        a.initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
     .command(
@@ -62,12 +74,10 @@ const argv = require('yargs')
           .option('pattern', { describe: 'Match pattern will filter baseline', default: null, type: 'string' })
       },
       async (argv) => {
-        const log = logger.create(argv.verbose);
-        const f = filter.create(log);
-        await f.configure();
-        log.con(f.filter);
+        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        l.con(f.filter);
         if (argv.pattern) {
-          log.con(argv.pattern, f.validate(argv.pattern)?'match':'not match');
+          l.con(argv.pattern, f.validate(argv.pattern)?'match':'not match');
         }
       }
     )
@@ -79,14 +89,11 @@ const argv = require('yargs')
           .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
       },
       async (argv) => {
-        const log = logger.create(argv.verbose);
-        const f = filter.create(log);
-        await f.configure();
-        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
-          .resolve(argv.components).forEach( (component) => {
+        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        a.resolve(argv.components).forEach( (component) => {
             const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, false);
             component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
-          });
+        });
       }
     )
     .command(
@@ -96,12 +103,11 @@ const argv = require('yargs')
           .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
           .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
       },
-      (argv) => {
-        const log = logger.create(argv.verbose);
-        require('./src/appl').create(log, cwd, __dirname, argv.presetsDest)
-          .resolve(argv.components).forEach( (component) => {
+      async (argv) => {
+        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        a.resolve(argv.components).forEach( (component) => {
             component.print(function(...args) { component.logger.con.apply(component.logger, args); }, argv.depth);
-          });
+        });
       }
     )
     .command(
@@ -114,10 +120,9 @@ const argv = require('yargs')
           .conflicts('c', 'i')
       }, 
       async (argv) => {
-        const log = logger.create(argv.verbose);
-        const appl = require('./src/appl').create(log, cwd, __dirname, argv.presetsDest);
-        const input = (argv.input)?(path.join(appl.currentComponent.home, argv.input)):(argv.input);
-        for(const component of appl.resolve(argv.components)) {
+        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const input = (argv.input)?(path.join(a.currentComponent.home, argv.input)):(argv.input);
+        for(const component of a.resolve(argv.components)) {
           const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
           if (argv.parallel) {
             component.execute(argv.command, input, argv.recursive, cntx);
@@ -138,11 +143,8 @@ const argv = require('yargs')
           .demandOption(['steps'], 'Please provide steps(s) you need to run')
       },
       async (argv) => {
-        const log = logger.create(argv.verbose);
-        const f = filter.create(log);
-        await f.configure();
-        const appl = require('./src/appl').create(log, cwd, __dirname, argv.presetsDest);
-        for (const component of appl.resolve(argv.components)) {
+        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        for (const component of a.resolve(argv.components)) {
           const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
           const steps = argv.steps.split(':');
           if (argv.parallel) {

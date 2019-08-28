@@ -26,7 +26,7 @@ class Script {
   * Build and execute script
   * params:
   */
-  async execute(context, environment = {}) {
+  async execute(context, tln, environment = {}) {
     const home = context.home;
     // prepare environment
     let envFromOptions = {};
@@ -39,7 +39,7 @@ class Script {
       fs.mkdirSync(home, { recursive: true });
     }
     // TODO: pass proxy object instead of script itself
-    const result = this.builder(null, this);
+    const result = this.builder(tln, this);
     const body = this.body;
     if (body) {
       let fl = null;
