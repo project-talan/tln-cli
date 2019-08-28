@@ -8,7 +8,7 @@ class Filter {
   constructor(logger) {
     this.logger = logger;
     this.osInfo = {
-      os: os.type(),
+      type: os.type(),
       platform: os.platform(),
       kernel: os.release()
     };
