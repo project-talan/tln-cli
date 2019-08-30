@@ -89,7 +89,7 @@ const argv = require('yargs')
           .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
       },
       async (argv) => {
-        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         a.resolve(argv.components).forEach( (component) => {
             const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, false);
             component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
@@ -104,7 +104,7 @@ const argv = require('yargs')
           .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
       },
       async (argv) => {
-        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         a.resolve(argv.components).forEach( (component) => {
             component.print(function(...args) { component.logger.con.apply(component.logger, args); }, argv.depth);
         });
@@ -120,7 +120,7 @@ const argv = require('yargs')
           .conflicts('c', 'i')
       }, 
       async (argv) => {
-        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         const input = (argv.input)?(path.join(a.currentComponent.home, argv.input)):(argv.input);
         for(const component of a.resolve(argv.components)) {
           const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
@@ -143,7 +143,7 @@ const argv = require('yargs')
           .demandOption(['steps'], 'Please provide steps(s) you need to run')
       },
       async (argv) => {
-        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         for (const component of a.resolve(argv.components)) {
           const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
           const steps = argv.steps.split(':');
