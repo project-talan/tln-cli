@@ -7,7 +7,11 @@ const utils = require('./utils');
 class Filter {
   constructor(logger) {
     this.logger = logger;
-    this.data = [os.type(), os.platform(), os.release()];
+    this.osInfo = {
+      type: os.type(),
+      platform: os.platform(),
+      kernel: os.release()
+    };
   }
 
   //
@@ -24,10 +28,12 @@ class Filter {
         if(e) {
           this.logger.error(e);
         } else {
-          Object.keys(os).forEach( k => {
-            this.data.push(os[k]);
+          this.osInfo = {...this.osInfo, ...os};
+          let data = [];
+          Object.keys(this.osInfo).forEach( k => {
+            data.push(this.osInfo[k]);
           });
-          this.filter = utils.uniquea(this.data.map( v => v.toLowerCase())).join(';');
+          this.filter = utils.uniquea(data.map( v => v.toLowerCase())).join(';');
         }
         resolve();
       });

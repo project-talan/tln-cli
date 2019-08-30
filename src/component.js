@@ -10,8 +10,9 @@ const options = require('./options');
 const variables = require('./variables');
 
 class Component {
-  constructor(logger, home, parent, id, descriptions) {
+  constructor(logger, tln, home, parent, id, descriptions) {
     this.logger = logger;
+    this.tln = tln;
     this.home = home;
     this.parent = parent;
     this.id = id;
@@ -349,7 +350,7 @@ class Component {
       // create child entity, should we get home from description?
       const eh = path.join(this.home, id);
       if (utils.isConfPresent(eh) || descriptions.length || force) {
-        component = new Component(this.logger, eh, this, id, descriptions);
+        component = new Component(this.logger, this.tln, eh, this, id, descriptions);
         component.loadDescriptions();
         this.components.push(component);
       }
@@ -509,7 +510,7 @@ class Component {
         } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       });
       const {/*vars, */env} = this.buildEnvironment(this.getVariables());
-      await scriptToExecute.execute(cntx, env);
+      await scriptToExecute.execute(cntx, this.tln, env);
     }
   }
 
@@ -543,7 +544,7 @@ class Component {
       // collect environment files
       let dontenvs = [];
       if (d.description.dotenvs) {
-        dontenvs = d.description.dotenvs();
+        dontenvs = d.description.dotenvs(null);
       }
       const relativePath = path.relative(home, this.home);
       cntx.addDotenvs(dontenvs.map((v, i, a) => path.join(relativePath, v)));
@@ -597,7 +598,7 @@ class Component {
       //
       if (list2execute.length) {
         for(const item of list2execute) {
-          if (!! await item.script.execute(item.cntx, env)){
+          if (!! await item.script.execute(item.cntx, this.tln, env)){
             break;
           }
         }
@@ -621,12 +622,12 @@ class Component {
 
 }
 
-module.exports.createRoot = (logger, home, presetsSrc, presetsDest) => {
-  const root = new Component(logger, home, null, '/', []);
+module.exports.createRoot = (logger, tln, home, presetsSrc, presetsDest) => {
+  const root = new Component(logger, tln, home, null, '/', []);
   root.loadDescriptionsFromFolder(presetsSrc, presetsDest, 'presets');
   root.loadDescriptions();
   return root;
 }
-module.exports.create = (logger, home, parent, id, descriptions) => {
-  return new Component(logger, home, parent, id, descriptions);
+module.exports.create = (logger, tln, home, parent, id, descriptions) => {
+  return new Component(logger, tln, home, parent, id, descriptions);
 }
