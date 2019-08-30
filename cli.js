@@ -63,7 +63,7 @@ const argv = require('yargs')
           .option('l', { describe: 'Remove help information from the template', alias: 'lightweight', default: false, type: 'boolean' })
       },
       async (argv) => {
-        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         a.initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
