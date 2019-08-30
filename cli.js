@@ -74,7 +74,7 @@ const argv = require('yargs')
           .option('pattern', { describe: 'Match pattern will filter baseline', default: null, type: 'string' })
       },
       async (argv) => {
-        const {l, f, t, a} = await scope(argv.verbose, argv.presetsDest);
+        const {l, f/*, t, a*/} = await scope(argv.verbose, argv.presetsDest);
         l.con(f.filter);
         if (argv.pattern) {
           l.con(argv.pattern, f.validate(argv.pattern)?'match':'not match');
