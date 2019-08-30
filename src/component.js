@@ -1,4 +1,5 @@
 'use strict'
+
 const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -299,19 +300,20 @@ class Component {
     r.inherits = [];
     r.depends = [];
     //
-    const steps = this.findStep('*', filter, this.home, cntx.clone(), []);
+    const cContext = cntx.clone();
+    const steps = this.findStep('*', filter, this.home, cContext, []);
     //
     r.env = {};
     const {vars/*, env*/} = this.buildEnvironment(this.getVariables());
     for(let v in vars) {
       r.env[v] = vars[v];
     }
-    /*/
+    //
     r.dotenvs = [];
-    for(const ef of execScope.envFiles) {
-      r.dotenvs.push(ef);
+    for(const de of cContext.dotenvs) {
+      r.dotenvs.push(de);
     }
-    /*/
+    //
     r.steps = [];
     for(const step of steps) {
       r.steps.push(step.script.uuid);
@@ -428,7 +430,7 @@ class Component {
     for (const d of this.descriptions) {
       if (d.description.variables) {
         const v = variables.create(this.home, orig);
-        d.description.variables(null, v);
+        d.description.variables(this.tln, v);
         r.push({source: d.source, vars: v});
       }
     }
@@ -544,7 +546,8 @@ class Component {
       // collect environment files
       let dontenvs = [];
       if (d.description.dotenvs) {
-        dontenvs = d.description.dotenvs(null);
+        dontenvs = d.description.dotenvs(this.tln);
+        this.logger.con(dontenvs);
       }
       const relativePath = path.relative(home, this.home);
       cntx.addDotenvs(dontenvs.map((v, i, a) => path.join(relativePath, v)));
@@ -554,7 +557,7 @@ class Component {
         // steps' options
         let opts = options.create(this.logger);
         if (d.description.options) {
-          d.description.options(null, opts);
+          d.description.options(this.tln, opts);
         }
         for (const s of d.description.steps()) {
           // is it our step

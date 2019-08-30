@@ -14,6 +14,7 @@ class Context {
 
   addDotenvs(donenvs) {
     this.dotenvs = this.dotenvs.concat(donenvs);
+    console.log(this.dotenvs);
   }
 
   clone(home = null) {
