@@ -300,8 +300,7 @@ class Component {
     r.inherits = [];
     r.depends = [];
     //
-    const cContext = cntx.clone();
-    const steps = this.findStep('*', filter, this.home, cContext, []);
+    const steps = this.findStep('*', filter, this.home, cntx, []);
     //
     r.env = {};
     const {vars/*, env*/} = this.buildEnvironment(this.getVariables());
@@ -310,7 +309,7 @@ class Component {
     }
     //
     r.dotenvs = [];
-    for(const de of cContext.dotenvs) {
+    for(const de of cntx.collectDotenvs()) {
       r.dotenvs.push(de);
     }
     //
@@ -531,7 +530,7 @@ class Component {
     let r = result;
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
-      r = this.parent.findStep(step, filter, home, cntx.clone(), r);
+      r = this.parent.findStep(step, filter, home, cntx.cloneAsChild(), r);
     }
     let i = -1; // calculate descs count to simplify scripts' names
     for (const d of this.descriptions) {
@@ -540,14 +539,13 @@ class Component {
       if (d.description.inherits) {
         const inheritComponents = this.resolve(d.description.inherits());
         for (const component of inheritComponents) {
-          r = component.findStep(step, filter, home, cntx.clone(), r, component.parent);
+          r = component.findStep(step, filter, home, cntx.cloneAsParant(), r, component.parent);
         }
       }
       // collect environment files
       let dontenvs = [];
       if (d.description.dotenvs) {
         dontenvs = d.description.dotenvs(this.tln);
-        this.logger.con(dontenvs);
       }
       const relativePath = path.relative(home, this.home);
       cntx.addDotenvs(dontenvs.map((v, i, a) => path.join(relativePath, v)));

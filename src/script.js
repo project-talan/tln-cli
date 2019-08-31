@@ -26,14 +26,14 @@ class Script {
   * Build and execute script
   * params:
   */
-  async execute(context, tln, environment = {}) {
-    const home = context.home;
+  async execute(cntx, tln, environment = {}) {
+    const home = cntx.home;
     // prepare environment
     let envFromOptions = {};
     if (this.options) {
-      envFromOptions = this.options.parse(context.argv);
+      envFromOptions = this.options.parse(cntx.argv);
     }
-    this.env = {...environment, ...envFromOptions, ...context.env};
+    this.env = {...environment, ...envFromOptions, ...cntx.env};
     // create component location if not exists
     if (!fs.existsSync(home)) {
       fs.mkdirSync(home, { recursive: true });
@@ -47,22 +47,23 @@ class Script {
         // string represents script file name
         fl = body;
       } else if (body instanceof Array) {
-        if (context.save) {
+        if (cntx.save) {
           fl = path.join(home, `${this.name}.${this.ext}`);
         } else {
           fl = tempfile(`.${this.ext}`);
         }
         let dotenvs = [];
         // TODO create variant for windows environment
-        for (const e of context.dotenvs) {
+        for (const e of cntx.collectDotenvs()) {
           dotenvs.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
         }
+        console.log(dotenvs);
         //
         fs.writeFileSync(fl, this.prefix.concat(dotenvs).concat(body).join('\n'));
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
-        if (context.validate) {
+        if (cntx.validate) {
           // output script to the console
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
@@ -96,7 +97,7 @@ class Script {
           await spawnPromise(fl, [], opt);
         }
       } else {
-        this.logger.error(`${context.uuid} could not save execution script: ${body}`);
+        this.logger.error(`${cntx.uuid} could not save execution script: ${body}`);
       }
     }
     return result;
@@ -122,17 +123,3 @@ class Script {
 module.exports.create = (logger, uuid, name, options, builder) => {
   return new Script(logger, uuid, name, options, builder);
 }
-
-/*
-const utils = require('./utils');
-const context = require('./context');
-
-
-  //
-  // ? should we force to create path to component when execute ?
-  // TODO: add windows cmd script
-  async execute(params) {
-    //
-  }
-
-*/
