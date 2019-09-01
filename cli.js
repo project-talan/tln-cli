@@ -91,7 +91,7 @@ const argv = require('yargs')
       async (argv) => {
         const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         a.resolve(argv.components).forEach( (component) => {
-            const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, false);
+            const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, false, false);
             component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
         });
       }
@@ -123,7 +123,7 @@ const argv = require('yargs')
         const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         const input = (argv.input)?(path.join(a.currentComponent.home, argv.input)):(argv.input);
         for(const component of a.resolve(argv.components)) {
-          const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
+          const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
           if (argv.parallel) {
             component.execute(argv.command, input, argv.recursive, cntx);
           } else {
@@ -145,7 +145,7 @@ const argv = require('yargs')
       async (argv) => {
         const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         for (const component of a.resolve(argv.components)) {
-          const cntx = context.create(component.home, component.id, component.uuid, argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
+          const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
           const steps = argv.steps.split(':');
           if (argv.parallel) {
             component.run(steps, f, argv.recursive, cntx);

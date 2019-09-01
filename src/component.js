@@ -1,4 +1,5 @@
 'use strict'
+
 const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -299,23 +300,21 @@ class Component {
     r.inherits = [];
     r.depends = [];
     //
-    const steps = this.findStep('*', filter, this.home, cntx.clone(), []);
+    const steps = this.findStep('*', filter, this.home, cntx, []);
     //
     r.env = {};
     const {vars/*, env*/} = this.buildEnvironment(this.getVariables());
     for(let v in vars) {
       r.env[v] = vars[v];
     }
-    /*/
+    //
     r.dotenvs = [];
-    for(const ef of execScope.envFiles) {
-      r.dotenvs.push(ef);
-    }
-    /*/
     r.steps = [];
     for(const step of steps) {
+      r.dotenvs = r.dotenvs.concat(step.cntx.dotenvs);
       r.steps.push(step.script.uuid);
     }
+    r.dotenvs = utils.uniquea(r.dotenvs);
     //
     if (yaml) {
       cout((require('yaml')).stringify(r));
@@ -428,7 +427,7 @@ class Component {
     for (const d of this.descriptions) {
       if (d.description.variables) {
         const v = variables.create(this.home, orig);
-        d.description.variables(null, v);
+        d.description.variables(this.tln, v);
         r.push({source: d.source, vars: v});
       }
     }
@@ -498,7 +497,7 @@ class Component {
       if (recursive) {
         this.construct();
         for (const component of this.components) {
-          await component.execute(command, file, recursive, cntx.clone(component.home));
+          await component.execute(command, file, recursive, cntx.clone());
         }
       }
       // TODO: collect environment variables and dotenvs
@@ -510,7 +509,7 @@ class Component {
         } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       });
       const {/*vars, */env} = this.buildEnvironment(this.getVariables());
-      await scriptToExecute.execute(cntx, this.tln, env);
+      await scriptToExecute.execute(this.home, cntx, this.tln, env);
     }
   }
 
@@ -527,9 +526,16 @@ class Component {
   */
   findStep(step, filter, home, cntx, result, parent = null) {
     let r = result;
+    // collect environment files
+    for (const d of this.descriptions) {
+      if (d.description.dotenvs) {
+        const relativePath = path.relative(home, this.home);
+        cntx.addDotenvs(d.description.dotenvs(this.tln).map((v, i, a) => path.join(relativePath, v)));
+      }
+    }
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
-      r = this.parent.findStep(step, filter, home, cntx.clone(), r);
+      r = this.parent.findStep(step, filter, home, cntx.cloneAsChild(), r);
     }
     let i = -1; // calculate descs count to simplify scripts' names
     for (const d of this.descriptions) {
@@ -538,23 +544,15 @@ class Component {
       if (d.description.inherits) {
         const inheritComponents = this.resolve(d.description.inherits());
         for (const component of inheritComponents) {
-          r = component.findStep(step, filter, home, cntx.clone(), r, component.parent);
+          r = component.findStep(step, filter, home, cntx.attach(), r, component.parent);
         }
       }
-      // collect environment files
-      let dontenvs = [];
-      if (d.description.dotenvs) {
-        dontenvs = d.description.dotenvs(null);
-      }
-      const relativePath = path.relative(home, this.home);
-      cntx.addDotenvs(dontenvs.map((v, i, a) => path.join(relativePath, v)));
-
       // third, check component's descriptions
       if (d.description.steps) {
         // steps' options
         let opts = options.create(this.logger);
         if (d.description.options) {
-          d.description.options(null, opts);
+          d.description.options(this.tln, opts);
         }
         for (const s of d.description.steps()) {
           // is it our step
@@ -573,7 +571,7 @@ class Component {
                 r.push(
                   {
                     script: script.create(this.logger, scriptUuid, scriptName, opts, s.script),
-                    cntx: cntx,
+                    cntx: cntx.detach(),
                   });
               }
             }
@@ -598,7 +596,7 @@ class Component {
       //
       if (list2execute.length) {
         for(const item of list2execute) {
-          if (!! await item.script.execute(item.cntx, this.tln, env)){
+          if (!! await item.script.execute(this.home, item.cntx, this.tln, env)){
             break;
           }
         }
@@ -610,7 +608,7 @@ class Component {
     if (recursive) {
       this.construct();
       for(const component of this.components) {
-        const c = context.clone(component.home);
+        const c = context.clone();
         if (parallel) {
           component.execute(steps, recursive, c);
         } else {
