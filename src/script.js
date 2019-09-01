@@ -17,7 +17,7 @@ class Script {
     this.body = null;
     this.ext = (os.platform() === 'win32') ? ('cmd') : ('sh');
     this.prefix = (os.platform() === 'win32') ? (['echo off']) : (['#!/bin/bash -e']);
-    this.suffix = (os.platform() === 'win32') ? ([]) : ([]);
+    this.suffix = []; //(os.platform() === 'win32') ? ([]) : ([]);
   }
 
   set(body) {

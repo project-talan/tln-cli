@@ -57,7 +57,7 @@ class Context {
         dotenvs = dotenvs.concat(head.dotenvs);
         head = head.next;
       } while (head);
-      dotenvs = dotenvs.reverse();
+      dotenvs.reverse();
     }
     return dotenvs;
   }
