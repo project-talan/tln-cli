@@ -17,6 +17,7 @@ class Script {
     this.body = null;
     this.ext = (os.platform() === 'win32') ? ('cmd') : ('sh');
     this.prefix = (os.platform() === 'win32') ? (['echo off']) : (['#!/bin/bash -e']);
+    this.suffix = (os.platform() === 'win32') ? ([]) : ([]);
   }
 
   set(body) {
@@ -26,8 +27,7 @@ class Script {
   * Build and execute script
   * params:
   */
-  async execute(cntx, tln, environment = {}) {
-    const home = cntx.home;
+  async execute(home, cntx, tln, environment = {}) {
     // prepare environment
     let envFromOptions = {};
     if (this.options) {
@@ -54,12 +54,15 @@ class Script {
         }
         let dotenvs = [];
         // TODO create variant for windows environment
-        for (const e of cntx.collectDotenvs()) {
-          dotenvs.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
+        for (const e of cntx.dotenvs) {
+          if (os.platform() === 'win32') {
+            dotenvs.push( `FOR /F "tokens=*" %%i in ('type "${e}"') do SET %%i`);
+          } else {
+            dotenvs.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
+          }
         }
-        console.log(dotenvs);
         //
-        fs.writeFileSync(fl, this.prefix.concat(dotenvs).concat(body).join('\n'));
+        fs.writeFileSync(fl, this.prefix.concat(dotenvs).concat(body).concat(this.suffix).join('\n'));
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
       }
       if (fl) {
@@ -97,7 +100,7 @@ class Script {
           await spawnPromise(fl, [], opt);
         }
       } else {
-        this.logger.error(`${cntx.uuid} could not save execution script: ${body}`);
+        this.logger.error(`${this.uuid} could not save execution script: ${body}`);
       }
     }
     return result;
