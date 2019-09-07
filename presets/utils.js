@@ -39,14 +39,18 @@ module.exports = {
         }
         r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') {
-        const folder2remove = folder.split(path.sep)[0];
-        script.set([
-          `wget '${url}'`,
-          `tar -xzf '${name}'`,
-          `mv ${folder}/* .`,
-          `rm -f ${name}`,
-          `rm -fR ${folder2remove}`
-        ]);
+        r.push(`wget '${url}'`);
+        r.push(`tar -xzf '${name}'`);
+        // move content
+        if (opts) {
+          if (opts[0] && opts[1]) {
+            r.push(`mv ${opts[0]} ${opts[1]}`);
+            if (opts[2]) {
+              r.push(`rmdir '${opts[2]}'`);
+            }
+          }
+        }
+        r.push(`rm -f ${name}`);
       }
     }
     return r;
