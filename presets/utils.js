@@ -27,7 +27,11 @@ module.exports = {
         r.push(`powershell -Command "Remove-Item '${name}'"`);
       } else if (platform === 'linux') {
         r.push(`wget '${url}'`);
-        r.push(`tar -xzf '${name}'`);
+        if (name.match('tar.gz')) {
+          r.push(`tar -xzf '${name}'`);
+        } else {
+          r.push(`unzip '${name}'`);
+        }
         // move content
         if (opts) {
           if (opts[0] && opts[1]) {
