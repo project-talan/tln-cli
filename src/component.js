@@ -445,7 +445,7 @@ class Component {
     env['COMPONENT_ID'] = this.id;
     for (const v of variables.reverse()) {
       names = v.vars.names(names);
-      env = v.vars.build(env);
+      env = v.vars.build(this.tln, env);
     }
     //
     let r = {};

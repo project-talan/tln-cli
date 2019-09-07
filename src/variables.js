@@ -81,13 +81,13 @@ class Variables {
     return utils.uniquea(n);
   }
   //
-  build(env) {
+  build(tln, env) {
     env['COMPONENT_ANCHOR'] = this.anchor;
     env['COMPONENT_ORIGIN'] = this.origin;
     for (const e of this.items) {
       let data = e.data;
       data.env = env;
-      env[e.data.name] = e.callback(null, data);
+      env[e.data.name] = e.callback(tln, data);
     }
     delete env['COMPONENT_ANCHOR'];
     delete env['COMPONENT_ORIGIN'];
