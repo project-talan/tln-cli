@@ -26,11 +26,18 @@ module.exports = {
         }
         r.push(`powershell -Command "Remove-Item '${name}'"`);
       } else if (platform === 'linux') {
-        script.set([
-          `wget '${url}'`,
-          `tar --strip-components=1 -xzf '${name}'`,
-          `rm -f ${name}`,
-        ]);
+        r.push(`wget '${url}'`);
+        r.push(`tar -xzf '${name}'`);
+        // move content
+        if (opts) {
+          if (opts[0] && opts[1]) {
+            r.push(`mv ${opts[0]} ${opts[1]}`);
+            if (opts[2]) {
+              r.push(`rmdir '${opts[2]}'`);
+            }
+          }
+        }
+        r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') {
         const folder2remove = folder.split(path.sep)[0];
         script.set([
