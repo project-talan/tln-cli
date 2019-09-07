@@ -44,13 +44,17 @@ module.exports = {
         r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') {
         r.push(`wget '${url}'`);
-        r.push(`tar -xzf '${name}'`);
+        if (name.match('tar.gz')) {
+          r.push(`tar -xzf '${name}'`);
+        } else {
+          r.push(`unzip '${name}'`);
+        }
         // move content
         if (opts) {
           if (opts[0] && opts[1]) {
             r.push(`mv ${opts[0]} ${opts[1]}`);
             if (opts[2]) {
-              r.push(`rmdir '${opts[2]}'`);
+              r.push(`rm -fR '${opts[2]}'`);
             }
           }
         }
