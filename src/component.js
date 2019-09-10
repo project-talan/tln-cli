@@ -296,14 +296,15 @@ class Component {
     this.descriptions.forEach( description => {
       r.descriptions.push({source: description.source, destination: description.destination});
     });
+    //
     r.tags = [];
     r.inherits = [];
     r.depends = [];
     //
-    const steps = this.findStep('*', filter, this.home, cntx, []);
+    const steps = this.findStep('*', filter, this.home, cntx, [], r.inherits);
     //
     r.env = {};
-    const {vars/*, env*/} = this.buildEnvironment(this.getVariables());
+    const {vars/*, env*/} = this.buildEnvironment(this.getVariables([], r.depends));
     for(let v in vars) {
       r.env[v] = vars[v];
     }
@@ -315,6 +316,8 @@ class Component {
       r.steps.push(step.script.uuid);
     }
     r.dotenvs = utils.uniquea(r.dotenvs);
+    r.inherits = utils.uniquea(r.inherits);
+    r.depends = utils.uniquea(r.depends);
     //
     if (yaml) {
       cout((require('yaml')).stringify(r));
@@ -322,7 +325,6 @@ class Component {
       cout(JSON.stringify(r, null, 2));
     }
   }
-
 
   /*
   * Create one child component, based on description and | or information from folders
@@ -404,7 +406,7 @@ class Component {
     * @var - array of collecting variables
     * @origin - path to component, which requests variables
   */
-  getVariables(vars = [], origin = null) {
+  getVariables(vars = [], depends = [], origin = null) {
     let orig = origin;
     if (!orig) {
       orig = this.home;
@@ -412,14 +414,16 @@ class Component {
     let r = vars;
     // get variables form hierarchy of parents
     if (this.parent) {
-      r = this.parent.getVariables(r, orig);
+      depends.push(this.parent.id);
+      r = this.parent.getVariables(r, depends, orig);
     }
     // for each depends list
     for (const d of this.descriptions) {
       if (d.description.depends) {
         const dependsComponents = this.resolve(d.description.depends());
         for (const component of dependsComponents) {
-          r = component.getVariables(r);
+          depends.push(component.id);
+          r = component.getVariables(r, depends);
         }
       }
     }
@@ -524,7 +528,7 @@ class Component {
     * @result - object which holds environment varaibles, environment files and collected steps
     * @parent - parameter is used to prevent add step from component more than one time
   */
-  findStep(step, filter, home, cntx, result, parent = null) {
+  findStep(step, filter, home, cntx, result, inherits, parent = null) {
     let r = result;
     // collect environment files
     for (const d of this.descriptions) {
@@ -535,7 +539,8 @@ class Component {
     }
     // first lookup inside parents
     if (this.parent && (this.parent != parent)) {
-      r = this.parent.findStep(step, filter, home, cntx.cloneAsChild(), r);
+      inherits.push(this.parent.id);
+      r = this.parent.findStep(step, filter, home, cntx.cloneAsChild(), r, inherits);
     }
     let i = -1; // calculate descs count to simplify scripts' names
     for (const d of this.descriptions) {
@@ -544,7 +549,8 @@ class Component {
       if (d.description.inherits) {
         const inheritComponents = this.resolve(d.description.inherits());
         for (const component of inheritComponents) {
-          r = component.findStep(step, filter, home, cntx.attach(), r, component.parent);
+          inherits.push(component.id);
+          r = component.findStep(step, filter, home, cntx.attach(), r, inherits, component.parent);
         }
       }
       // third, check component's descriptions
@@ -571,7 +577,7 @@ class Component {
                 r.push(
                   {
                     script: script.create(this.logger, scriptUuid, scriptName, opts, s.script),
-                    cntx: cntx.detach(),
+                    cntx: cntx.detach(inherits),
                   });
               }
             }
@@ -579,8 +585,6 @@ class Component {
         }
       }
     }
-    // collect environment variables
-    //r.vars = this.getVariables(r.vars);
     return r;
   }
 
@@ -591,7 +595,7 @@ class Component {
  async run(steps, filter, recursive, cntx) {
     // collect steps from descs, interits, parents
     for(const step of steps) {
-      const list2execute = this.findStep(step, filter, this.home, cntx.clone(), []);
+      const list2execute = this.findStep(step, filter, this.home, cntx.clone(), [], []);
       const {/*vars, */env} = this.buildEnvironment(this.getVariables());
       //
       if (list2execute.length) {
