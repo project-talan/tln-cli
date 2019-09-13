@@ -1,35 +1,3 @@
-def configBuildEnv(configFile) {
-  def tools = [
-    'openjdk': ['envs':['JAVA_HOME'], 'paths':['/bin'], 'validate':'java -version'],
-    'nodejs': ['envs':['NODEJS_HOME'], 'paths':['/bin'], 'validate':'node -v'],
-    'maven': ['envs':['MAVEN_HOME', 'M2_HOME'], 'paths':['/bin'], 'validate':'mvn -v']
-  ]
-  def config = [:]
-  if (fileExists(configFile)) {
-    print("Use Configuration from ${configFile}")
-    config = readJSON file: configFile
-  }else{
-    print('Default VM setup will be used')
-  }
-  printTopic('Build environment config')
-  print(config)
-  // configure
-  config.each { prop, val -> 
-    if (tools[prop]) {
-      sh "echo Configurint ${prop} using ${val} version"
-      def t = tool "${val}"
-      tools[prop].envs.each { e ->
-        env[e] = "${t}"
-      }
-      tools[prop].paths.each { p ->
-        env.PATH = "${t}${p}:${env.PATH}"
-      }
-      // validate setup
-      sh "${tools[prop].validate}"
-    }
-  }
-}
-
 def sendEmailNotification(subj, recepients) {
     emailext body: "${BUILD_URL}",
     recipientProviders: [
@@ -40,11 +8,25 @@ def sendEmailNotification(subj, recepients) {
     subject: subj,
     to: "${recepients}"
 }
+
+def setBuildStatus(String message, String state, String context, String sha) {
+  step([
+    $class: "GitHubCommitStatusSetter",
+    //reposSource: [$class: "ManuallyEnteredRepositorySource", url: "https://github.com/<your-repo-url>"],
+    contextSource: [$class: "ManuallyEnteredCommitContextSource", context: context],
+    errorHandlers: [[$class: "ChangingBuildStatusErrorHandler", result: "UNSTABLE"]],
+    commitShaSource: [$class: "ManuallyEnteredShaSource", sha: sha ],
+    //statusBackrefSource: [$class: "ManuallyEnteredBackrefSource", backref: "${BUILD_URL}<your-url>/"],
+    statusResultSource: [$class: "ConditionalStatusResultSource", results: [[$class: "AnyBuildResult", message: message, state: state]] ]
+  ]);
+}
+
 def printTopic(topic) {
   println("[*] ${topic} ".padRight(80, '-'))
 }
 
 node {
+
   //
   def pullRequest = false
   def commitSha = ''
@@ -53,16 +35,15 @@ node {
   def lastCommitAuthorEmail = ''
   def repo = ''
   def org = ''
+
   //
-  stage('Clone sources') {
+  stage('Checkout') {
     //
     def scmVars = checkout scm
     printTopic('Job input parameters');
     println(params)
     printTopic('SCM variables')
     println(scmVars)
-    // configure build env
-    configBuildEnv('build.conf.json');
     //
     commitSha = scmVars.GIT_COMMIT
     buildBranch = scmVars.GIT_BRANCH
@@ -94,62 +75,83 @@ node {
     printTopic('Author(s)')
     echo "[lastCommitAuthorEmail:${lastCommitAuthorEmail}]"
   }
-  //
-  stage('Build') {
-  /*
-  */
-  }
-  //
-  stage('Unit tests') {
-  /*
-  */
-  }
-  //
-  stage('SonarQube analysis') {
-    printTopic('Sonarqube properties')
-    echo sh(returnStdout: true, script: 'cat sonar-project.properties')
-    def scannerHome = tool "${SONARQUBE_SCANNER}"
-    withSonarQubeEnv("${SONARQUBE_SERVER}") {
-      if (pullRequest){
-        sh "${scannerHome}/bin/sonar-scanner -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=${pullId} -Dsonar.github.repository=${org}/${repo} -Dsonar.github.oauth=${GITHUB_ACCESS_TOKEN} -Dsonar.login=${SONARQUBE_ACCESS_TOKEN}"
-      } else {
-        sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONARQUBE_ACCESS_TOKEN}"
-        // check SonarQube Quality Gates
-        //// Pipeline Utility Steps
-        def props = readProperties  file: '.scannerwork/report-task.txt'
-        echo "properties=${props}"
-        def sonarServerUrl=props['serverUrl']
-        def ceTaskUrl= props['ceTaskUrl']
-        def ceTask
-        //// HTTP Request Plugin
-        timeout(time: 1, unit: 'MINUTES') {
-          waitUntil {
-            def response = httpRequest "${ceTaskUrl}"
-            println('Status: '+response.status)
-            println('Response: '+response.content)
-            ceTask = readJSON text: response.content
-            return (response.status == 200) && ("SUCCESS".equals(ceTask['task']['status']))
+    
+  try {
+    //  
+    stage('Build') {
+      /*
+      */
+    }
+
+    //
+    stage('Unit tests') {
+      /*
+      */
+    }
+
+    //
+    stage('SonarQube analysis') {
+      /*
+      printTopic('Sonarqube properties')
+      echo sh(returnStdout: true, script: 'cat sonar-project.properties')
+      def scannerHome = tool "${SONARQUBE_SCANNER}"
+      withSonarQubeEnv("${SONARQUBE_SERVER}") {
+        if (pullRequest){
+          sh "${scannerHome}/bin/sonar-scanner -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=${pullId} -Dsonar.github.repository=${org}/${repo} -Dsonar.github.oauth=${GITHUB_ACCESS_TOKEN} -Dsonar.login=${SONARQUBE_ACCESS_TOKEN}"
+        } else {
+          sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONARQUBE_ACCESS_TOKEN}"
+          // check SonarQube Quality Gates
+          //// Pipeline Utility Steps
+          def props = readProperties  file: '.scannerwork/report-task.txt'
+          echo "properties=${props}"
+          def sonarServerUrl=props['serverUrl']
+          def ceTaskUrl= props['ceTaskUrl']
+          def ceTask
+          //// HTTP Request Plugin
+          timeout(time: 1, unit: 'MINUTES') {
+            waitUntil {
+              def response = httpRequest "${ceTaskUrl}"
+              println('Status: '+response.status)
+              println('Response: '+response.content)
+              ceTask = readJSON text: response.content
+              return (response.status == 200) && ("SUCCESS".equals(ceTask['task']['status']))
+            }
+          }
+          //
+          def qgResponse = httpRequest sonarServerUrl + "/api/qualitygates/project_status?analysisId=" + ceTask['task']['analysisId']
+          def qualitygate = readJSON text: qgResponse.content
+          echo qualitygate.toString()
+          if ("ERROR".equals(qualitygate["projectStatus"]["status"])) {
+            currentBuild.description = "Quality Gate failure"
+            error currentBuild.description
           }
         }
-        //
-        def qgResponse = httpRequest sonarServerUrl + "/api/qualitygates/project_status?analysisId=" + ceTask['task']['analysisId']
-        def qualitygate = readJSON text: qgResponse.content
-        echo qualitygate.toString()
-        if ("ERROR".equals(qualitygate["projectStatus"]["status"])) {
-          currentBuild.description = "Quality Gate failure"
-          error currentBuild.description
-        }
       }
+      */
     }
-  }
-  //
-  stage('Deploy & Publish') {
-    /*/
-    if (pullRequest){
-    } else {
-      // upload, create docker, publish
+    
+    //  
+    stage('Delivery') {
+      /*
+      if (pullRequest){
+      } else {
+        // create docker, push
+        // archiveArtifacts artifacts: 'path/2/artifact'
+      }
+      */
+    }   
+
+    //
+    stage('Deploy') {
+      /*
+      if (pullRequest){
+      } else {
+        // 
+      }
+      */
     }
-    //archiveArtifacts artifacts: 'path/2/artifact'
-    /*/
+  } catch (e) {
+    sendEmailNotification('BUILD FAILED', lastCommitAuthorEmail, e.toString())
+    throw e
   }
 }

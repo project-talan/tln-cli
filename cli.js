@@ -55,7 +55,7 @@ const argv = require('yargs')
       }
     )
     .command(
-      'init-conf [repo] [-f] [-l]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
+      'init-config [repo] [-f] [-l]', 'Generate initial configuration file in current folder or checkout git repo with shared configuration',
       (yargs) => {
         yargs
           .option('repo', { describe: 'Git repository url', default: '', type: 'string' })
@@ -65,6 +65,15 @@ const argv = require('yargs')
       async (argv) => {
         const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
         a.initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
+      }
+    )
+    .command(
+      'update-config', 'Simply refresh git repository insode .tln foclder with component description',
+      (yargs) => {
+      },
+      async (argv) => {
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        a.updateComponentConfiguration();
       }
     )
     .command(

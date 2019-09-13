@@ -85,6 +85,6 @@ class Context {
 
 }
 
-module.exports.create = (argv, env, dotenvs, save, validate) => {
-  return new Context(argv, {...env}, [...dotenvs], save, validate);
+module.exports.create = (argv, env, dotenvs, save, validate, inherits = []) => {
+  return new Context(argv, {...env}, [...dotenvs], save, validate, inherits);
 }

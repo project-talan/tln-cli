@@ -64,6 +64,14 @@ class Appl {
   }
 
   /*
+  *
+  * params:
+  */
+  updateComponentConfiguration() {
+    this.currentComponent.updateConfiguration();
+  }
+
+  /*
   * Function is used during initial components lookup from command line parameter
   * components are colon separated string of ids (paths)
   * every id can be
