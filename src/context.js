@@ -30,7 +30,7 @@ class Context {
     if (anchor) {
       let tail = this;
       while (tail.next) {
-        tail = tail.prev;
+        tail = tail.next;
       }
         // insert current chain into anchor's chain
       // const after = anchor;
