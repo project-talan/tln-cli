@@ -121,7 +121,7 @@ class Component {
     let desc = null;
     // load definitions from .tln.conf file
     const conf = utils.getConfFile(location);
-    if (fs.existsSync(conf)) {
+    if (fs.existsSync(conf) && fs.lstatSync(conf).isFile()) {
       //
       desc = require(conf);
       /*/
