@@ -85,6 +85,19 @@ class Component {
     }
   }
 
+  /*
+  * Update component description inside .tln folder
+  * params:
+  */
+  updateConfiguration(options) {
+      const folder = utils.getConfFolder(this.home);
+      if (!fs.existsSync(folder)) {
+        this.logger.warn(`Git repository with tln configuration dosn't exist '${folder}', use 'init-config' command first.`);
+      } else {
+        this.logger.con(execSync(`pushd ${folder} && git pull origin master && popd`).toString());
+      }
+  }
+
   enumFolders(location) {
     let ids = [];
     fs.readdirSync(location).forEach( name => {
