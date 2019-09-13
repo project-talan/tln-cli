@@ -1,6 +1,6 @@
 {
   "name": "tln-cli",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Multi-projects management tool",
   "main": "cli.js",
   "scripts": {
