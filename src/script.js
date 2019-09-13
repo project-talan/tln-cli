@@ -56,7 +56,8 @@ class Script {
         // TODO create variant for windows environment
         for (const e of cntx.dotenvs) {
           if (os.platform() === 'win32') {
-            dotenvs.push( `FOR /F "tokens=*" %%i in ('type "${e}"') do SET %%i`);
+            dotenvs.push( `IF EXIST "${e}" FOR /F "tokens=*" %%i in ('type "${e}"') do SET %%i`);
+
           } else {
             dotenvs.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
           }

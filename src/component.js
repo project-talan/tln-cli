@@ -541,7 +541,7 @@ class Component {
     * @result - object which holds environment varaibles, environment files and collected steps
     * @parent - parameter is used to prevent add step from component more than one time
   */
-  findStep(step, filter, home, cntx, result, inherits, parent = null) {
+  findStep(step, filter, home, cntx, result, inherits, explicit = null, parent = null) {
     let r = result;
     // collect environment files
     for (const d of this.descriptions) {
@@ -550,48 +550,53 @@ class Component {
         cntx.addDotenvs(d.description.dotenvs(this.tln).map((v, i, a) => path.join(relativePath, v)));
       }
     }
-    // first lookup inside parents
-    if (this.parent && (this.parent != parent)) {
-      inherits.push(this.parent.id);
-      r = this.parent.findStep(step, filter, home, cntx.cloneAsChild(), r, inherits);
-    }
-    let i = -1; // calculate descs count to simplify scripts' names
-    for (const d of this.descriptions) {
-      i++;
-      // second, lookup inside inherits list
-      if (d.description.inherits) {
-        const inheritComponents = this.resolve(d.description.inherits());
-        for (const component of inheritComponents) {
-          inherits.push(component.id);
-          r = component.findStep(step, filter, home, cntx.attach(), r, inherits, component.parent);
-        }
+    if (explicit) {
+      // use explicitly defined component
+      r = explicit.findStep(step, filter, home, cntx.attach(), [], []);
+    } else {
+      // first lookup inside parents
+      if (this.parent && (this.parent != parent)) {
+        inherits.push(this.parent.id);
+        r = this.parent.findStep(step, filter, home, cntx.cloneAsChild(), r, inherits);
       }
-      // third, check component's descriptions
-      if (d.description.steps) {
-        // steps' options
-        let opts = options.create(this.logger);
-        if (d.description.options) {
-          d.description.options(this.tln, opts);
+      let i = -1; // calculate descs count to simplify scripts' names
+      for (const d of this.descriptions) {
+        i++;
+        // second, lookup inside inherits list
+        if (d.description.inherits) {
+          const inheritComponents = this.resolve(d.description.inherits());
+          for (const component of inheritComponents) {
+            inherits.push(component.id);
+            r = component.findStep(step, filter, home, cntx.attach(), r, inherits, null, component.parent);
+          }
         }
-        for (const s of d.description.steps()) {
-          // is it our step
-          if ((s.id === step) || (step === '*')) {
-            // are we meet underyling os, version and other filter's restrictions
-            if (filter.validate(s.filter)) {
-              // check if step was already added
-              /*               let suffix = [s.id];
-                          if (i || (home !== this.getHome())) {
-                            suffix.push(`${i}`);
-                          }
-              */
-              const scriptUuid = s.id + '@' + this.getUuid([`${i}`]);
-              const scriptName = s.id + '@' + this.getUuid([]);
-              if (!r.find(es => es.script.uuid === scriptUuid)) {
-                r.push(
-                  {
-                    script: script.create(this.logger, scriptUuid, scriptName, opts, s.script),
-                    cntx: cntx.detach(inherits),
-                  });
+        // third, check component's descriptions
+        if (d.description.steps) {
+          // steps' options
+          let opts = options.create(this.logger);
+          if (d.description.options) {
+            d.description.options(this.tln, opts);
+          }
+          for (const s of d.description.steps()) {
+            // is it our step
+            if ((s.id === step) || (step === '*')) {
+              // are we meet underyling os, version and other filter's restrictions
+              if (filter.validate(s.filter)) {
+                // check if step was already added
+                /*               let suffix = [s.id];
+                            if (i || (home !== this.getHome())) {
+                              suffix.push(`${i}`);
+                            }
+                */
+                const scriptUuid = s.id + '@' + this.getUuid([`${i}`]);
+                const scriptName = s.id + '@' + this.getUuid([]);
+                if (!r.find(es => es.script.uuid === scriptUuid)) {
+                  r.push(
+                    {
+                      script: script.create(this.logger, scriptUuid, scriptName, opts, s.script),
+                      cntx: cntx.detach(inherits),
+                    });
+                }
               }
             }
           }
@@ -608,7 +613,17 @@ class Component {
  async run(steps, filter, recursive, cntx) {
     // collect steps from descs, interits, parents
     for(const step of steps) {
-      const list2execute = this.findStep(step, filter, this.home, cntx.clone(), [], []);
+      let s = step;
+      let c = null;
+      const parts = step.split('@');
+      if (parts.length > 1) {
+        s = parts[0];
+        const cs = this.resolve([parts[1]]);
+        if (cs.length) {
+        c = cs[0];
+        }
+      }
+      const list2execute = this.findStep(s, filter, this.home, cntx.clone(), [], [], c);
       const {/*vars, */env} = this.buildEnvironment(this.getVariables());
       //
       if (list2execute.length) {
