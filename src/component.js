@@ -618,9 +618,12 @@ class Component {
       const parts = step.split('@');
       if (parts.length > 1) {
         s = parts[0];
-        c = this.resolve([parts[1]]);
+        const cs = this.resolve([parts[1]]);
+        if (cs.length) {
+        c = cs[0];
+        }
       }
-      const list2execute = this.findStep(s, filter, this.home, cntx.clone(), [], [], c[0]);
+      const list2execute = this.findStep(s, filter, this.home, cntx.clone(), [], [], c);
       const {/*vars, */env} = this.buildEnvironment(this.getVariables());
       //
       if (list2execute.length) {
