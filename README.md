@@ -14,7 +14,11 @@
   sudo apt-get install -y nodejs
   node -v
   ```
-* Install tln-cli ```npm i -g tln-cli```
+* Install tln-cli 
+  ```
+  npm i -g tln-cli
+  tln --version
+  ```
 
 ## Usage scenarios
 
