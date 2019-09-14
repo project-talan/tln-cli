@@ -12,6 +12,7 @@
   sudo bash nodesource_setup.sh
   sudo apt-get install -y gcc g++ make
   sudo apt-get install -y nodejs
+  node -v
   ```
 * Install tln-cli ```npm i -g tln-cli```
 
