@@ -22,7 +22,7 @@
 
 ## Usage scenarios
 
-### Configure working space
+### Configure your workspace
 * Goto to home folder
   ```
   cd ~
@@ -73,7 +73,7 @@
   6.10.3
   ```
 
-### Configure your team
+### Configure your team workspace
 
 ### Create skeleton for microsevices project using mono-repo
 
