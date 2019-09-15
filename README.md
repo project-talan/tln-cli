@@ -60,7 +60,7 @@
   to
     depends: (tln) => ['openjdk-12.0.2', 'node-12.10.0'],
   ```
-* Validate your setaup
+* Validate your setup
   ```
   tln exec -c "java -version && node -v && npm -v"
   ```
