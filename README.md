@@ -35,12 +35,12 @@
   cd projects
   tln init-config
   ```
-* List available components, inspect steps for java and install openjdk-12.0.2
+* List available components, inspect steps for java and install openjdk-12.0.2 and node-12.10.0
   ```
   tln ls
   tln ls java
   tln inspect openjdk-12.0.2 --yaml
-  tln install openjdk-12.0.2
+  tln install openjdk-12.0.2:node-12.10.0
   ```
 * Checkout how virtual dev env works
   ```
