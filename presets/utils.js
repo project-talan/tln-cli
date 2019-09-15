@@ -19,7 +19,8 @@ module.exports = {
         // move content
         if (opts) {
           if (opts[0] && opts[1]) {
-            r.push(`powershell -Command "Move-Item -Path '${opts[0]}' -Destination '${opts[1]}'"`);
+            // r.push(`powershell -Command "Move-Item -Path '${opts[0]}' -Destination '${opts[1]}'"`);
+            r.push(`powershell -Command "Get-ChildItem -Path '${opts[0]}' -Recurse | Move-Item -destination '${opts[1]}'"`);
             if (opts[2]) {
               r.push(`powershell -Command "Remove-Item '${opts[2]}'"`);
             }
