@@ -42,6 +42,11 @@
   tln inspect openjdk-12.0.2 --yaml
   tln install openjdk-12.0.2
   ```
+* Checkout how virtual dev env works
+  ```
+  java -version
+  tln exec -c "java -version" openjdk-12.0.2
+  ```
 
 ### Installing
 * Get list of all available components ```tln ls /```
