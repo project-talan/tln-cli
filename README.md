@@ -73,6 +73,11 @@
   6.10.3
   ```
 
+### Configure your team
+
+### Create skeleton for microsevices project using mono-repo
+
+
 ## Similar projects
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
