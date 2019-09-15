@@ -22,6 +22,23 @@
 
 ## Usage scenarios
 
+### Configure working space
+* Goto to home folder
+  ```
+  cd ~
+  ----
+  d: && cd /
+  ```
+* Create projects home
+  ```
+  mkdir projects
+  ```
+* Tell tln about it
+  ```
+  cd projects
+  tln init-config
+  ```
+
 ### Installing
 * Get list of all available components ```tln ls /```
 * Docker ```tln install docker```
