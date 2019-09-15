@@ -6,7 +6,7 @@
 * Manage complex relations between components using 'inherits' & 'depends' lists
 
 ## Setup
-* Install NodeJS
+* Install Nodejs 11.x or higher (https://nodejs.org)
   ```
   curl -sL https://deb.nodesource.com/setup_11.x -o nodesource_setup.sh
   sudo bash nodesource_setup.sh
