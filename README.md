@@ -47,12 +47,13 @@
   java -version
   tln exec -c "java -version" openjdk-12.0.2
   ```
+* Configure firt project
+  ```
+  mkdir company && cd company && tln init-config
+  mkdir team && cd team && tln init-config
+  mkdir project && cd project && tln init-config
+  ```
 
-### Installing
-* Get list of all available components ```tln ls /```
-* Docker ```tln install docker```
-
-### List available components
 
 
 ## Similar projects
