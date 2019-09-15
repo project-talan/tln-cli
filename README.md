@@ -29,14 +29,18 @@
   ----
   d: && cd /
   ```
-* Create projects home
+* Create projects' home and tell tln about it
   ```
   mkdir projects
-  ```
-* Tell tln about it
-  ```
   cd projects
   tln init-config
+  ```
+* List available components, inspect steps for java and install openjdk-12.0.2
+  ```
+  tln ls
+  tln ls java
+  tln inspect openjdk-12.0.2 --yaml
+  tln install openjdk-12.0.2
   ```
 
 ### Installing
