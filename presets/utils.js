@@ -1,4 +1,19 @@
 module.exports = {
+  getDefaultScript: (tln, id, distrs, script) => {
+    let s = [];
+    if (distrs[id]) {
+      Object.keys(distrs[id]).forEach( k => {
+        if (tln.filter.validate(k)) {
+          s = distrs[id][k];
+        }
+      });
+    }
+    if (s.length) {
+      script.set(s);
+      return true;
+    }
+    return false;
+  },
   getDownloadScript: (tln, dist) => {
     r = [];
     const osInfo = tln.getOsInfo();
