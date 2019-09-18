@@ -1,0 +1,9 @@
+
+sonar.sources=src
+sonar.exclusions=**/node_modules/**,**/*.spec.ts
+sonar.tests=src
+sonar.test.inclusions=**/*.spec.ts
+
+sonar.typescript.node=
+sonar.typescript.exclusions=
+sonar.typescript.lcov.reportPaths=coverage/lcov.info

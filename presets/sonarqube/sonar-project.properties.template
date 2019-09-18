@@ -1,0 +1,7 @@
+#sonar.host.url=
+#sonar.login=
+
+sonar.projectKey=
+sonar.projectName=
+sonar.projectVersion=
+sonar.sourceEncoding=UTF-8
