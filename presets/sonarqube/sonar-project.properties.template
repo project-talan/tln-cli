@@ -1,7 +1,13 @@
 #sonar.host.url=
 #sonar.login=
+#sonar.password=
 
 sonar.projectKey=
 sonar.projectName=
 sonar.projectVersion=
-sonar.sourceEncoding=UTF-8
+#sonar.projectDescription=
+#sonar.links.homepage=
+#sonar.links.ci=
+#sonar.links.issue=
+#sonar.links.scm=
+

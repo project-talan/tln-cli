@@ -1,9 +1,10 @@
-// tln.logger[.con() | .trace() | etc]
-// tln.getOsInfo(): 
-//    { type: 'Linux', platform: 'linux', kernel: '4.4.0-159-generic', os: 'linux', dist: 'Ubuntu Linux', codename: 'xenial', release: '16.04' }
-//    { type: 'Windows_NT', platform: 'win32', kernel: '10.0.17763', os: 'win32' }
-//
-// const path = require('path');
+/*
+  tln.logger[.con() | .trace() | etc]
+  tln.getOsInfo(): 
+    { type: 'Linux', platform: 'linux', kernel: '4.4.0-159-generic', os: 'linux', dist: 'Ubuntu Linux', codename: 'xenial', release: '16.04' }
+    { type: 'Windows_NT', platform: 'win32', kernel: '10.0.17763', os: 'win32' }
+  const path = require('path');
+*/
 module.exports = {
   tags: (tln) => [/*'tag'*/],
   options: (tln, options) => {/*

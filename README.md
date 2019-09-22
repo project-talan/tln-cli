@@ -8,6 +8,7 @@
 
 ## Setup
 * Install Nodejs 11.x or higher (https://nodejs.org)
+  Linux: 
   ```
   curl -sL https://deb.nodesource.com/setup_11.x -o nodesource_setup.sh
   sudo bash nodesource_setup.sh
@@ -25,11 +26,8 @@
 
 ### Configure your workspace
 * Goto to home folder
-  ```
-  cd ~
-  ----
-  d: && cd /
-  ```
+  Linux: ```cd ~```
+  Windows: ```d: && cd /```
 * Create projects' home and tell tln about it
   ```
   mkdir projects

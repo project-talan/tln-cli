@@ -1,7 +1,9 @@
 
 sonar.sources=cmd,pkg
+sonar.tests=cmd,pkg
+sonar.sourceEncoding=UTF-8
+
 sonar.exclusions=**/*_test.go,**/vendor/**
 
-sonar.tests=cmd,pkg
 sonar.test.inclusions=**/*_test.go
 sonar.test.exclusions=**/vendor/**
