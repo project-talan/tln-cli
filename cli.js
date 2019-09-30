@@ -149,6 +149,7 @@ const argv = require('yargs')
           .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
           .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
           .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
+          .option('depends', { describe: 'Execute steps for all components from depends list too', default: false, type: 'boolean' })
           .demandOption(['steps'], 'Please provide steps(s) you need to run')
       },
       async (argv) => {
@@ -157,9 +158,17 @@ const argv = require('yargs')
           const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
           const steps = argv.steps.split(':');
           if (argv.parallel) {
-            component.run(steps, f, argv.recursive, cntx);
+            if (argv.depends) {
+              component.unfold(steps, f, argv.recursive, cntx);
+            } else {
+              component.run(steps, f, argv.recursive, cntx);
+            }
           } else {
-            await component.run(steps, f, argv.recursive, cntx);
+            if (argv.depends) {
+              await component.unfold(steps, f, argv.recursive, cntx);
+            } else {
+              await component.run(steps, f, argv.recursive, cntx);
+            }
           }
         }
       }

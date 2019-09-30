@@ -362,7 +362,7 @@ class Component {
         }
       });
       // create child entity, should we get home from description?
-      const eh = path.join((home)?(home):(this.home), id);
+      const eh = path.join((home) ? (home) : (this.home), id);
       if (utils.isConfPresent(eh) || descriptions.length || force) {
         component = new Component(this.logger, this.tln, eh, this, id, descriptions);
         component.loadDescriptions();
@@ -658,6 +658,22 @@ class Component {
     }
   }
 
+  /**
+   * Run steps for component and for all components from depends list - unfold environment
+   * params:
+  */
+  async unfold(steps, filter, recursive, cntx) {
+    // for each depends list
+    for (const d of this.descriptions) {
+      if (d.description.depends) {
+        const dependsComponents = this.resolve(d.description.depends());
+        for (const component of dependsComponents) {
+          await component.unfold(steps, filter, recursive, cntx.clone());
+        }
+      }
+    }
+    await this.run(steps, filter, recursive, cntx);
+  }
 }
 
 module.exports.createRoot = (logger, tln, home, presetsSrc, presetsDest) => {

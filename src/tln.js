@@ -13,6 +13,7 @@ class Tln {
   constructor(logger, filter) {
     this.logger = logger;
     this.filter = filter;
+    this.utils = require('./utils');
   }
 
   /*
