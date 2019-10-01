@@ -26,8 +26,10 @@
 
 ### Configure your workspace
 * Goto to home folder
-  Linux: ```cd ~```
+
+  Linux/MacOs: ```cd ~```
   Windows: ```d: && cd /```
+
 * Create projects' home and tell tln about it
   ```
   mkdir projects
