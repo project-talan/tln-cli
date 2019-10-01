@@ -127,7 +127,7 @@ module.exports = {
           }
         }
         r.push(`powershell -Command "Remove-Item '${name}'"`);
-      } else if (platform === 'linux') {
+      } else /*if (platform === 'linux') {
         r.push(`wget '${url}'`);
         if (name.match('tar.gz')) {
           r.push(`tar -xzf '${name}'`);
@@ -144,7 +144,7 @@ module.exports = {
           }
         }
         r.push(`rm -f ${name}`);
-      } else if (platform === 'darwin') {
+      } else if (platform === 'darwin') */{
         r.push(`wget '${url}'`);
         if (name.match('tar.gz')) {
           r.push(`tar -xzf '${name}'`);
