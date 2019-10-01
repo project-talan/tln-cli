@@ -36,7 +36,7 @@ const argv = require('yargs')
     .option('l', { describe: 'validate generated scripts without execution by dumping sources to the console', alias: 'validate', default: false, type: 'boolean' })
     .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
     .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-    .option('presets-dest', { describe: 'Presets will be deployed using path, defined by this option', default: null })
+    .option('detach-presets', { describe: 'Presets will be deployed using path, defined by this option. Special option for CI configuration', default: null })
     .command(
       'about', 'Dislay project information',
       (yargs) => {
@@ -63,7 +63,7 @@ const argv = require('yargs')
           .option('l', { describe: 'Remove help information from the template', alias: 'lightweight', default: false, type: 'boolean' })
       },
       async (argv) => {
-        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         a.initComponentConfiguration({repo: argv.repo, force: argv.force, lightweight: argv.lightweight});
       }
     )
@@ -72,7 +72,7 @@ const argv = require('yargs')
       (yargs) => {
       },
       async (argv) => {
-        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         a.updateComponentConfiguration();
       }
     )
@@ -83,7 +83,7 @@ const argv = require('yargs')
           .option('pattern', { describe: 'Match pattern will filter baseline', default: null, type: 'string' })
       },
       async (argv) => {
-        const {l, f/*, t, a*/} = await scope(argv.verbose, argv.presetsDest);
+        const {l, f/*, t, a*/} = await scope(argv.verbose, argv.detachPresets);
         l.con(f.filter);
         if (argv.pattern) {
           l.con(argv.pattern, f.validate(argv.pattern)?'match':'not match');
@@ -98,7 +98,7 @@ const argv = require('yargs')
           .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
       },
       async (argv) => {
-        const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         a.resolve(argv.components).forEach( (component) => {
             const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, false, false);
             component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
@@ -113,7 +113,7 @@ const argv = require('yargs')
           .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
       },
       async (argv) => {
-        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         a.resolve(argv.components).forEach( (component) => {
             component.print(function(...args) { component.logger.con.apply(component.logger, args); }, argv.depth);
         });
@@ -129,7 +129,7 @@ const argv = require('yargs')
           .conflicts('c', 'i')
       }, 
       async (argv) => {
-        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l, f, t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         const input = (argv.input)?(path.join(a.currentComponent.home, argv.input)):(argv.input);
         for(const component of a.resolve(argv.components)) {
           const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, false, argv.validate);
@@ -149,17 +149,26 @@ const argv = require('yargs')
           .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
           .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
           .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
+          .option('depends', { describe: 'Execute steps for all components from depends list too', default: false, type: 'boolean' })
           .demandOption(['steps'], 'Please provide steps(s) you need to run')
       },
       async (argv) => {
-        const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.presetsDest);
+        const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         for (const component of a.resolve(argv.components)) {
           const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, argv.save, argv.validate);
           const steps = argv.steps.split(':');
           if (argv.parallel) {
-            component.run(steps, f, argv.recursive, cntx);
+            if (argv.depends) {
+              component.unfold(steps, f, argv.recursive, cntx);
+            } else {
+              component.run(steps, f, argv.recursive, cntx);
+            }
           } else {
-            await component.run(steps, f, argv.recursive, cntx);
+            if (argv.depends) {
+              await component.unfold(steps, f, argv.recursive, cntx);
+            } else {
+              await component.run(steps, f, argv.recursive, cntx);
+            }
           }
         }
       }

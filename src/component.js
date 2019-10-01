@@ -29,7 +29,7 @@ class Component {
   * 
   * params:
   */
- getRoot() {
+  getRoot() {
     if (this.parent) {
       return this.parent.getRoot();
     }
@@ -90,23 +90,23 @@ class Component {
   * params:
   */
   updateConfiguration(options) {
-      const folder = utils.getConfFolder(this.home);
-      if (!fs.existsSync(folder)) {
-        this.logger.warn(`Git repository with tln configuration does not exist '${folder}', use 'init-config' command first.`);
-      } else {
-        this.logger.con(execSync(`pushd ${folder} && git pull origin master && popd`).toString());
-      }
+    const folder = utils.getConfFolder(this.home);
+    if (!fs.existsSync(folder)) {
+      this.logger.warn(`Git repository with tln configuration does not exist '${folder}', use 'init-config' command first.`);
+    } else {
+      this.logger.con(execSync(`pushd ${folder} && git pull origin master && popd`).toString());
+    }
   }
 
   enumFolders(location) {
     let ids = [];
-    fs.readdirSync(location).forEach( name => {
+    fs.readdirSync(location).forEach(name => {
       const p = path.join(location, name);
       try {
-        if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1 ) {
+        if (fs.lstatSync(p).isDirectory() && ['.git', '.tln'].indexOf(name) == -1) {
           ids.push(name);
-        } 
-      } catch(err) {
+        }
+      } catch (err) {
         this.logger.trace('Skip folder due to access restruction', p);
       }
     });
@@ -141,9 +141,9 @@ class Component {
         components = desc.components();
       }
       //
-      this.enumFolders(location).forEach( (folder) => {
+      this.enumFolders(location).forEach((folder) => {
         let component = this.mergeDescs(path.join(location, folder), recursive);
-        const i = components.findIndex(function (c) {return c.id === folder;});
+        const i = components.findIndex(function (c) { return c.id === folder; });
         if (i >= 0) {
           // merge descs
           this.logger.fatal('recursive merge of folders is not implemented');
@@ -154,7 +154,7 @@ class Component {
         }
       });
       // reassign
-      desc.components = function(){ return components; };
+      desc.components = function () { return components; };
     }
     return desc;
   }
@@ -164,7 +164,7 @@ class Component {
   * params:
   */
   buildDescriptionPair(source, destination, description) {
-    return {source: source, destination: destination, description: description};
+    return { source: source, destination: destination, description: description };
   }
 
   /*
@@ -227,7 +227,7 @@ class Component {
             //
             ids.find((item) => {
               const c = this.dive(item, false);
-              if (c && (!floatUp || (floatUp && !floatUp.isItMe(c)) )) {
+              if (c && (!floatUp || (floatUp && !floatUp.isItMe(c)))) {
                 component = c.find(parts.slice(), strictSearch);
               }
               return (component != null);
@@ -304,10 +304,10 @@ class Component {
     r.uuid = this.uuid;
     r.home = this.home;
     //r.uuid = this.uuid;
-    r.parent = (this.parent)?(this.parent.id):(null);
+    r.parent = (this.parent) ? (this.parent.id) : (null);
     r.descriptions = [];
-    this.descriptions.forEach( description => {
-      r.descriptions.push({source: description.source, destination: description.destination});
+    this.descriptions.forEach(description => {
+      r.descriptions.push({ source: description.source, destination: description.destination });
     });
     //
     r.tags = [];
@@ -317,14 +317,14 @@ class Component {
     const steps = this.findStep('*', filter, this.home, cntx, [], r.inherits);
     //
     r.env = {};
-    const {vars/*, env*/} = this.buildEnvironment(this.getVariables([], r.depends));
-    for(let v in vars) {
+    const { vars/*, env*/ } = this.buildEnvironment(this.getVariables([], r.depends));
+    for (let v in vars) {
       r.env[v] = vars[v];
     }
     //
     r.dotenvs = [];
     r.steps = [];
-    for(const step of steps) {
+    for (const step of steps) {
       r.dotenvs = r.dotenvs.concat(step.cntx.dotenvs);
       r.steps.push(step.script.uuid);
     }
@@ -343,26 +343,26 @@ class Component {
   * Create one child component, based on description and | or information from folders
   * params:
   */
-  dive(id, force) {
+  dive(id, force, home = null) {
     // check if entity was already created
-    let component = this.components.find( (c) => { return c.id === id; });
+    let component = this.components.find((c) => { return c.id === id; });
     //
     if (!component) {
       // collect description from already loaded sources
       const descriptions = [];
-      this.descriptions.forEach( (d) => {
+      this.descriptions.forEach((d) => {
         let components = [];
         if (d.description.components) {
           components = d.description.components();
         }
         //
-        const component = components.find( (c) => { return c.id === id; });
+        const component = components.find((c) => { return c.id === id; });
         if (component) {
           descriptions.push(this.buildDescriptionPair(d.source, d.destination, component));
         }
       });
       // create child entity, should we get home from description?
-      const eh = path.join(this.home, id);
+      const eh = path.join((home) ? (home) : (this.home), id);
       if (utils.isConfPresent(eh) || descriptions.length || force) {
         component = new Component(this.logger, this.tln, eh, this, id, descriptions);
         component.loadDescriptions();
@@ -370,6 +370,14 @@ class Component {
       }
     }
     return component;
+  }
+
+  /*
+  * Create one child component, using different from the arent home folder
+  * params:
+  */
+  createChild(home, force) {
+    return this.dive(path.basename(home), force, path.dirname(home));
   }
 
   /*
@@ -413,12 +421,12 @@ class Component {
   }
 
 
-   /**
-    * Collect and combine all environment variables from parents, depends list and component itself
-    * goal is to provide complete script execution environment
-    * @var - array of collecting variables
-    * @origin - path to component, which requests variables
-  */
+  /**
+   * Collect and combine all environment variables from parents, depends list and component itself
+   * goal is to provide complete script execution environment
+   * @var - array of collecting variables
+   * @origin - path to component, which requests variables
+ */
   getVariables(vars = [], depends = [], origin = null) {
     let orig = origin;
     if (!orig) {
@@ -445,18 +453,18 @@ class Component {
       if (d.description.variables) {
         const v = variables.create(this.home, orig);
         d.description.variables(this.tln, v);
-        r.push({source: d.source, vars: v});
+        r.push({ source: d.source, vars: v });
       }
     }
     return r;
   }
 
-   /**
-    * @variables - 
-  */
+  /**
+   * @variables - 
+ */
   buildEnvironment(variables) {
     let names = [];
-    let env = {...process.env};
+    let env = { ...process.env };
     //
     env['COMPONENT_HOME'] = this.home;
     env['COMPONENT_ID'] = this.id;
@@ -469,7 +477,7 @@ class Component {
     names.forEach(n => {
       r[n] = env[n];
     })
-    return {vars: r, env:env};
+    return { vars: r, env: env };
   }
 
 
@@ -525,7 +533,7 @@ class Component {
           s.set(file)
         } else this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       });
-      const {/*vars, */env} = this.buildEnvironment(this.getVariables());
+      const {/*vars, */env } = this.buildEnvironment(this.getVariables());
       await scriptToExecute.execute(this.home, cntx, this.tln, env);
     }
   }
@@ -610,9 +618,9 @@ class Component {
    * Run step based on information from descriptions
    * params:
   */
- async run(steps, filter, recursive, cntx) {
+  async run(steps, filter, recursive, cntx) {
     // collect steps from descs, interits, parents
-    for(const step of steps) {
+    for (const step of steps) {
       let s = step;
       let c = null;
       const parts = step.split('@');
@@ -620,15 +628,15 @@ class Component {
         s = parts[0];
         const cs = this.resolve([parts[1]]);
         if (cs.length) {
-        c = cs[0];
+          c = cs[0];
         }
       }
       const list2execute = this.findStep(s, filter, this.home, cntx.clone(), [], [], c);
-      const {/*vars, */env} = this.buildEnvironment(this.getVariables());
+      const {/*vars, */env } = this.buildEnvironment(this.getVariables());
       //
       if (list2execute.length) {
-        for(const item of list2execute) {
-          if (!! await item.script.execute(this.home, item.cntx, this.tln, env)){
+        for (const item of list2execute) {
+          if (!! await item.script.execute(this.home, item.cntx, this.tln, env)) {
             break;
           }
         }
@@ -639,7 +647,7 @@ class Component {
     //
     if (recursive) {
       this.construct();
-      for(const component of this.components) {
+      for (const component of this.components) {
         const c = context.clone();
         if (parallel) {
           component.execute(steps, recursive, c);
@@ -650,6 +658,22 @@ class Component {
     }
   }
 
+  /**
+   * Run steps for component and for all components from depends list - unfold environment
+   * params:
+  */
+  async unfold(steps, filter, recursive, cntx) {
+    // for each depends list
+    for (const d of this.descriptions) {
+      if (d.description.depends) {
+        const dependsComponents = this.resolve(d.description.depends());
+        for (const component of dependsComponents) {
+          await component.unfold(steps, filter, recursive, cntx.clone());
+        }
+      }
+    }
+    await this.run(steps, filter, recursive, cntx);
+  }
 }
 
 module.exports.createRoot = (logger, tln, home, presetsSrc, presetsDest) => {

@@ -26,8 +26,10 @@
 
 ### Configure your workspace
 * Goto to home folder
-  Linux: ```cd ~```
+
+  Linux/MacOs: ```cd ~```
   Windows: ```d: && cd /```
+
 * Create projects' home and tell tln about it
   ```
   mkdir projects
@@ -63,7 +65,8 @@
   ```
   tln exec -c "java -version && node -v && npm -v"
   ```
-  
+
+  Expected output:  
   ```
   openjdk version "12.0.2" 2019-07-16
   OpenJDK Runtime Environment (build 12.0.2+10)
