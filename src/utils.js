@@ -95,6 +95,11 @@ module.exports = {
     ]);
     return false;
   },
+  getDownloadScriptById: (tln, id, distrs) => {
+    if (distrs[id]) {
+      return tln.utils.getDownloadScript(tln, distrs[id]);
+    }
+  },
   getDownloadScript: (tln, dist) => {
     let r = [];
     const osInfo = tln.getOsInfo();
