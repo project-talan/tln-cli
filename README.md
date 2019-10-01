@@ -1,10 +1,10 @@
 # Talan CLI
 
-* Multi-component management system
-* Helps dealing with Monolith-SOA-Microservices architecure, split & merge repositories with minimal pain
-* Manage structure of projects using hierarchy of components
-* Define complex relations between components using 'inherits' & 'depends' lists
-* Develop projects using fully isolated environments
+* Multi-components management system
+* Helps dealing with Monolith-SOA-Microservices architecture, split & merge repositories with less pain than usual
+* Manages structure of projects using hierarchy of components
+* Defines complex relations between components using 'inherits' & 'depends' lists
+* Setups fully isolated development environments
 
 ## Setup
 * Install Nodejs 11.x or higher (https://nodejs.org)
