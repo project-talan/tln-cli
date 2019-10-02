@@ -82,17 +82,19 @@ module.exports = {
     }
     return false;
   },
-  canInstallComponent: (tln, script) => {
+  canInstallComponent: (tln, script, groupId) => {
     const emptyDir = require('empty-dir');
     //
     const home = script.env['COMPONENT_HOME'];
     const id = script.env['COMPONENT_ID'];
-    if (emptyDir.sync(home)) {
-      return true;
+    if (groupId != id) {
+      if (emptyDir.sync(home)) {
+        return true;
+      }
+      script.set([
+        `echo Component '${id}' is already installed at this location '${home}'`
+      ]);
     }
-    script.set([
-      `echo Component '${id}' is already installed at this location '${home}'`
-    ]);
     return false;
   },
   getDownloadScriptById: (tln, id, distrs) => {
