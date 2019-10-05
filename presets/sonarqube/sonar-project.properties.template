@@ -11,3 +11,4 @@ sonar.projectVersion=
 #sonar.links.issue=
 #sonar.links.scm=
 
+sonar.sourceEncoding=UTF-8

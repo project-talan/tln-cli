@@ -48,6 +48,11 @@ module.exports = {
     }
     return r;
   },
+  shield(name) {
+    const tlnVarPrefix = (os.platform == "win32") ? ('%') : ('${');
+    const tlnVarSuffix = (os.platform == "win32") ? ('%') : ('}');
+    return `${tlnVarPrefix}${name}${tlnVarSuffix}`;
+  },
   /*
   *
   */
