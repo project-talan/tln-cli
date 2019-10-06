@@ -547,6 +547,8 @@ class Component {
     * @home - component current folder
     * @cntx - execution context
     * @result - object which holds environment varaibles, environment files and collected steps
+    * @inherits -
+    * @explicit - find step inside specific component, defined by this parameter
     * @parent - parameter is used to prevent add step from component more than one time
   */
   findStep(step, filter, home, cntx, result, inherits, explicit = null, parent = null) {
@@ -663,6 +665,11 @@ class Component {
    * params:
   */
   async unfold(steps, filter, recursive, cntx) {
+    // check parents hierarchy
+    if (this.parent) {
+      await this.parent.unfold(steps, filter, recursive, cntx.clone());
+    }
+    // ?????????? should we check inherits list too
     // for each depends list
     for (const d of this.descriptions) {
       if (d.description.depends) {
@@ -672,6 +679,7 @@ class Component {
         }
       }
     }
+    // ??????? should we execute the same step inside component
     await this.run(steps, filter, recursive, cntx);
   }
 }

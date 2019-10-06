@@ -3,6 +3,8 @@
 
 const os = require('os');
 const path = require('path');
+const fs = require('fs');
+const findUp = require('find-up')
 const logger = require('./src/logger');
 const context = require('./src/context');
 const utils = require('./src/utils');
@@ -27,7 +29,11 @@ const scope = async(verbose, presetsDest) => {
   return {l: l, f: f, t: t, a: a};
 }
 
+
+const configPath = findUp.sync(['.tlnclirc'])
+const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 const argv = require('yargs')
+    .config(config)
     .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [parameters] [options]')
     .help('help').alias('help', 'h')
     .option('verbose', { alias: 'v', count: true, default: 0 })
@@ -42,16 +48,16 @@ const argv = require('yargs')
       (yargs) => {
       },
       (argv) => {
-        console.log(String.raw`  _____           _           _     _______    _             `)
-        console.log(String.raw` |  __ \         (_)         | |   |__   __|  | |            `)
-        console.log(String.raw` | |__) | __ ___  _  ___  ___| |_     | | __ _| | __ _ _ __  `)
-        console.log(String.raw` |  ___/ '__/ _ \| |/ _ \/ __| __|    | |/ _' | |/ _' | '_ \ `)
-        console.log(String.raw` | |   | | | (_) | |  __/ (__| |_     | | (_| | | (_| | | | |`)
-        console.log(String.raw` |_|   |_|  \___/| |\___|\___|\__|    |_|\__,_|_|\__,_|_| |_|`)
-        console.log(String.raw`                _/ |                                         `)
-        console.log(String.raw`               |__/                                          `)
-        console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `)
-        console.log(String.raw`  github: https://github.com/project-talan/tln-cli.git       `)
+        console.log(String.raw`  _____           _           _     _______    _             `);
+        console.log(String.raw` |  __ \         (_)         | |   |__   __|  | |            `);
+        console.log(String.raw` | |__) | __ ___  _  ___  ___| |_     | | __ _| | __ _ _ __  `);
+        console.log(String.raw` |  ___/ '__/ _ \| |/ _ \/ __| __|    | |/ _' | |/ _' | '_ \ `);
+        console.log(String.raw` | |   | | | (_) | |  __/ (__| |_     | | (_| | | (_| | | | |`);
+        console.log(String.raw` |_|   |_|  \___/| |\___|\___|\__|    |_|\__,_|_|\__,_|_| |_|`);
+        console.log(String.raw`                _/ |                                         `);
+        console.log(String.raw`               |__/                                          `);
+        console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `);
+        console.log(String.raw`  github: https://github.com/project-talan/tln-cli.git       `);
       }
     )
     .command(
