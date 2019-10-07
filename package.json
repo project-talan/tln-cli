@@ -36,6 +36,7 @@
   "dependencies": {
     "empty-dir": "^2.0.0",
     "find-up": "^4.1.0",
+    "fs-extra": "^8.1.0",
     "getos": "^3.1.1",
     "json-fn": "^1.1.1",
     "log4js": "^3.0.6",
