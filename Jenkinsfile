@@ -83,6 +83,7 @@ node {
     } else if (params.containsKey('sha1')){
       pullRequest = true
       pullId = ghprbPullId
+      commitSha = params.ghprbActualCommit
     } else {
     }
     //
