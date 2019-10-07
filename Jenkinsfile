@@ -63,6 +63,7 @@ node {
   def lastCommitAuthorEmail = ''
   def repo = ''
   def org = ''
+  def token = GITHUB_ACCESS_TOKEN
   //
   stage('Clone sources') {
     //
