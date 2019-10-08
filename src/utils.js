@@ -53,6 +53,9 @@ module.exports = {
     const tlnVarSuffix = (os.platform == "win32") ? ('%') : ('}');
     return `${tlnVarPrefix}${name}${tlnVarSuffix}`;
   },
+  getVersionFromId(id) {
+    return id.split('-').reverse()[0];
+  },
   /*
   *
   */
