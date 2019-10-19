@@ -1,5 +1,5 @@
 // https://github.com/project-talan/tln-jenkins-shared-libraries
-@Library('tln-jenkins-shared-libraries@0.1.0') _
+@Library('tln-jenkins-shared-libraries@19.10.0') _
 import org.talan.jenkins.*
 
 properties([
@@ -34,7 +34,7 @@ node {
     //
     // Project specific steps
   }
-    
+
   try {
 
     stage('Setup build environment') {
