@@ -1,0 +1,11 @@
+
+sonar.sources=src
+sonar.exclusions=
+sonar.tests=src
+sonar.test.inclusions=
+sonar.test.exclusions=
+
+sonar.java.binaries=
+sonar.java.libraries=
+sonar.java.test.binaries=
+sonar.java.test.libraries=

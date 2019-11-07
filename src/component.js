@@ -650,11 +650,11 @@ class Component {
     if (recursive) {
       this.construct();
       for (const component of this.components) {
-        const c = context.clone();
-        if (parallel) {
-          component.execute(steps, recursive, c);
+        const c = cntx.clone();
+        if (/*parallel*/false) {
+          component.run(steps, filter, recursive, c);
         } else {
-          await component.execute(steps, recursive, c);
+          await component.run(steps, filter, recursive, c);
         }
       }
     }
