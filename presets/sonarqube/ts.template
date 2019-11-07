@@ -1,8 +1,10 @@
 
 sonar.sources=src
+sonar.inclusions=
 sonar.exclusions=**/node_modules/**,**/*.spec.ts
 sonar.tests=src
 sonar.test.inclusions=**/*.spec.ts
+sonar.test.exclusions=
 
 sonar.typescript.node=
 sonar.typescript.exclusions=
