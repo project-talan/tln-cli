@@ -621,40 +621,41 @@ class Component {
    * params:
   */
   async run(steps, filter, recursive, cntx) {
-    // collect steps from descs, interits, parents
-    for (const step of steps) {
-      let s = step;
-      let c = null;
-      const parts = step.split('@');
-      if (parts.length > 1) {
-        s = parts[0];
-        const cs = this.resolve([parts[1]]);
-        if (cs.length) {
-          c = cs[0];
-        }
-      }
-      const list2execute = this.findStep(s, filter, this.home, cntx.clone(), [], [], c);
-      const {/*vars, */env } = this.buildEnvironment(this.getVariables());
-      //
-      if (list2execute.length) {
-        for (const item of list2execute) {
-          if (!! await item.script.execute(this.home, item.cntx, this.tln, env)) {
-            break;
-          }
-        }
-      } else {
-        this.logger.con(`Nothing to execute`);
-      }
-    }
     //
     if (recursive) {
       this.construct();
       for (const component of this.components) {
-        const c = context.clone();
-        if (parallel) {
-          component.execute(steps, recursive, c);
+        const c = cntx.clone();
+        if (/*parallel*/false) {
+          component.run(steps, filter, false, c);
         } else {
-          await component.execute(steps, recursive, c);
+          await component.run(steps, filter, false, c);
+        }
+      }
+    } else {
+      // collect steps from descs, interits, parents
+      for (const step of steps) {
+        let s = step;
+        let c = null;
+        const parts = step.split('@');
+        if (parts.length > 1) {
+          s = parts[0];
+          const cs = this.resolve([parts[1]]);
+          if (cs.length) {
+            c = cs[0];
+          }
+        }
+        const list2execute = this.findStep(s, filter, this.home, cntx.clone(), [], [], c);
+        const {/*vars, */env } = this.buildEnvironment(this.getVariables());
+        //
+        if (list2execute.length) {
+          for (const item of list2execute) {
+            if (!! await item.script.execute(this.home, item.cntx, this.tln, env)) {
+              break;
+            }
+          }
+        } else {
+          this.logger.con(`Nothing to execute`);
         }
       }
     }

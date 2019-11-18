@@ -2,6 +2,7 @@
 
 const os = require('os');
 const fs = require('fs');
+const fsextra = require('fs-extra');
 const path = require('path');
 const { spawn } = require('child_process');
 const tempfile = require('tempfile');
@@ -36,7 +37,9 @@ class Script {
     this.env = {...environment, ...envFromOptions, ...cntx.env};
     // create component location if not exists
     if (!fs.existsSync(home)) {
-      fs.mkdirSync(home, { recursive: true });
+      // NodeJS >= 10.12.0
+      // fs.mkdirSync(home, { recursive: true });
+      fsextra.ensureDirSync(home);
     }
     // TODO: pass proxy object instead of script itself
     const result = this.builder(tln, this);
