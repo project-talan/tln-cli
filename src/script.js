@@ -108,22 +108,6 @@ class Script {
       }
     }
     return result;
-
-
-
-
-
-
-    /*     if (fs.existsSync(this.home)) {
-      if (recursive) {
-        this.construct();
-        this.components.forEach(function (component) {
-          component.executeCommand(command, recursive);
-        })
-      }
-      this.logger.con(execSync(command, { cwd: this.home }).toString());
-    }
- */
   }
 }
 
