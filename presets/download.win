@@ -1,0 +1,1 @@
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::TLS12

@@ -101,13 +101,13 @@ const argv = require('yargs')
       (yargs) => {
         yargs
           .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-          .option('y', { describe: 'Output using yaml format instead of json', alias: 'yaml', default: false, type: 'boolean' })
+          .option('j', { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
       },
       async (argv) => {
         const {/*l,*/ f, /*t,*/ a} = await scope(argv.verbose, argv.detachPresets);
         a.resolve(argv.components).forEach( (component) => {
             const cntx = context.create(argv, utils.parseEnv(argv.env), argv.envFile, false, false);
-            component.inspectComponent(f, cntx, argv.yaml, (...args) => { component.logger.con.apply(component.logger, args); });
+            component.inspectComponent(f, cntx, !argv.json, (...args) => { component.logger.con.apply(component.logger, args); });
         });
       }
     )
