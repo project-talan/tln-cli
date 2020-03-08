@@ -25,7 +25,7 @@ const argv = require('yargs')
         .option('q', { describe: 'Remove help information from the template', alias: 'quite', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const a = appl.create(argv.verbose, process.cwd());
+      appl.create(argv.verbose, process.cwd()).config(argv.repository, argv.force, argv.quite);
     }
   )
   .command(

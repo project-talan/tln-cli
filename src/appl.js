@@ -15,8 +15,12 @@ class Appl {
   constructor(verbose, cwd) {
     this.logger = logger.create(verbose);
     this.cwd = cwd;
+    this.logger.info(`cwd: ${this.cwd}`);
   }
 
+  async config(repository, force, quite) {
+    this.logger.info(`config: '${repository}' '${force}' '${quite}'`);
+  }
 
 }
 
