@@ -7,10 +7,10 @@
 * Setups fully isolated development environments
 
 ## Setup
-* Install Nodejs 11.x or higher (https://nodejs.org)
+* Install Nodejs 12.x or higher (https://nodejs.org)
   Linux: 
   ```
-  curl -sL https://deb.nodesource.com/setup_11.x -o nodesource_setup.sh
+  curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh
   sudo bash nodesource_setup.sh
   sudo apt-get install -y gcc g++ make
   sudo apt-get install -y nodejs
