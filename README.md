@@ -18,7 +18,7 @@
   ```
 * Install tln-cli 
   ```
-  npm i -g tln-cli
+  sudo npm i -g tln-cli
   tln --version
   ```
 
