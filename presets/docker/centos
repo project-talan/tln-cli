@@ -1,0 +1,7 @@
+sudo systemctl start docker
+Enable Docker:
+
+sudo systemctl enable docker
+Check the status of the service with:
+
+sudo systemctl status docker 0
