@@ -30,6 +30,7 @@
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
     "log4js": "^6.1.2",
+    "tmp": "^0.1.0",
     "yargs": "^15.1.0"
   },
   "devDependencies": {

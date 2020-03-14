@@ -21,9 +21,9 @@ class Component {
 
 }
 
-module.exports.createRoot = (logger, tln, home, presetsSrc, presetsDest) => {
+module.exports.createRoot = (logger, tln, home, source, destination) => {
   const root = new Component(logger, tln, home, null, '/', []);
-  root.loadDescriptionsFromFolder(presetsSrc, presetsDest, 'presets');
+  root.loadDescriptionsFromFolder(source, destination, 'presets');
   root.loadDescriptions();
   return root;
 }

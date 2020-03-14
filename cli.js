@@ -14,7 +14,7 @@ const argv = require('yargs')
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-  .option('anchor-path', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
+  .option('shared-dest', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
   .command(
     /**************************************************************************/
     'config', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
@@ -25,7 +25,7 @@ const argv = require('yargs')
         .option('q', { describe: 'Remove help information from the template', alias: 'quite', default: false, type: 'boolean' })
     },
     async (argv) => {
-      appl.create(argv.verbose, process.cwd()).config(argv.repository, argv.force, argv.quite);
+      appl.create(argv.verbose, process.cwd(), __dirname, argv.sharedDest).config(argv.repository, argv.force, argv.quite);
     }
   )
   .command(
