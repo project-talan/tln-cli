@@ -79,8 +79,29 @@ class Appl {
     this.logger.info('mode:', detached ? 'detached' : 'normal');
   }
 
+  //
   async config(repository, force, quite) {
     this.logger.info(`config: '${repository}' '${force}' '${quite}'`);
+  }
+
+  //
+  async inspect(components, outputAsJson) {
+    this.logger.info(`inspect: '${components}' '${outputAsJson}'`);
+  }
+
+  //
+  async ls(components, depth) {
+    this.logger.info(`inspect: '${components}' '${depth}'`);
+  }
+
+  //
+  async exec(components, command, input, recursive, parallel) {
+    this.logger.info(`exec: '${components}' '${command}' '${input}' '${recursive}' '${parallel}'`);
+  }
+
+  //
+  async run(steps, components, recursive, parallel, save, dryRun, depends) {
+    this.logger.info(`exec: '${steps} ${components} ${recursive} ${parallel} ${save} ${dryRun} ${depends}'`);
   }
 
   //

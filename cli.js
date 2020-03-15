@@ -2,7 +2,15 @@
 
 'use strict';
 
-const appl = require('./src/appl');
+const appl = async (verbose, cwd, cliHome, sharedDest, fn) => {
+  const a = require('./src/appl').create(verbose, cwd, cliHome, sharedDest);
+  await a.init();
+  await fn(a);
+}
+const validateComponents = (components) => {
+  return components?components.split(':'):[];
+}
+
 
 const argv = require('yargs')
   .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
@@ -25,49 +33,76 @@ const argv = require('yargs')
         .option('q', { describe: 'Remove help information from the template', alias: 'quite', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const a = appl.create(argv.verbose, process.cwd(), __dirname, argv.sharedDest);
-      await a.init();
-      await a.config(argv.repository, argv.force, argv.quite);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+        await a.config(argv.repository, argv.force, argv.quite);
+      });
     }
   )
   .command(
     /**************************************************************************/
-    'inspect [components] [-y]', 'Display component internal structure',
+    'inspect [components] [-j]', 'Display component(s) internal structure',
     (yargs) => {
+      yargs
+        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('j', { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+        await a.inspect(validateComponents(argv.components), argv.json);
+      });
     }
   )
   .command(
     /**************************************************************************/
     'ls [components] [-d]', 'Display components hierarchy',
     (yargs) => {
+      yargs
+        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
     },
     async (argv) => {
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+        await a.ls(validateComponents(argv.components), argv.depth);
+      });
     }
   )
   .command(
     /**************************************************************************/
     'exec [components] [-r] [-p] [-c] [-i]', 'Execute specified command or script',
     (yargs) => {
+      yargs
+        .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('c', { describe: 'Shell command to execute', alias: 'command', type: 'string' })
+        .option('i', { describe: 'Script name to execute', alias: 'input', type: 'string' })
+        .conflicts('c', 'i')
+        .check(({ command, input }) => {
+          if (!(command || input)) {
+            throw new Error('command or input option is required');
+          }
+          return true;
+        })
     },
     async (argv) => {
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+        await a.exec(validateComponents(argv.components), argv.command, argv.input, argv.recursive, argv.parallel);
+      });
     }
   )
   .command(
     /**************************************************************************/
-    ['$0 <steps> [components] [-r] [-p] [-s] [-l]'], 'Execute set of steps over a set of components',
+    ['$0 <steps> [components] [-r] [-p] [-s] [-u] [--depends]'], 'Execute set of steps over a set of components',
     (yargs) => {
       yargs
         .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
         .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
+        .option('depends', { describe: 'Execute steps for all components from depends list too', default: false, type: 'boolean' })
+        .demandOption(['steps'], 'Please provide steps(s) you need to run')
     },
     async (argv) => {
-      console.log('run');
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+        await a.run(argv.steps.split(':'), validateComponents(argv.components), argv.recursive, argv.parallel, argv.save, argv.dryRun, argv.depends);
+      });
     }
   )
   .command(
