@@ -12,7 +12,7 @@ class Component {
     this.id = id;
     this.home = home;
     this.parent = parent;
-    this.uuid = id;
+    this.uuid = '';
     if (this.parent) {
       this.uuid = [this.parent.uuid, this.id].join('/');
     }
@@ -21,10 +21,27 @@ class Component {
   }
 
   //
+  async ls(depth) {
+    this.logger.con(this.id);
+  }
+
+  //
+  async exec(recursive, command, input) {
+    this.logger.con(this);
+  }
+
+  //
+  async run(recursive, save, dryRun, depends) {
+    this.logger.con('!!!!!!!!!!!!!!1');
+    this.logger.con(this);
+  }
+
+  //
   async createChild(home) {
     return await this.buildChild(path.basename(home), true, path.dirname(home));
   }
 
+  //
   async buildChild(id, force, home = null) {
     // check if entity was already created
     let component = this.components.find((c) => { return c.id === id; });
@@ -46,7 +63,7 @@ class Component {
 }
 
 module.exports.createRoot = (logger, home, source, destination) => {
-  const root = new Component(logger, '/', home, null, []);
+  const root = new Component(logger, '', home, null, []);
 //  root.loadDescriptionsFromFolder(source, destination, 'presets');
 //  root.loadDescriptions();
   return root;

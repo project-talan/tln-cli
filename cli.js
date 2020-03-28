@@ -7,7 +7,7 @@ const appl = async (verbose, cwd, cliHome, sharedDest, fn) => {
   await a.init();
   await fn(a);
 }
-const validateComponents = (components) => {
+const splitComponents = (components) => {
   return components?components.split(':'):[];
 }
 
@@ -16,8 +16,8 @@ const argv = require('yargs')
   .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
   .help('help').alias('help', 'h')
   .option('verbose', { alias: 'v', count: true, default: 0 })
-  .option('r', { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('p', { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
+  .option('r', { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('a', { describe: 'Show all components', alias: 'all', default: false, type: 'boolean' })
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
@@ -48,7 +48,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.inspect(validateComponents(argv.components), argv.json);
+        await a.inspect(splitComponents(argv.components), argv.json);
       });
     }
   )
@@ -62,7 +62,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.ls(validateComponents(argv.components), argv.depth);
+        await a.ls(splitComponents(argv.components), argv.depth);
       });
     }
   )
@@ -84,7 +84,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.exec(validateComponents(argv.components), argv.command, argv.input, argv.recursive, argv.parallel);
+        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, argv.command, argv.input);
       });
     }
   )
@@ -101,7 +101,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.run(argv.steps.split(':'), validateComponents(argv.components), argv.recursive, argv.parallel, argv.save, argv.dryRun, argv.depends);
+        await a.run(argv.steps.split(':'), splitComponents(argv.components), argv.parallel, argv.recursive, argv.save, argv.dryRun, argv.depends);
       });
     }
   )

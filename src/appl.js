@@ -65,7 +65,7 @@ class Appl {
     if (detached) {
       this.currentComponent = await this.rootComponent.createChild(this.cwd);
     } else {
-      for(folder in folders) {
+      for(const folder of folders) {
         this.currentComponent = await this.currentComponent.buildChild(folder, true);
       };
     }
@@ -87,21 +87,54 @@ class Appl {
   //
   async inspect(components, outputAsJson) {
     this.logger.info(`inspect: '${components}' '${outputAsJson}'`);
+    for(const component of await this.resolve(components)) {
+      await component.inspect(outputAsJson);
+    }
   }
 
   //
   async ls(components, depth) {
-    this.logger.info(`inspect: '${components}' '${depth}'`);
+    this.logger.info(`ls ${this.uuid}: '${depth}'`);
+    for(const component of await this.resolve(components)) {
+      await component.ls(depth);
+    }
   }
 
   //
-  async exec(components, command, input, recursive, parallel) {
-    this.logger.info(`exec: '${components}' '${command}' '${input}' '${recursive}' '${parallel}'`);
+  async exec(components, parallel, recursive, command, input) {
+    this.logger.info(`exec ${this.uuid}: '${components}' '${command}' '${input}' '${parallel}' '${recursive}'`);
+    for(const component of await this.resolve(components)) {
+      if (parallel) {
+        component.exec(recursive, command, input);
+      } else {
+        await component.exec(recursive, command, input);
+      }
+    }
   }
 
   //
-  async run(steps, components, recursive, parallel, save, dryRun, depends) {
-    this.logger.info(`exec: '${steps} ${components} ${recursive} ${parallel} ${save} ${dryRun} ${depends}'`);
+  async run(steps, components, parallel, recursive, save, dryRun, depends) {
+    this.logger.info(`exec ${this.uuid}: '${steps} ${components} ${parallel} ${recursive} ${save} ${dryRun} ${depends}'`);
+    for(const component of await this.resolve(components)) {
+      if (parallel) {
+        component.run(recursive, save, dryRun, depends);
+      } else {
+        await component.run(recursive, save, dryRun, depends);
+      }
+    }
+  }
+
+  //
+  async resolve(components) {
+    if (components.length) {
+      let r = [];
+      for(let component of components) {
+        // find component
+        this.logger.info(`need to fine ${component}`);
+      }
+      return r;
+    }
+    return [this.currentComponent];
   }
 
   //
