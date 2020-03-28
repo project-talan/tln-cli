@@ -49,7 +49,7 @@ class Appl {
         folders = rel.split(path.sep);
       }
       //
-      // deploy shared components
+      // shared components location
       if (this.isRootPath(this.cwd) || noConfig) {
         // inside tmp folder
         const tmpobj = tmp.dirSync({ template: 'tln-XXXXXX' });
@@ -80,13 +80,14 @@ class Appl {
   }
 
   //
-  async config(repository, force, quite) {
-    this.logger.info(`config: '${repository}' '${force}' '${quite}'`);
+  async config(components, repository, prefix, force, quite) {
+    for(const component of await this.resolve(components)) {
+      await component.config(repository, prefix, force, quite);
+    }
   }
 
   //
   async inspect(components, outputAsJson) {
-    this.logger.info(`inspect: '${components}' '${outputAsJson}'`);
     for(const component of await this.resolve(components)) {
       await component.inspect(outputAsJson);
     }
@@ -94,7 +95,6 @@ class Appl {
 
   //
   async ls(components, depth) {
-    this.logger.info(`ls ${this.uuid}: '${depth}'`);
     for(const component of await this.resolve(components)) {
       await component.ls(depth);
     }
@@ -102,7 +102,6 @@ class Appl {
 
   //
   async exec(components, parallel, recursive, command, input) {
-    this.logger.info(`exec ${this.uuid}: '${components}' '${command}' '${input}' '${parallel}' '${recursive}'`);
     for(const component of await this.resolve(components)) {
       if (parallel) {
         component.exec(recursive, command, input);
@@ -113,13 +112,12 @@ class Appl {
   }
 
   //
-  async run(steps, components, parallel, recursive, save, dryRun, depends) {
-    this.logger.info(`exec ${this.uuid}: '${steps} ${components} ${parallel} ${recursive} ${save} ${dryRun} ${depends}'`);
+  async run(components, parallel, recursive, steps, save, dryRun, depends) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.run(recursive, save, dryRun, depends);
+        component.run(recursive, steps, save, dryRun, depends);
       } else {
-        await component.run(recursive, save, dryRun, depends);
+        await component.run(recursive, steps, save, dryRun, depends);
       }
     }
   }
@@ -130,7 +128,7 @@ class Appl {
       let r = [];
       for(let component of components) {
         // find component
-        this.logger.info(`need to fine ${component}`);
+        this.logger.info(`need to find component ${component}`);
       }
       return r;
     }
@@ -140,7 +138,7 @@ class Appl {
   //
   isRootPath(p) {
     // TODO validate expression at windows box
-    const root = (os.platform == "win32") ? `${this.cwd().split(path.sep)[0]}${path.sep}` : path.sep;
+    const root = (os.platform == "win32") ? `${this.cwd.split(path.sep)[0]}${path.sep}` : path.sep;
     return (p === root);
   }
 

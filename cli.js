@@ -28,13 +28,14 @@ const argv = require('yargs')
     'config', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
     (yargs) => {
       yargs
-        .option('repo', { describe: 'Git repository url', alias:'repository', default: '', type: 'string' })
-        .option('f', { describe: 'Force override config file, if exists', alias: 'force', default: false, type: 'boolean' })
-        .option('q', { describe: 'Remove help information from the template', alias: 'quite', default: false, type: 'boolean' })
+        .option('repo', { describe: 'Git repository url', alias:'repository', default: null, type: 'string' })
+        .option('prefix', { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
+        .option('force', { describe: 'Force override config file, if exists', default: false, type: 'boolean' })
+        .option('terse', { describe: 'Remove help information from the config', default: false, type: 'boolean' })
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.config(argv.repository, argv.force, argv.quite);
+        await a.config(splitComponents(argv.components), argv.repo, argv.prefix, argv.force, argv.terse);
       });
     }
   )
@@ -101,7 +102,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.run(argv.steps.split(':'), splitComponents(argv.components), argv.parallel, argv.recursive, argv.save, argv.dryRun, argv.depends);
+        await a.run(splitComponents(argv.components), argv.parallel, argv.recursive, argv.steps.split(':'), argv.save, argv.dryRun, argv.depends);
       });
     }
   )

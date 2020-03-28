@@ -20,20 +20,73 @@ class Component {
     this.components = [];
   }
 
+  async config(repository, prefix, force, terse) {
+    this.logger.info(`config - '${this.uuid}' repository:'${repository}' prefix:'${prefix}' force:'${force}' terse:'${terse}'`);
+    //
+    if (repository) {
+      // clone repo with tln configuration
+      let folder = utils.getConfigFolder(this.home);
+      if (prefix) {
+        folder = path.join(folder, prefix);
+      }
+      //
+      if (fs.existsSync(folder)) {
+        this.logger.warn(`Git repository with tln configuration already exists in '${folder}'. Use git pull to update it`);
+      } else {
+        this.logger.con(execSync(`git clone ${repository} ${folder}`).toString());
+      }
+    } else {
+      // generate local configuration file
+      const fileName = utils.getConfigFile(this.home);
+      const fe = fs.existsSync(fileName);
+      let generateFile = true;
+      if (fe && !force) {
+        this.logger.error(`Configuration file already exists '${fileName}', use --force to override`);
+        generateFile = false;
+      }
+      if (generateFile) {
+        const templateFileName = path.join(__dirname, '.tln.conf.template');
+        if (terse) {
+          const reg = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
+          fs.writeFile(fileName, fs.readFileSync(templateFileName).toString().replace(reg, ''), (err) => {
+            if (err) {
+              this.logger.con(err);
+            } else {
+              this.logger.con(`done: ${fileName}`);
+            }
+          });
+        } else {
+          await fs.copyFile(templateFileName, fileName, (err) => {
+            if (err) {
+              this.logger.error(err);
+            } else {
+              this.logger.con(`done: ${fileName}`);
+            }
+          });
+        }
+      }
+    }
+  }
+
+  async inspect(outputAsJson) {
+    this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
+  }
+
   //
   async ls(depth) {
-    this.logger.con(this.id);
+    this.logger.info(`ls ${this.uuid} - depth:'${depth}'`);
+    this.logger.info(this);
   }
 
   //
   async exec(recursive, command, input) {
+    this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
     this.logger.con(this);
   }
 
   //
-  async run(recursive, save, dryRun, depends) {
-    this.logger.con('!!!!!!!!!!!!!!1');
-    this.logger.con(this);
+  async run(recursive, steps, save, dryRun, depends) {
+    this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
   }
 
   //
@@ -58,8 +111,6 @@ class Component {
     }
     return component;
   }
-
-
 }
 
 module.exports.createRoot = (logger, home, source, destination) => {

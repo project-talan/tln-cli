@@ -7,7 +7,7 @@
 */
 module.exports = {
   tags: async (tln) => [/*'tag'*/],
-  options: (tln, options) => {/*
+  options: async (tln, options) => {/*
     options
       .add( 'origin',         // option name
             'TLN_GIT_ORIGIN', // variable that will be populated
@@ -21,15 +21,15 @@ module.exports = {
   variables: async (tln, variables) => {/*
     // params.name, params.env 
     variables
-      .set('TLN_GIT_USER', (tln, params) => 'john.doe')
-      .append('PATH', (tln, params) => path.join(params.env['COMPONENT_ORIGIN'], 'lib'))
-      .prepend('PATH', (tln, params) => path.join(params.env['COMPONENT_ORIGIN'], 'bin'));
+      .set('TLN_GIT_USER', async (tln, params) => 'john.doe')
+      .append('PATH', async (tln, params) => path.join(params.env['COMPONENT_ORIGIN'], 'lib'))
+      .prepend('PATH', async (tln, params) => path.join(params.env['COMPONENT_ORIGIN'], 'bin'));
   */},
   steps: async (tln) => [/*
     {
       id: 'hi',
-      desc: 'Say Hi from hi step',
-      script: (tln, script) => script.set(['echo Hi, home: ${COMPONENT_HOME}'])
+      desc: 'Say Hi from component home',
+      script: async (tln, script) => script.set(['echo Hi, home: ${COMPONENT_HOME}'])
     }
   */],
   components: async (tln) => [/*
