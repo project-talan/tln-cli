@@ -7,14 +7,14 @@
 */
 module.exports = {
   tags: async (tln) => [/*'tag'*/],
-  options: async (tln, options) => {/*
-    options
-      .add( 'origin',         // option name
-            'TLN_GIT_ORIGIN', // variable that will be populated
-            'Origin url',     // description, default value
-            null              // default value
-      );
-  */},
+  options: async (tln) => [/*
+    {
+      name: 'origin',         // option name
+      var:  'TLN_GIT_ORIGIN', // variable to expose
+      desc: 'Origin url',     // description
+      def:  null              // default value
+    }
+  */],
   dotenvs: async (tln) => [/*'.env'*/],
   depends: async (tln) => [/*'java/openjdk-11.0.2'*/],
   inherits: async (tln) => [/*'git'*/],
