@@ -124,15 +124,7 @@ class Appl {
 
   //
   async resolve(components) {
-    if (components.length) {
-      let r = [];
-      for(let component of components) {
-        // find component
-        this.logger.info(`need to find component ${component}`);
-      }
-      return r;
-    }
-    return [this.currentComponent];
+    return this.currentComponent.resolve(components, true);
   }
 
   //
