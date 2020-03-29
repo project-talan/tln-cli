@@ -31,6 +31,7 @@
   "dependencies": {
     "log4js": "^6.1.2",
     "tmp": "^0.1.0",
+    "yaml": "^1.8.3",
     "yargs": "^15.1.0"
   },
   "devDependencies": {

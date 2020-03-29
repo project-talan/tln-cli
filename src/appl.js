@@ -60,7 +60,7 @@ class Appl {
         this.dest = this.home;
       }
     }
-    this.rootComponent = require('./component').createRoot(this.logger, this.dest, this.cliHome, this.dest);
+    this.rootComponent = require('./component').createRoot(this.logger, this.dest, this.cliHome);
     this.currentComponent = this.rootComponent;
     if (detached) {
       this.currentComponent = await this.rootComponent.createChild(this.cwd);
@@ -89,7 +89,7 @@ class Appl {
   //
   async inspect(components, outputAsJson) {
     for(const component of await this.resolve(components)) {
-      await component.inspect(outputAsJson);
+      await component.inspect(outputAsJson, (...args) => { this.logger.con.apply(this.logger, args); });
     }
   }
 

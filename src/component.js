@@ -69,8 +69,47 @@ class Component {
     }
   }
 
-  async inspect(outputAsJson) {
+  async inspect(outputAsJson, cout) {
     this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
+    //
+    let r = {};
+    r.id = this.id;
+    r.uuid = this.uuid;
+    r.home = this.home;
+    //r.uuid = this.uuid;
+    r.parent = (this.parent) ? (this.parent.id) : (null);
+    r.descriptions = [];
+    this.descriptions.forEach(description => {
+      r.descriptions.push(description.source);
+    });
+    /*/
+    r.tags = [];
+    r.inherits = [];
+    r.depends = [];
+    //
+    const steps = this.findStep('*', filter, this.home, cntx, [], r.inherits);
+    //
+    r.env = {};
+    const { vars, env } = this.buildEnvironment(this.getVariables([], r.depends));
+    for (let v in vars) {
+      r.env[v] = vars[v];
+    }
+    //
+    r.dotenvs = [];
+    r.steps = [];
+    for (const step of steps) {
+      r.dotenvs = r.dotenvs.concat(step.cntx.dotenvs);
+      r.steps.push(step.script.uuid);
+    }
+    r.dotenvs = utils.uniquea(r.dotenvs);
+    r.inherits = utils.uniquea(r.inherits);
+    r.depends = utils.uniquea(r.depends);
+    /*/
+    if (outputAsJson) {
+      cout(JSON.stringify(r, null, 2));
+    } else {
+      cout((require('yaml')).stringify(r));
+    }
   }
 
   //
@@ -98,7 +137,7 @@ class Component {
       const p = path.join(location, name);
       try {
         if (fs.lstatSync(p).isDirectory() && exclude.indexOf(name) == -1) {
-          ids.push(name);
+          ids.push({name:name, path:p});
         }
       } catch (err) {
         this.logger.trace('Skip folder due to access restruction', p);
@@ -108,29 +147,48 @@ class Component {
   }
 
   //
-  loadDescriptionsFromFile(source) {
-    let description = this.mergeDescs(source);
-    if (description) {
-      description.source = source;
-      this.descriptions.push(description);
+  mergeDescriptions(location, configFolderOnly) {
+    let descriptions = [];
+    // check folder(s)
+    if (configFolderOnly) {
+      // check .tln folder only
+      const configFolder = utils.getConfigFolder(location);
+      if (fs.existsSync(configFolder)) {
+        descriptions = descriptions.concat(this.mergeDescriptions(configFolder, false));
+      }
+    } else {
+      const descs = [];
+      // scan all subfolders
+      for(const item of this.enumFolders(location)) {
+        for(const desc of this.mergeDescriptions(item.path, false)) {
+          descs.push({id: item.name, ...desc});
+        }
+      }
+      if (descs.length) {
+        descriptions.push({
+          components: async (tln) => descs,
+          source: location
+        });
+      }
     }
+    // load from file
+    const configFile = utils.getConfigFile(location);
+    if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
+      const d = require(configFile);
+      d.source = location;
+      descriptions.push(d);
+    }
+    return descriptions;
   }
 
   //
-  loadDescriptionsFromFolder(source, folder) {
-    // add additional source from .tln folder with git repository(ies)
-    const configFolder = utils.getConfigFolder(source, folder);
-    if (fs.existsSync(configFolder)) {
-      this.loadDescriptionsFromFile(configFolder);
-      // enum nested folders
-      const description = {}
-    }
+  loadDescriptionsFromFolder(location, configFolderOnly) {
+    this.descriptions = this.descriptions.concat(this.mergeDescriptions(location, configFolderOnly));
   }
 
   //
   loadDescriptions() {
-    this.loadDescriptionsFromFolder(this.home);
-    this.loadDescriptionsFromFile(this.home);
+    this.loadDescriptionsFromFolder(this.home, true);
   }
 
   // --------------------------------------------------------------------------
@@ -179,7 +237,7 @@ class Component {
 
 module.exports.createRoot = (logger, home, source) => {
   const root = new Component(logger, '', home, null, []);
-  root.loadDescriptionsFromFolder(source, 'components');
+  root.loadDescriptionsFromFolder(path.join(source, 'components'), false);
   root.loadDescriptions();
   return root;
 }
