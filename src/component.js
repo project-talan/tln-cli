@@ -175,7 +175,7 @@ class Component {
     const configFile = utils.getConfigFile(location);
     if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
       const d = require(configFile);
-      d.source = location;
+      d.source = configFile;
       descriptions.push(d);
     }
     return descriptions;
@@ -193,9 +193,9 @@ class Component {
 
   // --------------------------------------------------------------------------
 
-  // child component will can have home different from parent
+  // child component will have home path different from parent
   async createChild(home) {
-    return await this.buildChild(path.basename(home), true, path.dirname(home));
+    return await this.buildChild(path.basename(home), true, home);
   }
 
   // child component will inherit home hierarchy from parent
@@ -206,6 +206,21 @@ class Component {
     if (!component) {
       // collect description from already loaded sources
       const descriptions = [];
+      for(const desc of this.descriptions) {
+        let components = [];
+        if (desc.components) {
+          components = await desc.components({});
+        }
+        //
+        if (components) {
+          for (const component of components) {
+            if (component.id === id) {
+              component.source = desc.source;
+              descriptions.push(component);
+            }
+          }
+        }
+      }
       // create child entity
       const cHome = path.join((home) ? (home) : (this.home), id);
       if (utils.isConfigPresent(cHome) || descriptions.length || force) {
