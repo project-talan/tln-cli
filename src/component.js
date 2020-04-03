@@ -69,7 +69,7 @@ class Component {
     }
   }
 
-  async inspect(outputAsJson, cout) {
+  async inspect(cout, outputAsJson) {
     this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
     //
     let r = {};
@@ -113,10 +113,44 @@ class Component {
   }
 
   //
-  async ls(depth) {
+  async ls(cout, depth) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}'`);
-    this.logger.info(this);
+    await this.print(cout, depth);
   }
+
+  /*
+  * Print hierarchy of components
+  * params:
+  */
+  async print(cout, depth, offset = '', last = false) {
+    // output yourself
+    let status = '';
+    if (!fs.existsSync(this.home)) {
+      status = '*'
+    }
+    const id = this.id === '' ? '/' : this.id;
+    cout(`${offset} ${id} ${status}`);
+    //
+    if (depth > 0) {
+      await this.buildAllChildren();
+      let cnt = this.components.length;
+      let no = offset;
+      if (offset.length) {
+        if (this.components.length) {
+          no = offset.substring(0, offset.length - 1) + '│';
+        }
+        if (last) {
+          no = offset.substring(0, offset.length - 1) + ' ';
+        }
+      }
+      for(const component of this.components) {
+        cnt--;
+        const delim = (cnt) ? (' ├') : (' └');
+        await component.print(cout, depth - 1, `${no}${delim}`, cnt === 0);
+      }
+    }
+  }
+
 
   //
   async exec(recursive, command, input) {
@@ -145,6 +179,45 @@ class Component {
     });
     return ids;
   }
+
+
+  async getComponentsFromDesc(desc) {
+    if (!desc.resolved) {
+      if (desc.components) {
+        desc.resolved = await desc.components({});
+      }
+    }
+    return desc.resolved;
+  }
+  /*
+  * Collect list of childs using all possible sources: descriptions, file system
+  * params:
+  */
+  async getIDs() {
+    // collect ids
+    let ids = [];
+    // ... from already created components
+    this.components.forEach((c) => { ids.push(c.id); });
+    // ... from descs
+    for(const desc of this.descriptions) {
+      const components = await this.getComponentsFromDesc(desc);
+      //
+      if (components) {
+        for (const component of components) {
+          ids.push(component.id);
+        }
+      }
+    }
+    // ... from file system
+    if (fs.existsSync(this.home)) {
+      ids = ids.concat(this.enumFolders(this.home).map(f => f.name));
+    }
+    // remove duplicates
+    ids = utils.uniquea(ids);
+    this.logger.trace('ids', ids);
+    return ids;
+  }
+
 
   //
   mergeDescriptions(location, configFolderOnly) {
@@ -207,10 +280,7 @@ class Component {
       // collect description from already loaded sources
       const descriptions = [];
       for(const desc of this.descriptions) {
-        let components = [];
-        if (desc.components) {
-          components = await desc.components({});
-        }
+        const components = await this.getComponentsFromDesc(desc);
         //
         if (components) {
           for (const component of components) {
@@ -231,6 +301,18 @@ class Component {
     }
     return component;
   }
+
+  /*
+  * Create all children components from available descriptions
+  * params:
+  */
+  async buildAllChildren() {
+    const ids = await this.getIDs();
+    for (const id of ids) {
+      await this.buildChild(id, false);
+    }
+  }
+
 
   async resolve(components, resolveEmptyToThis = false) {
     let r = [];

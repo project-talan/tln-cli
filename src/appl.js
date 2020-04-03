@@ -89,14 +89,14 @@ class Appl {
   //
   async inspect(components, outputAsJson) {
     for(const component of await this.resolve(components)) {
-      await component.inspect(outputAsJson, (...args) => { this.logger.con.apply(this.logger, args); });
+      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, outputAsJson);
     }
   }
 
   //
   async ls(components, depth) {
     for(const component of await this.resolve(components)) {
-      await component.ls(depth);
+      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, depth);
     }
   }
 
