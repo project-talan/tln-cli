@@ -1,16 +1,24 @@
 # Talan CLI
 
 * Multi-components management system
-* Helps dealing with Monolith-SOA-Microservices architecture, split & merge repositories with less pain than usual
+* Helps dealing with Standalon/SOA/Microservices architectures, split & merge repositories with less pain than usual
 * Manages structure of projects using hierarchy of components
 * Defines complex relations between components using 'inherits' & 'depends' lists
 * Setups fully isolated development environments
 
 ## Setup
 * Install Nodejs 12.x or higher (https://nodejs.org)
+  Linux: 
+  ```
+  curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh
+  sudo bash nodesource_setup.sh
+  sudo apt-get install -y gcc g++ make
+  sudo apt-get install -y nodejs
+  node -v
+  ```
 * Install tln-cli 
   ```
-  npm i -g tln-cli
+  sudo npm i -g tln-cli
   tln --version
   ```
 
