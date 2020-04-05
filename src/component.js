@@ -20,7 +20,10 @@ class Component {
     this.components = [];
   }
 
-  // --------------------------------------------------------------------------
+  /*
+  * 
+  * params:
+  */
   async config(repository, prefix, force, terse) {
     this.logger.info(`config - '${this.uuid}' repository:'${repository}' prefix:'${prefix}' force:'${force}' terse:'${terse}'`);
     //
@@ -69,7 +72,11 @@ class Component {
     }
   }
 
-  async inspect(outputAsJson, cout) {
+  /*
+  * 
+  * params:
+  */
+  async inspect(cout, outputAsJson) {
     this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
     //
     let r = {};
@@ -112,11 +119,48 @@ class Component {
     }
   }
 
-  //
-  async ls(depth) {
+  /*
+  * 
+  * params:
+  */
+  async ls(cout, depth) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}'`);
-    this.logger.info(this);
+    await this.print(cout, depth);
   }
+
+  /*
+  * Print hierarchy of components
+  * params:
+  */
+  async print(cout, depth, offset = '', last = false) {
+    // output yourself
+    let status = '';
+    if (!fs.existsSync(this.home)) {
+      status = '*'
+    }
+    const id = this.id === '' ? '/' : this.id;
+    cout(`${offset} ${id} ${status}`);
+    //
+    if (depth > 0) {
+      await this.buildAllChildren();
+      let cnt = this.components.length;
+      let no = offset;
+      if (offset.length) {
+        if (this.components.length) {
+          no = offset.substring(0, offset.length - 1) + '│';
+        }
+        if (last) {
+          no = offset.substring(0, offset.length - 1) + ' ';
+        }
+      }
+      for (const component of this.components) {
+        cnt--;
+        const delim = (cnt) ? (' ├') : (' └');
+        await component.print(cout, depth - 1, `${no}${delim}`, cnt === 0);
+      }
+    }
+  }
+
 
   //
   async exec(recursive, command, input) {
@@ -137,7 +181,7 @@ class Component {
       const p = path.join(location, name);
       try {
         if (fs.lstatSync(p).isDirectory() && exclude.indexOf(name) == -1) {
-          ids.push({name:name, path:p});
+          ids.push({ name: name, path: p });
         }
       } catch (err) {
         this.logger.trace('Skip folder due to access restruction', p);
@@ -145,6 +189,46 @@ class Component {
     });
     return ids;
   }
+
+
+  async getComponentsFromDesc(desc) {
+    if (!desc.resolved) {
+      if (desc.components) {
+        desc.resolved = await desc.components({});
+      }
+    }
+    return desc.resolved;
+  }
+
+  /*
+  * Collect list of childs using all possible sources: descriptions, file system
+  * params:
+  */
+  async getIDs() {
+    // collect ids
+    let ids = [];
+    // ... from already created components
+    this.components.forEach((c) => { ids.push(c.id); });
+    // ... from descs
+    for (const desc of this.descriptions) {
+      const components = await this.getComponentsFromDesc(desc);
+      //
+      if (components) {
+        for (const component of components) {
+          ids.push(component.id);
+        }
+      }
+    }
+    // ... from file system
+    if (fs.existsSync(this.home)) {
+      ids = ids.concat(this.enumFolders(this.home).map(f => f.name));
+    }
+    // remove duplicates
+    ids = utils.uniquea(ids);
+    this.logger.trace('ids', ids);
+    return ids;
+  }
+
 
   //
   mergeDescriptions(location, configFolderOnly) {
@@ -159,9 +243,9 @@ class Component {
     } else {
       const descs = [];
       // scan all subfolders
-      for(const item of this.enumFolders(location)) {
-        for(const desc of this.mergeDescriptions(item.path, false)) {
-          descs.push({id: item.name, ...desc});
+      for (const item of this.enumFolders(location)) {
+        for (const desc of this.mergeDescriptions(item.path, false)) {
+          descs.push({ id: item.name, ...desc });
         }
       }
       if (descs.length) {
@@ -175,7 +259,7 @@ class Component {
     const configFile = utils.getConfigFile(location);
     if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
       const d = require(configFile);
-      d.source = location;
+      d.source = configFile;
       descriptions.push(d);
     }
     return descriptions;
@@ -193,9 +277,9 @@ class Component {
 
   // --------------------------------------------------------------------------
 
-  // child component will can have home different from parent
+  // child component will have home path different from parent
   async createChild(home) {
-    return await this.buildChild(path.basename(home), true, path.dirname(home));
+    return await this.buildChild(path.basename(home), true, home);
   }
 
   // child component will inherit home hierarchy from parent
@@ -206,6 +290,18 @@ class Component {
     if (!component) {
       // collect description from already loaded sources
       const descriptions = [];
+      for (const desc of this.descriptions) {
+        const components = await this.getComponentsFromDesc(desc);
+        //
+        if (components) {
+          for (const component of components) {
+            if (component.id === id) {
+              component.source = desc.source;
+              descriptions.push(component);
+            }
+          }
+        }
+      }
       // create child entity
       const cHome = path.join((home) ? (home) : (this.home), id);
       if (utils.isConfigPresent(cHome) || descriptions.length || force) {
@@ -217,12 +313,70 @@ class Component {
     return component;
   }
 
+  /*
+  * Create all children components from available descriptions
+  * params:
+  */
+  async buildAllChildren() {
+    const ids = await this.getIDs();
+    for (const id of ids) {
+      await this.buildChild(id, false);
+    }
+  }
+
+  /*
+  * Find entity inside children or pop up to check parent and continue search there
+  * params:
+  */
+ async find(ids, recursive = true, depth = 0, exclude = []) {
+  let component = null;
+  //console.log(this.id, ' ', ids);
+  if (ids.length) {
+    const id = ids[0];
+    let nIds = ids;
+    let nRecursive = true;
+    //
+    if (this.id === id) {
+      component = this;
+      if (ids.length > 1) {
+        nIds = ids.slice(1);
+        nRecursive = false;
+      }
+    }
+    // recursive search
+    if ((component && (ids.length > 1)) || (!component && recursive)) {
+      for (const item of await this.getIDs()) {
+        if (!exclude.includes(item)) {
+          const c = await this.buildChild(item, false);
+          if (c) {
+            component = await c.find(nIds, nRecursive, depth + 1);
+            if (component) {
+              break;
+            }
+          }
+        }
+      }
+    }
+    // try to use one level upper
+    if (!component && this.parent && (depth === 0)) {
+      component = this.parent.find(ids, true, 0, [this.id]);
+    }
+  }
+  return component;
+}
+
+
   async resolve(components, resolveEmptyToThis = false) {
     let r = [];
     if (components.length) {
-      for(let component of components) {
+      for (let component of components) {
         // find component
-        this.logger.error(`Component '${component}' was not found`);
+        const c = await this.find(component.split('/'));
+        if (c) {
+          r.push(c);
+        } else {
+          this.logger.error(`Component '${component}' was not found`);
+        }
       }
       return r;
     } else {

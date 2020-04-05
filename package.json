@@ -29,7 +29,9 @@
   },
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
     "log4js": "^6.1.2",
+    "node-fetch": "^2.6.0",
     "tmp": "^0.1.0",
     "yaml": "^1.8.3",
     "yargs": "^15.1.0"

@@ -59,7 +59,7 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('d', { describe: 'depth level', alias: 'depth', default: -1, type: 'number' })
+        .option('d', { describe: 'depth level', alias: 'depth', default: 1, type: 'number' })
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
