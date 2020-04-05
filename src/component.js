@@ -20,7 +20,10 @@ class Component {
     this.components = [];
   }
 
-  // --------------------------------------------------------------------------
+  /*
+  * 
+  * params:
+  */
   async config(repository, prefix, force, terse) {
     this.logger.info(`config - '${this.uuid}' repository:'${repository}' prefix:'${prefix}' force:'${force}' terse:'${terse}'`);
     //
@@ -69,6 +72,10 @@ class Component {
     }
   }
 
+  /*
+  * 
+  * params:
+  */
   async inspect(cout, outputAsJson) {
     this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
     //
@@ -112,7 +119,10 @@ class Component {
     }
   }
 
-  //
+  /*
+  * 
+  * params:
+  */
   async ls(cout, depth) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}'`);
     await this.print(cout, depth);
@@ -143,7 +153,7 @@ class Component {
           no = offset.substring(0, offset.length - 1) + ' ';
         }
       }
-      for(const component of this.components) {
+      for (const component of this.components) {
         cnt--;
         const delim = (cnt) ? (' ├') : (' └');
         await component.print(cout, depth - 1, `${no}${delim}`, cnt === 0);
@@ -171,7 +181,7 @@ class Component {
       const p = path.join(location, name);
       try {
         if (fs.lstatSync(p).isDirectory() && exclude.indexOf(name) == -1) {
-          ids.push({name:name, path:p});
+          ids.push({ name: name, path: p });
         }
       } catch (err) {
         this.logger.trace('Skip folder due to access restruction', p);
@@ -189,6 +199,7 @@ class Component {
     }
     return desc.resolved;
   }
+
   /*
   * Collect list of childs using all possible sources: descriptions, file system
   * params:
@@ -199,7 +210,7 @@ class Component {
     // ... from already created components
     this.components.forEach((c) => { ids.push(c.id); });
     // ... from descs
-    for(const desc of this.descriptions) {
+    for (const desc of this.descriptions) {
       const components = await this.getComponentsFromDesc(desc);
       //
       if (components) {
@@ -232,9 +243,9 @@ class Component {
     } else {
       const descs = [];
       // scan all subfolders
-      for(const item of this.enumFolders(location)) {
-        for(const desc of this.mergeDescriptions(item.path, false)) {
-          descs.push({id: item.name, ...desc});
+      for (const item of this.enumFolders(location)) {
+        for (const desc of this.mergeDescriptions(item.path, false)) {
+          descs.push({ id: item.name, ...desc });
         }
       }
       if (descs.length) {
@@ -279,7 +290,7 @@ class Component {
     if (!component) {
       // collect description from already loaded sources
       const descriptions = [];
-      for(const desc of this.descriptions) {
+      for (const desc of this.descriptions) {
         const components = await this.getComponentsFromDesc(desc);
         //
         if (components) {
@@ -313,13 +324,57 @@ class Component {
     }
   }
 
+  /*
+  * Find entity inside children or pop up to check parent and continue search there
+  * params:
+  */
+ async find(ids, recursive = true, depth = 0, exclude = []) {
+  let component = null;
+  //console.log(this.id, ' ', ids);
+  if (ids.length) {
+    const id = ids[0];
+    let nIds = ids;
+    let nRecursive = true;
+    //
+    if (this.id === id) {
+      component = this;
+      if (ids.length > 1) {
+        nIds = ids.slice(1);
+        nRecursive = false;
+      }
+    }
+    // recursive search
+    if ((component && (ids.length > 1)) || (!component && recursive)) {
+      for (const item of await this.getIDs()) {
+        if (!exclude.includes(item)) {
+          const c = await this.buildChild(item, false);
+          component = await c.find(nIds, nRecursive, depth + 1);
+          if (component) {
+            break;
+          }
+        }
+      }
+    }
+    // try to use one level upper
+    if (!component && this.parent && (depth === 0)) {
+      component = this.parent.find(ids, true, 0, [this.id]);
+    }
+  }
+  return component;
+}
+
 
   async resolve(components, resolveEmptyToThis = false) {
     let r = [];
     if (components.length) {
-      for(let component of components) {
+      for (let component of components) {
         // find component
-        this.logger.error(`Component '${component}' was not found`);
+        const c = await this.find(component.split('/'));
+        if (c) {
+          r.push(c);
+        } else {
+          this.logger.error(`Component '${component}' was not found`);
+        }
       }
       return r;
     } else {
