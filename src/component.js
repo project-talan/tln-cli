@@ -348,9 +348,11 @@ class Component {
       for (const item of await this.getIDs()) {
         if (!exclude.includes(item)) {
           const c = await this.buildChild(item, false);
-          component = await c.find(nIds, nRecursive, depth + 1);
-          if (component) {
-            break;
+          if (c) {
+            component = await c.find(nIds, nRecursive, depth + 1);
+            if (component) {
+              break;
+            }
           }
         }
       }
