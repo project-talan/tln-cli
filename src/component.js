@@ -9,6 +9,7 @@ const utils = require('./utils');
 class Component {
   constructor(logger, id, home, parent, descriptions) {
     this.logger = logger;
+    this.tln = {};
     this.id = id;
     this.home = home;
     this.parent = parent;
@@ -89,6 +90,9 @@ class Component {
     this.descriptions.forEach(description => {
       r.descriptions.push(description.source);
     });
+    // herarchy
+    const herarchy = await this.unfoldHierarchy();
+    r.depends = utils.uniquea(herarchy.filter( c => true/*c.type === 'depends'*/).map( c => `${c.component.id} [${c.component.uuid}]`));
     /*/
     r.tags = [];
     r.inherits = [];
@@ -145,7 +149,7 @@ class Component {
       await this.buildAllChildren();
       let more = 0;
       let cnt = this.components.length;
-      if (limit > 0){
+      if (limit > 0) {
         if (limit < cnt) {
           more = cnt - limit;
           cnt = limit;
@@ -207,7 +211,7 @@ class Component {
   async getComponentsFromDesc(desc) {
     if (!desc.resolved) {
       if (desc.components) {
-        desc.resolved = await desc.components({});
+        desc.resolved = await desc.components(this.tln);
       }
     }
     return desc.resolved;
@@ -341,43 +345,42 @@ class Component {
   * Find entity inside children or pop up to check parent and continue search there
   * params:
   */
- async find(ids, recursive = true, depth = 0, exclude = []) {
-  let component = null;
-  //console.log(this.id, ' ', ids);
-  if (ids.length) {
-    const id = ids[0];
-    let nIds = ids;
-    let nRecursive = true;
-    //
-    if (this.id === id) {
-      component = this;
-      if (ids.length > 1) {
-        nIds = ids.slice(1);
-        nRecursive = false;
+  async find(ids, recursive = true, depth = 0, exclude = []) {
+    let component = null;
+    //console.log(this.id, ' ', ids);
+    if (ids.length) {
+      const id = ids[0];
+      let nIds = ids;
+      let nRecursive = true;
+      //
+      if (this.id === id) {
+        component = this;
+        if (ids.length > 1) {
+          nIds = ids.slice(1);
+          nRecursive = false;
+        }
       }
-    }
-    // recursive search
-    if ((component && (ids.length > 1)) || (!component && recursive)) {
-      for (const item of await this.getIDs()) {
-        if (!exclude.includes(item)) {
-          const c = await this.buildChild(item, false);
-          if (c) {
-            component = await c.find(nIds, nRecursive, depth + 1);
-            if (component) {
-              break;
+      // recursive search
+      if ((component && (ids.length > 1)) || (!component && recursive)) {
+        for (const item of await this.getIDs()) {
+          if (!exclude.includes(item)) {
+            const c = await this.buildChild(item, false);
+            if (c) {
+              component = await c.find(nIds, nRecursive, depth + 1);
+              if (component) {
+                break;
+              }
             }
           }
         }
       }
+      // try to use one level upper
+      if (!component && this.parent && (depth === 0)) {
+        component = this.parent.find(ids, true, 0, [this.id]);
+      }
     }
-    // try to use one level upper
-    if (!component && this.parent && (depth === 0)) {
-      component = this.parent.find(ids, true, 0, [this.id]);
-    }
+    return component;
   }
-  return component;
-}
-
 
   async resolve(components, resolveEmptyToThis = false) {
     let r = [];
@@ -400,10 +403,29 @@ class Component {
     return r;
   }
 
+  async unfoldHierarchy(type = '') {
+    let list = [{component: this, type: type}];
+    // check parents' hierarchy first
+    if (this.parent) {
+      list = list.concat(await this.parent.unfoldHierarchy(type));
+    }
+    // check depends list
+    let depends = [];
+    for (const desc of this.descriptions) {
+      if (desc.depends) {
+        depends = depends.concat(await desc.depends(this.tln));
+      }
+    }
+    for (let component of await this.resolve(depends)) {
+      list = list.concat(await component.unfoldHierarchy('depends'));
+    }
+    return list;
+  }
+
 }
 
 module.exports.createRoot = (logger, home, source) => {
-  const root = new Component(logger, '', home, null, []);
+  const root = new Component(logger, '/', home, null, []);
   root.loadDescriptionsFromFolder(path.join(source, 'components'), false);
   root.loadDescriptions();
   return root;
