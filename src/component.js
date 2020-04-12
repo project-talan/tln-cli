@@ -123,16 +123,16 @@ class Component {
   * 
   * params:
   */
-  async ls(cout, depth) {
-    this.logger.info(`ls ${this.uuid} - depth:'${depth}'`);
-    await this.print(cout, depth);
+  async ls(cout, depth, limit) {
+    this.logger.info(`ls ${this.uuid} - depth:'${depth}' limit:'${limit}'`);
+    await this.print(cout, depth, limit);
   }
 
   /*
   * Print hierarchy of components
   * params:
   */
-  async print(cout, depth, offset = '', last = false) {
+  async print(cout, depth, limit, offset = '', last = false) {
     // output yourself
     let status = '';
     if (!fs.existsSync(this.home)) {
@@ -143,7 +143,14 @@ class Component {
     //
     if (depth > 0) {
       await this.buildAllChildren();
+      let more = 0;
       let cnt = this.components.length;
+      if (limit > 0){
+        if (limit < cnt) {
+          more = cnt - limit;
+          cnt = limit;
+        }
+      }
       let no = offset;
       if (offset.length) {
         if (this.components.length) {
@@ -156,7 +163,13 @@ class Component {
       for (const component of this.components) {
         cnt--;
         const delim = (cnt) ? (' ├') : (' └');
-        await component.print(cout, depth - 1, `${no}${delim}`, cnt === 0);
+        await component.print(cout, depth - 1, limit, `${no}${delim}`, cnt === 0);
+        if (!cnt) {
+          break;
+        }
+      }
+      if (more) {
+        cout(`${offset}   ... ${more} more`);
       }
     }
   }

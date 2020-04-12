@@ -94,9 +94,9 @@ class Appl {
   }
 
   //
-  async ls(components, depth) {
+  async ls(components, depth, limit) {
     for(const component of await this.resolve(components)) {
-      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, depth);
+      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, depth, limit);
     }
   }
 
