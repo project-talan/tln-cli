@@ -4,7 +4,8 @@
   "description": "Multi-component management tool",
   "main": "cli.js",
   "scripts": {
-    "test": "nyc --reporter=text --reporter=lcov mocha **/*spec.js"
+    "test": "nyc --reporter=text --reporter=lcov mocha **/*spec.js",
+    "update": "node components/update.js"
   },
   "nyc": {
     "all": true,
