@@ -84,7 +84,6 @@ class Component {
     r.id = this.id;
     r.uuid = this.uuid;
     r.home = this.home;
-    //r.uuid = this.uuid;
     r.parent = (this.parent) ? (this.parent.id) : (null);
     r.descriptions = [];
     this.descriptions.forEach(description => {
@@ -92,11 +91,9 @@ class Component {
     });
     // herarchy
     const herarchy = await this.unfoldHierarchy();
-    r.depends = utils.uniquea(herarchy.filter( c => true/*c.type === 'depends'*/).map( c => `${c.component.id} [${c.component.uuid}]`));
+    r.inherits = herarchy.map( c => `${c.id} [${c.uuid}]`);
     /*/
     r.tags = [];
-    r.inherits = [];
-    r.depends = [];
     //
     const steps = this.findStep('*', filter, this.home, cntx, [], r.inherits);
     //
@@ -250,6 +247,13 @@ class Component {
   //
   mergeDescriptions(location, configFolderOnly) {
     let descriptions = [];
+    // load from file
+    const configFile = utils.getConfigFile(location);
+    if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
+      const d = require(configFile);
+      d.source = configFile;
+      descriptions.push(d);
+    }
     // check folder(s)
     if (configFolderOnly) {
       // check .tln folder only
@@ -271,13 +275,6 @@ class Component {
           source: location
         });
       }
-    }
-    // load from file
-    const configFile = utils.getConfigFile(location);
-    if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
-      const d = require(configFile);
-      d.source = configFile;
-      descriptions.push(d);
     }
     return descriptions;
   }
@@ -403,21 +400,24 @@ class Component {
     return r;
   }
 
-  async unfoldHierarchy(type = '') {
-    let list = [{component: this, type: type}];
-    // check parents' hierarchy first
-    if (this.parent) {
-      list = list.concat(await this.parent.unfoldHierarchy(type));
+  async unfoldHierarchy(unique = true, list = []) {
+    if (unique) {
+      list = list.filter((component) => component.uuid !== this.uuid);
     }
-    // check depends list
-    let depends = [];
+    list.push(this);
+    // check inherits list first
+    let inherits = [];
     for (const desc of this.descriptions) {
-      if (desc.depends) {
-        depends = depends.concat(await desc.depends(this.tln));
+      if (desc.inherits) {
+        inherits = inherits.concat(await desc.inherits(this.tln));
       }
     }
-    for (let component of await this.resolve(depends)) {
-      list = list.concat(await component.unfoldHierarchy('depends'));
+    for (let component of await this.resolve(inherits)) {
+      list = await component.unfoldHierarchy(unique, list);
+    }
+    // check parents' hierarchy
+    if (this.parent) {
+      list = await this.parent.unfoldHierarchy(unique, list);
     }
     return list;
   }

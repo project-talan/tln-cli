@@ -16,14 +16,11 @@ module.exports = {
     }
   */],
   dotenvs: async (tln) => [/*'.env'*/],
-  depends: async (tln) => [/*'java/openjdk-11.0.2'*/],
-  inherits: async (tln) => [/*'git'*/],
-  variables: async (tln, variables) => {/*
-    // params.name, params.env 
-    variables
-      .set('TLN_GIT_USER', async (tln, params) => 'john.doe')
-      .append('PATH', async (tln, params) => path.join(params.env['COMPONENT_ORIGIN'], 'lib'))
-      .prepend('PATH', async (tln, params) => path.join(params.env['COMPONENT_ORIGIN'], 'bin'));
+  inherits: async (tln) => [/*'git', 'java/openjdk-11.0.2'*/],
+  env: async (tln, env) => {/*
+    env['TLN_GIT_USER'] = 'john.doe';
+    env['PATH'] = `${env['PATH']}${tln.delim}${path.join(env['TLN_COMPONENT_ORIGIN'], 'lib')}`;
+    env['PATH'] = `${path.join(env['TLN_COMPONENT_ORIGIN'], 'bin')}${tln.delim}${env['PATH']}`;
   */},
   steps: async (tln) => [/*
     {
