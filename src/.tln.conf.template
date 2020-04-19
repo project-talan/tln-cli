@@ -9,24 +9,29 @@ module.exports = {
   tags: async (tln) => [/*'tag'*/],
   options: async (tln) => [/*
     {
-      name: 'origin',         // option name
-      var:  'TLN_GIT_ORIGIN', // variable to expose
-      desc: 'Origin url',     // description
-      def:  null              // default value
+      option: 'origin',       // option name
+      env:  'TLN_GIT_ORIGIN', // variable to expose
+      desc: 'Origin url',     //
+      default:  null          // 
     }
   */],
   dotenvs: async (tln) => [/*'.env'*/],
-  inherits: async (tln) => [/*'git', 'java/openjdk-11.0.2'*/],
+  inherits: async (tln) => [/*'git'*/],
+  depends: async (tln) => [/*'java/openjdk-11.0.2'*/],
   env: async (tln, env) => {/*
     env['TLN_GIT_USER'] = 'john.doe';
     env['PATH'] = `${env['PATH']}${tln.delim}${path.join(env['TLN_COMPONENT_ORIGIN'], 'lib')}`;
     env['PATH'] = `${path.join(env['TLN_COMPONENT_ORIGIN'], 'bin')}${tln.delim}${env['PATH']}`;
-  */},
+    
+  */ return env; },
   steps: async (tln) => [/*
     {
       id: 'hi',
       desc: 'Say Hi from component home',
-      script: async (tln, script) => script.set(['echo Hi, home: ${COMPONENT_HOME}'])
+      script: async (tln, script) => {
+        script.set(['echo Hi, home: ${TLN_COMPONENT_HOME}']);
+        // return true; // to prevent chain execution
+      }
     }
   */],
   components: async (tln) => [/*

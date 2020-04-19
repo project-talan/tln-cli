@@ -18,7 +18,7 @@ module.exports = {
   dotenvs: (tln) => [/*'.env'*/],
   depends: (tln) => [/*'java'*/],
   inherits: (tln) => [/*'git'*/],
-  variables: (tln, variables) => {/*
+  es: (tln, variables) => {/*
     // params.name, params.env 
     variables
       .set('TLN_GIT_USER', (tln, params) => 'user.name')

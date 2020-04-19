@@ -10,7 +10,12 @@ const appl = async (verbose, cwd, cliHome, sharedDest, fn) => {
 const splitComponents = (components) => {
   return components?components.split(':'):[];
 }
+const parseEnv = (env) => {
+  const obj = {};
+  env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
+  return obj;
 
+}
 
 const argv = require('yargs')
   .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
@@ -49,7 +54,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.inspect(splitComponents(argv.components), argv.json);
+        await a.inspect(splitComponents(argv.components), parseEnv(argv.env), argv, argv.json);
       });
     }
   )

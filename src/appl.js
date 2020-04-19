@@ -7,6 +7,7 @@ const os = require('os');
 const tmp = require('tmp');
 
 const logger = require('./logger');
+const filterFactory = require('./filter');
 const utils = require('./utils');
 
 class Appl {
@@ -21,6 +22,7 @@ class Appl {
     this.cliHome = cliHome;
     this.dest = sharedDest;
     this.home = this.cwd;
+    this.filter = filterFactory.create(this.logger);
   }
 
   async init() {
@@ -87,9 +89,9 @@ class Appl {
   }
 
   //
-  async inspect(components, outputAsJson) {
+  async inspect(components, env, argv, outputAsJson) {
     for(const component of await this.resolve(components)) {
-      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, outputAsJson);
+      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, env, argv, outputAsJson);
     }
   }
 
