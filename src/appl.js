@@ -114,12 +114,12 @@ class Appl {
   }
 
   //
-  async run(components, parallel, recursive, steps, save, dryRun, depends) {
+  async run(components, parallel, steps, recursive, envFromCli, argv, save, dryRun, depends) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.run(recursive, steps, save, dryRun, depends);
+        component.run(steps, recursive, this.filter, envFromCli, argv, save, dryRun, depends);
       } else {
-        await component.run(recursive, steps, save, dryRun, depends);
+        await component.run(steps, recursive, this.filter, envFromCli, argv, save, dryRun, depends );
       }
     }
   }

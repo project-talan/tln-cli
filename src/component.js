@@ -116,7 +116,7 @@ class Component {
       }
     });
     r.dotenvs = dotenvs;
-    r.scripts = scripts.map( s => {return { id: s.getUuid()}});
+    r.steps = scripts.map( s => {return { id: s.getUuid()}});
     r.graph = herarchy.map( c => `${c.component.id} [${c.component.getUuid()}] [${c.anchor}]`);
     r.inherits = herarchy.filter(c => c.anchor === this.uuid).map( c => `${c.component.id} [${c.component.getUuid()}]`);
     r.depends = Component.getDependsList(herarchy, this.uuid).map( c => `${c.component.id} [${c.component.getUuid()}]`);
@@ -124,24 +124,6 @@ class Component {
 
     /*/
     r.tags = [];
-    //
-    const steps = this.findStep('*', filter, this.home, cntx, [], r.inherits);
-    //
-    r.env = {};
-    const { vars, env } = this.buildEnvironment(this.getVariables([], r.depends));
-    for (let v in vars) {
-      r.env[v] = vars[v];
-    }
-    //
-    r.dotenvs = [];
-    r.steps = [];
-    for (const step of steps) {
-      r.dotenvs = r.dotenvs.concat(step.cntx.dotenvs);
-      r.steps.push(step.script.uuid);
-    }
-    r.dotenvs = utils.uniquea(r.dotenvs);
-    r.inherits = utils.uniquea(r.inherits);
-    r.depends = utils.uniquea(r.depends);
     /*/
     if (outputAsJson) {
       cout(JSON.stringify(r, null, 2));
@@ -213,8 +195,24 @@ class Component {
   }
 
   //
-  async run(recursive, steps, save, dryRun, depends) {
+  async run(steps, recursive, filter, envFromCli, argv, save, dryRun, depends) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
+    const herarchy = await this.unfoldHierarchy(this.uuid);
+    if (depends) {
+
+    } else {
+      for(const step of steps) {
+        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, step, filter, envFromCli, argv);
+        for(const script of scripts) {
+          if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+            break;
+          }
+        }
+      }
+      if (recursive) {
+        
+      }
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -272,7 +270,6 @@ class Component {
     this.logger.trace('ids', ids);
     return ids;
   }
-
 
   //
   mergeDescriptions(location, configFolderOnly) {

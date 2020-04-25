@@ -1,6 +1,19 @@
 #!/usr/bin/env node
 
+/*
+Add ability to defien external catalog url, something similar to
+tln install --repo https://github.com/company/catalog
+
+recursive execution parent first than children or children first than parent
+*/
 'use strict';
+
+// workaround for windows Path definition
+if (process.env['Path']) {
+  const p = process.env['Path'];
+  delete process.env['Path'];
+  process.env['PATH'] = p;
+}
 
 const appl = async (verbose, cwd, cliHome, sharedDest, fn) => {
   const a = require('./src/appl').create(verbose, cwd, cliHome, sharedDest);
@@ -108,7 +121,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.run(splitComponents(argv.components), argv.parallel, argv.recursive, argv.steps.split(':'), argv.save, argv.dryRun, argv.depends);
+        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, parseEnv(argv.env), argv, argv.save, argv.dryRun, argv.depends);
       });
     }
   )
