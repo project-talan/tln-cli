@@ -79,10 +79,11 @@ const argv = require('yargs')
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
         .option('d', { describe: 'depth level', alias: 'depth', default: 1, type: 'number' })
         .option('l', { describe: 'depth level', alias: 'limit', default: 5, type: 'number' })
+        .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.ls(splitComponents(argv.components), argv.depth, (argv.all ? -1 : argv.limit));
+        await a.ls(splitComponents(argv.components), argv.parents, argv.depth, (argv.all ? -1 : argv.limit));
       });
     }
   )

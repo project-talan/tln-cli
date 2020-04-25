@@ -136,23 +136,30 @@ class Component {
   * 
   * params:
   */
-  async ls(cout, depth, limit) {
+  async ls(cout, parents, depth, limit) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}' limit:'${limit}'`);
-    await this.print(cout, depth, limit);
+    await this.print(cout, parents, depth, limit);
   }
 
   /*
   * Print hierarchy of components
   * params:
   */
-  async print(cout, depth, limit, offset = '', last = false) {
+  async print(cout, parents, depth, limit, offset = '', last = false) {
+    let prefix = ' ';
+    if (parents && this.parent) {
+      offset = `${await this.parent.print(cout, parents, 0, 0)} └`;
+    }
     // output yourself
     let status = '';
     if (!fs.existsSync(this.home)) {
       status = '*'
     }
     const id = this.id === '' ? '/' : this.id;
-    cout(`${offset} ${id} ${status}`);
+    cout(`${offset}${prefix}${id} ${status}`);
+    if (parents && offset.length) {
+      offset = offset.slice(0, -1) + ' ';
+    }
     //
     if (depth > 0) {
       await this.buildAllChildren();
@@ -165,7 +172,7 @@ class Component {
         }
       }
       let no = offset;
-      if (offset.length) {
+      if (offset.length && !parents) {
         if (this.components.length) {
           no = offset.substring(0, offset.length - 1) + '│';
         }
@@ -176,7 +183,7 @@ class Component {
       for (const component of this.components) {
         cnt--;
         const delim = (cnt) ? (' ├') : (' └');
-        await component.print(cout, depth - 1, limit, `${no}${delim}`, cnt === 0);
+        await component.print(cout, false, depth - 1, limit, `${no}${delim}`, cnt === 0);
         if (!cnt) {
           break;
         }
@@ -185,6 +192,7 @@ class Component {
         cout(`${offset}   ... ${more} more`);
       }
     }
+    return offset;
   }
 
 
