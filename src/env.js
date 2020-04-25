@@ -19,10 +19,10 @@ class Env {
     }
     return {...inputEnv};
   }
-
+  /*
   static BoolNot(l, r) {
   }
-
+  */
 }
 
 module.exports.create = (logger) => {
