@@ -344,7 +344,7 @@ class Component {
         }
       }
       // create child entity
-      const cHome = path.join((home) ? (home) : (this.home), id);
+      const cHome = (home) ? (home) : path.join((this.home), id);
       if (utils.isConfigPresent(cHome) || descriptions.length || force) {
         component = new Component(this.logger, id, cHome, this, descriptions);
         component.loadDescriptions();
