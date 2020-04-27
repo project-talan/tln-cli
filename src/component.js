@@ -282,13 +282,6 @@ class Component {
   //
   mergeDescriptions(location, configFolderOnly) {
     let descriptions = [];
-    // load from file
-    const configFile = utils.getConfigFile(location);
-    if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
-      const d = require(configFile);
-      d.source = configFile;
-      descriptions.push(d);
-    }
     // check folder(s)
     if (configFolderOnly) {
       // check .tln folder only
@@ -310,6 +303,13 @@ class Component {
           source: location
         });
       }
+    }
+    // load from file
+    const configFile = utils.getConfigFile(location);
+    if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
+      const d = require(configFile);
+      d.source = configFile;
+      descriptions.push(d);
     }
     return descriptions;
   }
@@ -491,15 +491,15 @@ class Component {
     for (const h of hierarchy) {
       (await h.component.findScript(pattern, filter)).map(i => {
         // collect script from direct parent of inherits list
-        if ((h.anchor === this.uuid) && (i.script)) {
-          scripts.push(i.script);
+        if ((h.anchor === this.uuid) && (i.scripts.length)) {
+          scripts.push(...i.scripts);
         }
         envs.push(i.envs);
         dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(h.component.home, this.home), de)));
       });
     }
     // merge all env and apply options
-    let env = {...process.env};
+    let env = {...process.env, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home};
     for (const e of envs.reverse()) {
       env = e.options.parse(argv, await e.env.build(this.tln, env));
     }
@@ -509,18 +509,17 @@ class Component {
   async findScript(pattern, filter) {
     const r = [];
     for (const desc of this.descriptions) {
-      let script = null;
+      let scripts = [];
       let env = envFactory.create(this.logger);
       let options = optionsFactory.create(this.logger);
       let dotenvs = [];
       // locate script
       if (desc.steps) {
-        const step = (await desc.steps(this.tln)).find(s => 
-          s.id.match(pattern) && filter.validate(s.filter ? s.filter : '')
-        );
-        if (step) {
-          script = scriptFactory.create(this.logger, step.id, this.uuid, step.script);
-        }
+        (await desc.steps(this.tln)).forEach(step => {
+          if (step.id.match(pattern) && filter.validate(step.filter ? step.filter : '')) {
+            scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.script));
+          }
+        });
       }
       // get env & options
       if (desc.env) {
@@ -533,7 +532,7 @@ class Component {
       if (desc.dotenvs) {
         dotenvs = await desc.dotenvs(this.tln);
       }
-      r.push({ script: script, envs: {env : env, options: options}, dotenvs: dotenvs });
+      r.push({ scripts, envs: {env : env, options: options}, dotenvs });
     }
     return r;
   }
