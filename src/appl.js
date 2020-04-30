@@ -23,6 +23,12 @@ class Appl {
     this.dest = sharedDest;
     this.home = this.cwd;
     this.filter = filterFactory.create(this.logger);
+    this.tln = Object.freeze({
+      logger: this.logger,
+      getOsInfo: () => {return {platform: 'win32'}},
+      getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
+    })
+
   }
 
   async init() {
@@ -62,7 +68,7 @@ class Appl {
         this.dest = this.home;
       }
     }
-    this.rootComponent = require('./component').createRoot(this.logger, this.dest, this.cliHome);
+    this.rootComponent = require('./component').createRoot(this.logger, this.tln, this.dest, this.cliHome);
     this.currentComponent = this.rootComponent;
     if (detached) {
       this.currentComponent = await this.rootComponent.createChild(this.cwd);

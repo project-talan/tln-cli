@@ -43,7 +43,6 @@ class Script {
     }
     // TODO: pass proxy object instead of script itself
     const result = await this.builder(tln, Object.freeze({
-        logger: this.logger,
         env: {...env},
         set: (body) => this.set(body)
       })

@@ -10,9 +10,9 @@ const envFactory = require('./env');
 const utils = require('./utils');
 
 class Component {
-  constructor(logger, id, home, parent, descriptions) {
+  constructor(logger, tln, id, home, parent, descriptions) {
     this.logger = logger;
-    this.tln = {};
+    this.tln = tln;
     this.id = id;
     this.home = home;
     this.parent = parent;
@@ -102,7 +102,7 @@ class Component {
       r.descriptions.push(description.source);
     });
     // herarchy
-    const herarchy = await this.unfoldHierarchy(this.uuid);
+    const herarchy = await this.unfoldHierarchy(this.uuid, false);
     const {scripts, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, argv);
     r.env = {};
 
@@ -354,7 +354,7 @@ class Component {
       // create child entity
       const cHome = (home) ? (home) : path.join((this.home), id);
       if (utils.isConfigPresent(cHome) || descriptions.length || force) {
-        component = new Component(this.logger, id, cHome, this, descriptions);
+        component = new Component(this.logger, this.tln, id, cHome, this, descriptions);
         component.loadDescriptions();
         this.components.push(component);
       }
@@ -491,19 +491,26 @@ class Component {
     for (const h of hierarchy) {
       (await h.component.findScript(pattern, filter)).map(i => {
         // collect script from direct parent of inherits list
+        // use component ownd id & home
+        let compomentId = h.component.id;
+        let componentHome = h.component.home;
         if ((h.anchor === this.uuid) && (i.scripts.length)) {
           scripts.push(...i.scripts);
+          // use main component id & home
+          compomentId = this.id;
+          componentHome = this.home;
         }
-        envs.push(i.envs);
+        envs.push({ ...i.envs, compomentId, componentHome });
         dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(h.component.home, this.home), de)));
       });
     }
     // merge all env and apply options
-    let env = {...process.env, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home};
+    let env = {...process.env };
     for (const e of envs.reverse()) {
+      env = {...env, TLN_COMPONENT_ID: e.compomentId, TLN_COMPONENT_HOME: e.componentHome };
       env = e.options.parse(argv, await e.env.build(this.tln, env));
     }
-    return {scripts: scripts, env: {...env, ...envFromCli}, dotenvs: dotenvs.reverse()};
+    return {scripts: scripts, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
   }
 
   async findScript(pattern, filter) {
@@ -538,8 +545,8 @@ class Component {
   }
 }
 
-module.exports.createRoot = (logger, home, source) => {
-  const root = new Component(logger, '/', home, null, []);
+module.exports.createRoot = (logger, tln, home, source) => {
+  const root = new Component(logger, tln, '/', home, null, []);
   root.loadDescriptionsFromFolder(path.join(source, 'components'), false);
   root.loadDescriptions();
   return root;

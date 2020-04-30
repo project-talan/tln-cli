@@ -21,5 +21,70 @@ module.exports = {
     return arr.filter((item, pos) => {
       return cmp(arr, item, pos);
     });
+  },
+  getDownloadScript: (tln, dist) => {
+    let r = [];
+    const osInfo = tln.getOsInfo();
+    const platform = osInfo.platform;
+    if (dist[platform]) {
+      const opts = dist[platform].opts;
+      const name = dist[platform].name;
+      const url = dist[platform].url;
+      //
+      if (platform === 'win32') {
+        r.push(`echo Downloading ${url}`);
+        r.push(`powershell -Command "(New-Object System.Net.WebClient).DownloadFile('${url}', '${name}')"`);
+        if (name.match('tar.gz')) {
+          r.push(`tar -xvzf ${name}`);
+        } else {
+          r.push(`powershell -Command "Expand-Archive -LiteralPath '${name}' -DestinationPath '.'"`);
+        }
+        // move content
+        if (opts) {
+          if (opts.src && opts.flt && opts.dest) {
+            r.push(`powershell -Command "Get-ChildItem -Path '${opts.src}' -Filter '${opts.flt}' -Recurse | Move-Item -Destination '${opts.dest}'"`);
+            if (opts.rmv) {
+              r.push(`powershell -Command "Remove-Item '${opts.rmv}'"`);
+            }
+          }
+        }
+        r.push(`powershell -Command "Remove-Item '${name}'"`);
+      } else /*if (platform === 'linux') {
+        r.push(`wget '${url}'`);
+        if (name.match('tar.gz')) {
+          r.push(`tar -xzf '${name}'`);
+        } else {
+          r.push(`unzip '${name}'`);
+        }
+        // move content
+        if (opts) {
+          if (opts.src && opts.flt && opts.dest) {
+            r.push(`mv ${opts.src}/${opts.flt} ${opts.dest}`);
+            if (opts.rmv) {
+              r.push(`rmdir '${opts.rmv}'`);
+            }
+          }
+        }
+        r.push(`rm -f ${name}`);
+      } else if (platform === 'darwin') */ {
+        r.push(`wget '${url}'`);
+        if (name.match('tar.gz')) {
+          r.push(`tar -xzf '${name}'`);
+        } else {
+          r.push(`unzip '${name}'`);
+        }
+        // move content
+        if (opts) {
+          if (opts.src && opts.flt && opts.dest) {
+            r.push(`mv ${opts.src}/${opts.flt} ${opts.dest}`);
+            if (opts.rmv) {
+              r.push(`rmdir '${opts.rmv}'`);
+            }
+          }
+        }
+        r.push(`rm -f ${name}`);
+      }
+    }
+    return r;
   }
 }
