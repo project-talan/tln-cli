@@ -105,7 +105,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
-        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, argv.command, argv.input);
+        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, parseEnv(argv.env), argv, argv.dryRun, argv.command, argv.input);
       });
     }
   )

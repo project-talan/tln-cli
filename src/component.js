@@ -197,9 +197,28 @@ class Component {
 
 
   //
-  async exec(recursive, command, input) {
+  async exec(recursive, filter, envFromCli, argv, dryRun, command, input) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
-    this.logger.con(this);
+    const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
+    //
+    if (recursive) {
+      await this.buildAllChildren();
+      for (const component of this.components) {
+        await component.exec(recursive, filter, envFromCli, argv, dryRun, command, input);
+      }
+    }
+    //
+    const script2Execute = scriptFactory.create(this.logger, 'clicmd', this.uuid, async (tln, script) => {
+      if (command) {
+        script.set([command])
+      } else if (input) {
+        script.set(input);
+      } else {
+        this.logger.warn(`${this.uuid} exec command input parameter is missing`);
+      }
+    });
+    const { scripts, env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, argv);
+    await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
   }
 
   //

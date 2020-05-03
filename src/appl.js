@@ -109,12 +109,12 @@ class Appl {
   }
 
   //
-  async exec(components, parallel, recursive, command, input) {
+  async exec(components, parallel, recursive, envFromCli, argv, dryRun, command, input) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.exec(recursive, command, input);
+        component.exec(recursive, this.filter, envFromCli, argv, dryRun, command, input);
       } else {
-        await component.exec(recursive, command, input);
+        await component.exec(recursive, this.filter, envFromCli, argv, dryRun, command, input);
       }
     }
   }
