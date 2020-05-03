@@ -102,7 +102,7 @@ class Component {
       r.descriptions.push(description.source);
     });
     // herarchy
-    const herarchy = await this.unfoldHierarchy(this.uuid, false);
+    const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, false);
     const {scripts, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, argv);
     r.env = {};
 
@@ -205,7 +205,7 @@ class Component {
   //
   async run(steps, recursive, filter, envFromCli, argv, save, dryRun, depends) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
-    const herarchy = await this.unfoldHierarchy(this.uuid);
+    const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
 
     } else {
@@ -435,21 +435,12 @@ class Component {
     return r;
   }
 
-  async unfoldHierarchy(anchor, unique = true, list = []) {
+  async unfoldHierarchy(anchor, id, home, unique = true, list = []) {
     if (unique) {
       list = list.filter((item) => (item.anchor !== anchor) || (item.component.uuid !== this.uuid) && (item.anchor === anchor));
     }
-    list.push({ component: this, anchor: anchor });
-    // check inherits list first
-    let inherits = [];
-    for (const desc of this.descriptions) {
-      if (desc.inherits) {
-        inherits = inherits.concat(await desc.inherits(this.tln));
-      }
-    }
-    for (let component of await this.resolve(inherits)) {
-      list = await component.unfoldHierarchy(anchor, unique, list);
-    }
+    list.push({ component: this, anchor, id, home });
+
     // check depends list first
     let depends = [];
     for (const desc of this.descriptions) {
@@ -458,11 +449,22 @@ class Component {
       }
     }
     for (let component of await this.resolve(depends)) {
-      list = await component.unfoldHierarchy(component.uuid, unique, list);
+      list = await component.unfoldHierarchy(component.uuid, component.id, component.home, unique, list);
+    }
+
+    // check inherits list first
+    let inherits = [];
+    for (const desc of this.descriptions) {
+      if (desc.inherits) {
+        inherits = inherits.concat(await desc.inherits(this.tln));
+      }
+    }
+    for (let component of await this.resolve(inherits)) {
+      list = await component.unfoldHierarchy(anchor, id, home, unique, list);
     }
     // check parents' hierarchy
     if (this.parent) {
-      list = await this.parent.unfoldHierarchy(anchor, unique, list);
+      list = await this.parent.unfoldHierarchy(anchor, id, home, unique, list);
     }
     return list;
   }
@@ -489,31 +491,25 @@ class Component {
     let dotenvs = [];
     // check all components from hierarchy and locate scripts
     for (const h of hierarchy) {
-      (await h.component.findScript(pattern, filter)).map(i => {
+      (await h.component.findSteps(pattern, filter)).map(i => {
         // collect script from direct parent of inherits list
-        // use component ownd id & home
-        let compomentId = h.component.id;
-        let componentHome = h.component.home;
         if ((h.anchor === this.uuid) && (i.scripts.length)) {
           scripts.push(...i.scripts);
-          // use main component id & home
-          compomentId = this.id;
-          componentHome = this.home;
         }
-        envs.push({ ...i.envs, compomentId, componentHome });
+        envs.push({ ...i.envs, id: h.id, home: h.home });
         dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(h.component.home, this.home), de)));
       });
     }
     // merge all env and apply options
     let env = {...process.env };
     for (const e of envs.reverse()) {
-      env = {...env, TLN_COMPONENT_ID: e.compomentId, TLN_COMPONENT_HOME: e.componentHome };
+      env = {...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home };
       env = e.options.parse(argv, await e.env.build(this.tln, env));
     }
     return {scripts: scripts, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
   }
 
-  async findScript(pattern, filter) {
+  async findSteps(pattern, filter) {
     const r = [];
     for (const desc of this.descriptions) {
       let scripts = [];
