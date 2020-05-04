@@ -1,6 +1,11 @@
+/*
+  TODO:
+  * add latest version during update run
+*/
 const fs = require('fs');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const compareVersions = require('compare-versions');
 
 const update = async () => {
   const endpoints = [
@@ -35,9 +40,19 @@ const update = async () => {
       //return json.filter( v => v.name.match(/^[0-9]/)).map( v => { return { id: `docker-compose-${v.name}` } } );
     }},
     //
-    { url: 'https://api.github.com/repos/golang/go/releases', path: 'golang', fn: async (response) => {
-      //const json = await response.json();
-      return [{id: '1.14.1'}, {id: '1.13.9'}]; //json.filter( v => v.name.match(/^[0-9]/)).map( v => { return { id: `golang-${v.name}` } } );
+    { url: 'https://golang.org/dl/', path: 'golang', fn: async (response) => {
+      const result = []
+      const html = await response.text();
+      let $ = cheerio.load(html);
+      const items = [];
+      $("div.toggleVisible,.toggle").each(function (i, e) {
+        const id = $(this).attr('id').slice(2);
+        if (id.match(/^[0-9]/)) {
+          result.push(id)
+        }
+      });
+      result.sort(compareVersions).reverse();
+      return result.map(i => { return {id:`go-${i}`}});
     }},
     //
     { url: 'https://api.github.com/repos/gradle/gradle/releases', path: 'gradle', fn: async (response) => {
@@ -71,6 +86,7 @@ const update = async () => {
       });
       return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 ).reverse();
     }}
+    //
   ];
   //
   for(const endpoint of endpoints) {
