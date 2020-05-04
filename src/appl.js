@@ -25,7 +25,12 @@ class Appl {
     this.filter = filterFactory.create(this.logger);
     this.tln = Object.freeze({
       logger: this.logger,
-      getOsInfo: () => {return {platform: 'win32'}},
+      delimiter: path.delimiter,
+      sep: path.sep,
+      isWindows: () => os.platform() === 'win32',
+      isLinux: () => os.platform() === 'linux',
+      isDarwin: () => os.platform() === 'darwin',
+      getOsInfo: () => {return {platform: os.platform()}},
       getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
     })
 
