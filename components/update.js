@@ -1,7 +1,3 @@
-/*
-  TODO:
-  * add latest version during update run
-*/
 const fs = require('fs');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
@@ -57,7 +53,7 @@ const update = async () => {
     //
     { url: 'https://api.github.com/repos/gradle/gradle/releases', path: 'gradle', fn: async (response) => {
       const json = await response.json();
-      return json.map( v => { return { id: 'gradle-' + v.tag_name.substring(1) } } );
+      return json.map( v => { return { id: 'gradle-' + v.tag_name.substring(1).toLowerCase() } });
     }},
     //
     { url: 'https://archive.apache.org/dist/maven/maven-3/', path: 'maven', fn: async (response) => {
