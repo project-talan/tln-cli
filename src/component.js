@@ -116,7 +116,7 @@ class Component {
       }
     });
     r.dotenvs = dotenvs;
-    r.steps = scripts.map( s => {return { id: s.getUuid()}});
+    r.steps = scripts.map( s => {return s.getUuid()});
     r.graph = herarchy.map( c => `${c.component.id} [${c.component.getUuid()}] [${c.anchor}]`);
     r.inherits = herarchy.filter(c => c.anchor === this.uuid).map( c => `${c.component.id} [${c.component.getUuid()}]`);
     r.depends = Component.getDependsList(herarchy, this.uuid).map( c => `${c.component.id} [${c.component.getUuid()}]`);
