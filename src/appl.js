@@ -23,20 +23,23 @@ class Appl {
     this.dest = sharedDest;
     this.home = this.cwd;
     this.filter = filterFactory.create(this.logger);
-    this.tln = Object.freeze({
-      logger: this.logger,
-      delimiter: path.delimiter,
-      sep: path.sep,
-      isWindows: () => os.platform() === 'win32',
-      isLinux: () => os.platform() === 'linux',
-      isDarwin: () => os.platform() === 'darwin',
-      getOsInfo: () => {return {platform: os.platform()}},
-      getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
-    })
+    this.tln = {};
 
   }
 
   async init() {
+    await this.filter.configure();
+    this.tln = Object.freeze({
+      logger: this.logger,
+      delimiter: path.delimiter,
+      sep: path.sep,
+      isWindows: () => this.filter.isWindows(),
+      isLinux: () => this.filter.isLinux(),
+      isDarwin: () => this.filter.isDarwin(),
+      getOsInfo: () => this.filter.getOsInfo(),
+      getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
+    })
+
     //
     let folders = [];
     let detached = false;

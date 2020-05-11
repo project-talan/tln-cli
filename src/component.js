@@ -102,7 +102,7 @@ class Component {
       r.descriptions.push(description.source);
     });
     // herarchy
-    const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, false);
+    const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, true);
     const {scripts, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, argv);
     r.env = {};
 

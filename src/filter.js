@@ -22,14 +22,30 @@ class Filter {
     }
     return true;
   }
-/*
-  configure() {
+
+  isWindows() {
+    return os.platform() === 'win32';
+  }
+
+  isLinux() {
+    return os.platform() === 'linux';
+  }
+
+  isDarwin() {
+    return os.platform() === 'darwin';
+  }
+
+  getOsInfo() {
+    return this.osInfo();
+  }
+
+  async configure() {
     return new Promise( (resolve, reject) => {
-      getos((e,os) => {
+      getos((e,info) => {
         if(e) {
           this.logger.error(e);
         } else {
-          this.osInfo = {...this.osInfo, ...os};
+          this.osInfo = {...this.osInfo, ...info};
           let data = [];
           Object.keys(this.osInfo).forEach( k => {
             data.push(this.osInfo[k]);
@@ -40,7 +56,6 @@ class Filter {
       });
     });
   }
-*/s
 }
 
 module.exports.create = (logger) => {

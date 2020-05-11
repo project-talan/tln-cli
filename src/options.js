@@ -7,7 +7,9 @@ class Options {
   }
 
   setDescs(descs) {
-    this.descs = descs;
+    if (descs) {
+      this.descs = descs;
+    }
   }
 
   parse(argv, inputEnv) {
