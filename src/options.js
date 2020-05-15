@@ -18,9 +18,7 @@ class Options {
       if (argv[d.option]) {
         env[d.env] = argv[d.option];
       } else {
-        if (d.default) {
-          env[d.env] = d.default;
-        }
+        env[d.env] = d.default;
       }
     });
     return { ...inputEnv, ...env};

@@ -229,7 +229,7 @@ class Component {
 
     } else {
       for(const step of steps) {
-        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, step, filter, envFromCli, argv);
+        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, argv);
         for(const script of scripts) {
           if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
             break;
