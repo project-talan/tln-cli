@@ -68,8 +68,9 @@ class Appl {
       // shared components location
       if (this.isRootPath(this.cwd) || noConfig) {
         // inside tmp folder
-        const tmpobj = tmp.dirSync({ template: 'tln-XXXXXX' });
-        this.dest = tmpobj.name;
+        const tmpPath = path.join(os.tmpdir(), 'tln'); // tmp.dirSync({ template: 'tln-XXXXXX' });
+        this.dest = this.dest || tmpPath;
+        fs.mkdirSync(tmpPath, { recursive: true });
         detached = true;
       } else {
         // at project's root level

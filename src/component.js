@@ -237,7 +237,6 @@ class Component {
         }
       }
       if (recursive) {
-        
       }
     }
   }

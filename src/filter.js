@@ -36,7 +36,7 @@ class Filter {
   }
 
   getOsInfo() {
-    return this.osInfo();
+    return this.osInfo;
   }
 
   async configure() {
