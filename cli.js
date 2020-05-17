@@ -15,8 +15,8 @@ if (process.env['Path']) {
   process.env['PATH'] = p;
 }
 
-const appl = async (verbose, cwd, cliHome, sharedDest, fn) => {
-  const a = require('./src/appl').create(verbose, cwd, cliHome, sharedDest);
+const appl = async (verbose, cwd, cliHome, detach, localRepo, fn) => {
+  const a = require('./src/appl').create(verbose, cwd, cliHome, detach, localRepo);
   await a.init();
   await fn(a);
 }
@@ -40,7 +40,8 @@ const argv = require('yargs')
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-  .option('shared-dest', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
+  .option('local-repo', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
+  .option('detach', { describe: 'Shared components will be deployed default location inside tmp folder', default: false, type: 'boolean'  })
   .command(
     /**************************************************************************/
     'config', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
@@ -52,7 +53,7 @@ const argv = require('yargs')
         .option('terse', { describe: 'Remove help information from the config', default: false, type: 'boolean' })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.config(splitComponents(argv.components), argv.repo, argv.prefix, argv.force, argv.terse);
       });
     }
@@ -66,7 +67,7 @@ const argv = require('yargs')
         .option('j', { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.inspect(splitComponents(argv.components), parseEnv(argv.env), argv, argv.json);
       });
     }
@@ -82,7 +83,7 @@ const argv = require('yargs')
         .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.ls(splitComponents(argv.components), argv.parents, argv.depth, (argv.all ? -1 : argv.limit));
       });
     }
@@ -104,7 +105,7 @@ const argv = require('yargs')
         })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, parseEnv(argv.env), argv, argv.dryRun, argv.command, argv.input);
       });
     }
@@ -121,7 +122,7 @@ const argv = require('yargs')
         .demandOption(['steps'], 'Please provide steps(s) you need to run')
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.sharedDest, async (a) => {
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, parseEnv(argv.env), argv, argv.save, argv.dryRun, argv.depends);
       });
     }

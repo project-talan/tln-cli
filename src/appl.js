@@ -4,8 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const tmp = require('tmp');
-
 const logger = require('./logger');
 const filterFactory = require('./filter');
 const utils = require('./utils');
@@ -16,11 +14,12 @@ class Appl {
   *
   * params:
   */
-  constructor(verbose, cwd, cliHome, sharedDest) {
+  constructor(verbose, cwd, cliHome, detach, localRepo) {
     this.logger = logger.create(verbose);
     this.cwd = cwd;
     this.cliHome = cliHome;
-    this.dest = sharedDest;
+    this.detach = detach;
+    this.localRepo = localRepo;
     this.home = this.cwd;
     this.filter = filterFactory.create(this.logger);
     this.tln = {};
@@ -43,9 +42,12 @@ class Appl {
     //
     let folders = [];
     let detached = false;
+    const tmpPath = path.join(os.tmpdir(), 'tln');
     // find projects' root and current component
-    if (this.dest) {
+    if (this.detach || this.localRepo) {
+      console.log(this.localRepo, tmpPath);
       // we are in detached mode
+      this.localRepo = this.localRepo || tmpPath;
       detached = true;
     } else {
       // find topmost level folder with with tln descs
@@ -67,17 +69,15 @@ class Appl {
       //
       // shared components location
       if (this.isRootPath(this.cwd) || noConfig) {
-        // inside tmp folder
-        const tmpPath = path.join(os.tmpdir(), 'tln'); // tmp.dirSync({ template: 'tln-XXXXXX' });
-        this.dest = this.dest || tmpPath;
-        fs.mkdirSync(tmpPath, { recursive: true });
+        this.localRepo = tmpPath;
         detached = true;
       } else {
         // at project's root level
-        this.dest = this.home;
+        this.localRepo = this.home;
       }
     }
-    this.rootComponent = require('./component').createRoot(this.logger, this.tln, this.dest, this.cliHome);
+    fs.mkdirSync(this.localRepo, { recursive: true });
+    this.rootComponent = require('./component').createRoot(this.logger, this.tln, this.localRepo, this.cliHome);
     this.currentComponent = this.rootComponent;
     if (detached) {
       this.currentComponent = await this.rootComponent.createChild(this.cwd);
@@ -91,7 +91,7 @@ class Appl {
     this.logger.info(`cwd: ${this.cwd}`);
     this.logger.info('home:', this.home);
     this.logger.info(`cli home: ${this.cliHome}`);
-    this.logger.info(`shared dest: ${this.dest}`);
+    this.logger.info(`local repo: ${this.localRepo}`);
     this.logger.info('folders:', folders);
     this.logger.info('mode:', detached ? 'detached' : 'normal');
   }
@@ -154,6 +154,6 @@ class Appl {
 
 }
 
-module.exports.create = (verbose, cwd, cliHome, sharedDest) => {
-  return new Appl(verbose, cwd, cliHome, sharedDest);
+module.exports.create = (verbose, cwd, cliHome, detach, localRepo) => {
+  return new Appl(verbose, cwd, cliHome, detach, localRepo);
 }
