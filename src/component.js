@@ -540,7 +540,7 @@ class Component {
       if (desc.steps) {
         (await desc.steps(this.tln)).forEach(step => {
           if (step.id.match(pattern) && filter.validate(step.filter ? step.filter : '')) {
-            scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.script));
+            scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.builder));
           }
         });
       }

@@ -28,7 +28,7 @@ module.exports = {
     {
       id: 'hi',
       desc: 'Say Hi from component home',
-      script: async (tln, script) => {
+      builder: async (tln, script) => {
         script.set(['echo Hi, home: ${TLN_COMPONENT_HOME}']);
         // return true; // to prevent chain execution
       }
