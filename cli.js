@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 
-/*
-Add ability to defien external catalog url, something similar to
-tln install --repo https://github.com/company/catalog
-
-recursive execution parent first than children or children first than parent
-*/
 'use strict';
+
+const fs = require('fs');
+const findUp = require('find-up')
 
 // workaround for windows Path definition
 if (process.env['Path']) {
@@ -30,7 +27,10 @@ const parseEnv = (env) => {
 
 }
 
+const configPath = findUp.sync(['.tlnrc'])
+const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 const argv = require('yargs')
+    .config(config)
   .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
   .help('help').alias('help', 'h')
   .option('verbose', { alias: 'v', count: true, default: 0 })
