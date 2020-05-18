@@ -22,6 +22,14 @@ module.exports = {
       return cmp(arr, item, pos);
     });
   },
+  canInstallComponent: (tln, id, home) => {
+    const emptyDir = require('empty-dir');
+    if (emptyDir.sync(home)) {
+      return true;
+    }
+    tln.logger.con(`Component '${id}' is already installed at '${home}'`);
+    return false;
+  },
   getDownloadScript: (tln, dist) => {
     let r = [];
     const osInfo = tln.getOsInfo();

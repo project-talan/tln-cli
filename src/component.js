@@ -226,7 +226,9 @@ class Component {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
-
+      for(const d of Component.getDependsList(herarchy, this.uuid)) {
+        await d.component.run(steps, false, filter, envFromCli, argv, save, dryRun, false);
+      }
     } else {
       for(const step of steps) {
         const {scripts, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, argv);

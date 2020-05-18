@@ -36,6 +36,7 @@ class Appl {
       isLinux: () => this.filter.isLinux(),
       isDarwin: () => this.filter.isDarwin(),
       getOsInfo: () => this.filter.getOsInfo(),
+      canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
       getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
     })
 
