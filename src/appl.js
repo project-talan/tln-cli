@@ -36,7 +36,13 @@ class Appl {
       isLinux: () => this.filter.isLinux(),
       isDarwin: () => this.filter.isDarwin(),
       getOsInfo: () => this.filter.getOsInfo(),
+      unpackId: (id) => {
+        const arr = id.split('-');
+        const version = arr.pop();
+        return {name: arr.join('-'), version};
+      },
       canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
+      getDownloadScriptById: (tln, id, distrs) => utils.getDownloadScriptById(tln, id, distrs),
       getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
     })
 

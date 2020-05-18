@@ -30,6 +30,11 @@ module.exports = {
     tln.logger.con(`Component '${id}' is already installed at '${home}'`);
     return false;
   },
+  getDownloadScriptById: (tln, id, distrs) => {
+    if (distrs[id]) {
+      return tln.getDownloadScript(tln, distrs[id]);
+    }
+  },
   getDownloadScript: (tln, dist) => {
     let r = [];
     const osInfo = tln.getOsInfo();
