@@ -47,6 +47,7 @@ class Appl {
         }).join(', ');
         this.logger.error(`One or more environmet variables were not defined: ${list}`);
       },
+      copyTemplate: (tln, script, src, dest, tail = []) => utils.copyTemplate(tln, script, src, dest, tail),
       canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
       getDownloadScriptById: (tln, id, distrs) => utils.getDownloadScriptById(tln, id, distrs),
       getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)

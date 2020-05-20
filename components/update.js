@@ -5,7 +5,7 @@ const compareVersions = require('compare-versions');
 
 const update = async () => {
   const endpoints = [
-    /*/
+    //
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
       const json = await response.json();
       return json.map( v => { return { id: 'node-' + v.version.substring(1) } });
@@ -82,7 +82,7 @@ const update = async () => {
       });
       return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 ).reverse();
     }},
-    /*/
+    //
     { url: 'https://api.github.com/repos/bitcoin/bitcoin/releases', path: 'bitcoin/bitcoin-core', fn: async (response) => {
       const json = await response.json();
       return json.map( v => { return { id: `bitcoin-core-${v.tag_name.substring(1).toLowerCase()}` } } );

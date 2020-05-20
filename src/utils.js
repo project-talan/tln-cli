@@ -99,5 +99,21 @@ module.exports = {
       }
     }
     return r;
+  },
+  copyTemplate: (tln, script, src, dest, tail = []) => {
+    const osInfo = tln.getOsInfo();
+    const platform = osInfo.platform;
+    //
+    let cp_cmd = 'cp';
+    let cat_cmd = 'cat';
+    if (platform === 'win32') {
+      cp_cmd = 'copy';
+      cat_cmd = 'type';
+    }
+    let arr = [`${cp_cmd} ${src} ${dest}`];
+    for (let i of tail) {
+      arr.push(`${cat_cmd} ${i} >> ${dest}`);
+    }
+    script.set(arr);
   }
 }
