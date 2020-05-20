@@ -41,6 +41,12 @@ class Appl {
         const version = arr.pop();
         return {name: arr.join('-'), version};
       },
+      reportMissedVariables: (env, vars) => {
+        const list = vars.map(v => {
+          return `${v}: ${env[v]}`
+        }).join(', ');
+        this.logger.error(`One or more environmet variables were not defined: ${list}`);
+      },
       canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
       getDownloadScriptById: (tln, id, distrs) => utils.getDownloadScriptById(tln, id, distrs),
       getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
