@@ -2,9 +2,9 @@
 #sonar.login=
 #sonar.password=
 
-sonar.projectKey=${COMPONENT_ID}
-sonar.projectName=${COMPONENT_ID}
-sonar.projectVersion=${COMPONENT_VERSION}
+sonar.projectKey=${TLN_COMPONENT_UID}
+sonar.projectName=${TLN_COMPONENT_UID}
+sonar.projectVersion=${TLN_COMPONENT_VERSION}
 #sonar.projectDescription=
 #sonar.links.homepage=
 #sonar.links.ci=
