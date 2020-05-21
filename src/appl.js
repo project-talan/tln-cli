@@ -41,11 +41,16 @@ class Appl {
         const version = arr.pop();
         return {name: arr.join('-'), version};
       },
-      reportMissedVariables: (env, vars) => {
+      checkVariables: (env, vars, options) => {
+        let error = false;
         const list = vars.map(v => {
+          error = error | !env[v];
           return `${v}: ${env[v]}`
         }).join(', ');
-        this.logger.error(`One or more environmet variables were not defined: ${list}`);
+        if (error) {
+          this.logger.error(`One or more environmet variables were not defined: ${list}. Please use next options to define them ` + options.map( o => `'--${o}'`).join(','));
+        }
+        return !error;
       },
       copyTemplate: (tln, script, src, dest, tail = []) => utils.copyTemplate(tln, script, src, dest, tail),
       canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
