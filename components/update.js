@@ -6,7 +6,7 @@ const compareVersions = require('compare-versions');
 
 const update = async () => {
   const endpoints = [
-    //
+    /*/
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
       const json = await response.json();
       return json.map( v => { return { id: 'node-' + v.version.substring(1) } });
@@ -129,6 +129,13 @@ const update = async () => {
       const data = Object.keys(json.versions);
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `angular-${v}` } });
+    }},
+    /*/
+    { url: 'https://registry.npmjs.com/cordova', path: 'cordova', fn: async (response) => {
+      const json = await response.json();
+      const data = Object.keys(json.versions).filter(v => !v.match('nightly'));
+      data.sort(compareVersions).reverse();
+      return data.map( v => { return { id: `cordova-${v}` } });
     }},
     //
   ];
