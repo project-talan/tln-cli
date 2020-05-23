@@ -124,17 +124,11 @@ const update = async () => {
       return data.map( v => { return { id: `bitcoin-core-${v}` } } );
     }},
     //
-    { url: 'https://api.github.com/repos/angular/angular/tags', path: 'angular', fn: async (response) => {
+    { url: 'https://registry.npmjs.com/@angular/cli', path: 'angular', fn: async (response) => {
       const json = await response.json();
-      if (Array.isArray(json)) {
-        return json.filter( v => v.name.match(/^[0-9]/) ).map( v => v.name );
-      }
-      return [];
-    }, options: {page: 0}, it: (url, options) => {
-      return `${url}?page=${++options.page}`;
-    }, finalize: (data) => {
+      const data = Object.keys(json.versions);
       data.sort(compareVersions).reverse();
-      return data.map( v => { return { id: `angular-${v}` } } );
+      return data.map( v => { return { id: `angular-${v}` } });
     }},
     //
   ];
