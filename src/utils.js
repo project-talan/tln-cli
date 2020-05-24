@@ -81,7 +81,7 @@ module.exports = {
         r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') */ {
         r.push(`wget '${url}'`);
-        if (name.match('tar.gz')) {
+        if (name.match('tar.gz') || name.match('tgz')) {
           r.push(`tar -xzf '${name}'`);
         } else {
           r.push(`unzip '${name}'`);
