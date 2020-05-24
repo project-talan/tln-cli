@@ -35,6 +35,7 @@ module.exports = {
       return tln.getDownloadScript(tln, distrs[id]);
     }
   },
+  //[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::TLS12
   getDownloadScript: (tln, dist) => {
     let r = [];
     const osInfo = tln.getOsInfo();
