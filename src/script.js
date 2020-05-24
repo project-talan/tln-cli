@@ -16,15 +16,6 @@ class Script {
     this.body = null;
     this.ext = (os.platform() === 'win32') ? ('cmd') : ('sh');
     this.prefix = (os.platform() === 'win32') ? (['echo off']) : (['#!/bin/bash -e']);
-/*
-    this.logger = logger;
-    this.uuid = uuid;
-    this.name = name;
-    this.options = options;
-    this.builder = builder;
-    this.env = {};
-    this.suffix = []; //(os.platform() === 'win32') ? ([]) : ([]);
-*/
   }
 
   getUuid() {
@@ -35,7 +26,7 @@ class Script {
     this.body = body;
   }
   
-  async execute(home, tln, env, dotenvs, save, dryRun) {
+  async execute(home, tln, argv, env, dotenvs, save, dryRun) {
     this.body = null;
     // create component location if not exists
     if (!fs.existsSync(home)) {
@@ -45,6 +36,7 @@ class Script {
     const result = await this.builder(tln, Object.freeze({
         logger: this.logger,
         env: {...env},
+        argv: {...argv},
         set: (body) => this.set(body)
       })
     );
@@ -56,7 +48,7 @@ class Script {
         fl = body;
       } else if (body instanceof Array) {
         if (save) {
-          fl = path.join(home, `${this.name}.${this.ext}`);
+          fl = path.join(home, `${this.uuid}.${this.ext}`);
         } else {
           const tmpobj = tmp.fileSync();
           fl = `${tmpobj.name}.${this.ext}`;

@@ -122,9 +122,9 @@ class Appl {
   }
 
   //
-  async inspect(components, env, argv, outputAsJson) {
+  async inspect(components, env, outputAsJson, _) {
     for(const component of await this.resolve(components)) {
-      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, env, argv, outputAsJson);
+      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, env, outputAsJson, _);
     }
   }
 
@@ -136,23 +136,23 @@ class Appl {
   }
 
   //
-  async exec(components, parallel, recursive, envFromCli, argv, dryRun, command, input) {
+  async exec(components, parallel, recursive, envFromCli, dryRun, command, input, _) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.exec(recursive, this.filter, envFromCli, argv, dryRun, command, input);
+        component.exec(recursive, this.filter, envFromCli, dryRun, command, input, _);
       } else {
-        await component.exec(recursive, this.filter, envFromCli, argv, dryRun, command, input);
+        await component.exec(recursive, this.filter, envFromCli, dryRun, command, input, _);
       }
     }
   }
 
   //
-  async run(components, parallel, steps, recursive, envFromCli, argv, save, dryRun, depends) {
+  async run(components, parallel, steps, recursive, envFromCli, save, dryRun, depends, _) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.run(steps, recursive, this.filter, envFromCli, argv, save, dryRun, depends);
+        component.run(steps, recursive, this.filter, envFromCli, save, dryRun, depends, _);
       } else {
-        await component.run(steps, recursive, this.filter, envFromCli, argv, save, dryRun, depends );
+        await component.run(steps, recursive, this.filter, envFromCli, save, dryRun, depends, _);
       }
     }
   }

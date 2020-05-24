@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 'use strict';
+
 /*
-console.log(require('yargs')([ '--run', '-x', '1', '-y', '2', '--', '--platform=android' ])
+console.log(require('yargs')([ '--run', '-x', '1', '-y', '2', '--', '--platform=android', '-x' ])
 .option('run', {
   alias: 'r',
   describe: 'run your program'
@@ -14,6 +15,7 @@ console.log(require('yargs')([ '-x', '1', '-y', '2' ])
 .demandOption(['verbose'], 'Please provide both run and path arguments to work with this tool')
 .argv);
 */
+
 const fs = require('fs');
 const findUp = require('find-up')
 
@@ -80,7 +82,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.inspect(splitComponents(argv.components), parseEnv(argv.env), argv, argv.json);
+        await a.inspect(splitComponents(argv.components), parseEnv(argv.env), argv.json, argv._);
       });
     }
   )
@@ -118,7 +120,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, parseEnv(argv.env), argv, argv.dryRun, argv.command, argv.input);
+        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, parseEnv(argv.env), argv.dryRun, argv.command, argv.input, argv._);
       });
     }
   )
@@ -135,7 +137,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, parseEnv(argv.env), argv, argv.save, argv.dryRun, argv.depends);
+        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, parseEnv(argv.env), argv.save, argv.dryRun, argv.depends, argv._);
       });
     }
   )

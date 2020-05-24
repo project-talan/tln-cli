@@ -89,7 +89,7 @@ class Component {
   * 
   * params:
   */
-  async inspect(cout, filter, envFromCli, argv, outputAsJson) {
+  async inspect(cout, filter, envFromCli, outputAsJson, _) {
     this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
     //
     let r = {};
@@ -103,7 +103,7 @@ class Component {
     });
     // herarchy
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, true);
-    const {scripts, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, argv);
+    const {scripts, argv, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, _);
     r.env = {};
 
     Object.keys(env).forEach( k => {
@@ -197,14 +197,14 @@ class Component {
 
 
   //
-  async exec(recursive, filter, envFromCli, argv, dryRun, command, input) {
+  async exec(recursive, filter, envFromCli, dryRun, command, input, _) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     //
     if (recursive) {
       await this.buildAllChildren();
       for (const component of this.components) {
-        await component.exec(recursive, filter, envFromCli, argv, dryRun, command, input);
+        await component.exec(recursive, filter, envFromCli, _, dryRun, command, input);
       }
     }
     //
@@ -217,23 +217,23 @@ class Component {
         this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       }
     });
-    const { scripts, env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, argv);
-    await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
+    const { scripts, argv, env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
+    await script2Execute.execute(this.home, this.tln, argv, env, dotenvs, false, dryRun);
   }
 
   //
-  async run(steps, recursive, filter, envFromCli, argv, save, dryRun, depends) {
+  async run(steps, recursive, filter, envFromCli, save, dryRun, depends, _) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
       for(const d of Component.getDependsList(herarchy, this.uuid)) {
-        await d.component.run(steps, false, filter, envFromCli, argv, save, dryRun, false);
+        await d.component.run(steps, false, filter, envFromCli, _, save, dryRun, false);
       }
     } else {
       for(const step of steps) {
-        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, argv);
+        const {scripts, argv, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, _);
         for(const script of scripts) {
-          if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+          if (await script.execute(this.home, this.tln, argv, env, dotenvs, save, dryRun)) {
             break;
           }
         }
@@ -505,7 +505,7 @@ class Component {
       .reverse();
   }
 
-  async collectScripts(hierarchy, pattern, filter, envFromCli, argv) {
+  async collectScripts(hierarchy, pattern, filter, envFromCli, _) {
     let scripts = [];
     let envs = [];
     let dotenvs = [];
@@ -522,11 +522,12 @@ class Component {
     }
     // merge all env and apply options
     let env = {...process.env };
+    let argv = {};
     for (const e of envs.reverse()) {
-      env = {...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home };
-      env = e.options.parse(argv, await e.env.build(this.tln, env));
+      env = await e.env.build(this.tln, {...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home });
+      argv = {...argv, ...(await e.options.parse(this.tln, _))};
     }
-    return {scripts: scripts, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
+    return {scripts, argv, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
   }
 
   async findSteps(pattern, filter) {
@@ -549,7 +550,7 @@ class Component {
         env.setBuilder(desc.env);
       }
       if (desc.options) {
-        options.setDescs(await desc.options(this.tln));
+        options.setBuilder(desc.options);
       }
       // get dotenvs
       if (desc.dotenvs) {

@@ -3,25 +3,20 @@
 class Options {
   constructor(logger) {
     this.logger = logger;
-    this.descs = [];
+    this.builder = null;
   }
 
-  setDescs(descs) {
-    if (descs) {
-      this.descs = descs;
+  setBuilder(builder) {
+    this.builder = builder;
+  }
+
+  async parse(tln, _) {
+    if (this.builder) {
+      const yargs = require('yargs');
+      await this.builder(tln, yargs(_));
+      return yargs.argv;
     }
-  }
-
-  parse(argv, inputEnv) {
-    let env = {};
-    this.descs.forEach( d => {
-      if (argv[d.option]) {
-        env[d.env] = argv[d.option];
-      } else {
-        env[d.env] = d.default;
-      }
-    });
-    return { ...inputEnv, ...env};
+    return {};
   }
 
 }
