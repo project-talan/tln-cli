@@ -7,15 +7,8 @@
 */
 module.exports = {
   tags: async (tln) => [/*'tag'*/],
-  options: async (tln) => [/*
-      yargs.option('c', { describe: 'Configuration to build', alias:'configuration', default: null, type: 'string' });
-
-    {
-      option: 'origin',       // option name
-      env:  'TLN_GIT_ORIGIN', // variable to expose
-      desc: 'Origin url',     //
-      default:  null          // 
-    }
+  options: async (tln, yargs) => [/*
+    yargs.option('c', { describe: 'Configuration to build', alias:'configuration', default: null, type: 'string' });
   */],
   dotenvs: async (tln) => [/*'.env'*/],
   inherits: async (tln) => [/*'git'*/],

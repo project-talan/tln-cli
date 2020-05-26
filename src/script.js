@@ -26,7 +26,7 @@ class Script {
     this.body = body;
   }
   
-  async execute(home, tln, argv, env, dotenvs, save, dryRun) {
+  async execute(home, tln, env, dotenvs, save, dryRun) {
     this.body = null;
     // create component location if not exists
     if (!fs.existsSync(home)) {
@@ -36,7 +36,6 @@ class Script {
     const result = await this.builder(tln, Object.freeze({
         logger: this.logger,
         env: {...env},
-        argv: {...argv},
         set: (body) => this.set(body)
       })
     );

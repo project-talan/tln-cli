@@ -103,7 +103,7 @@ class Component {
     });
     // herarchy
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, true);
-    const {scripts, argv, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, _);
+    const {scripts, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, _);
     r.env = {};
 
     Object.keys(env).forEach( k => {
@@ -217,8 +217,8 @@ class Component {
         this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       }
     });
-    const { scripts, argv, env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
-    await script2Execute.execute(this.home, this.tln, argv, env, dotenvs, false, dryRun);
+    const { scripts, env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
+    await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
   }
 
   //
@@ -231,9 +231,9 @@ class Component {
       }
     } else {
       for(const step of steps) {
-        const {scripts, argv, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, _);
+        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, _);
         for(const script of scripts) {
-          if (await script.execute(this.home, this.tln, argv, env, dotenvs, save, dryRun)) {
+          if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
             break;
           }
         }
@@ -522,12 +522,10 @@ class Component {
     }
     // merge all env and apply options
     let env = {...process.env };
-    let argv = {};
     for (const e of envs.reverse()) {
-      env = await e.env.build(this.tln, {...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home });
-      argv = {...argv, ...(await e.options.parse(this.tln, _))};
+      env = await e.env.build(this.tln, {...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, ...(await e.options.parse(this.tln, _))});
     }
-    return {scripts, argv, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
+    return {scripts, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
   }
 
   async findSteps(pattern, filter) {
