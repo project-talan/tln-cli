@@ -30,8 +30,6 @@ class Appl {
     await this.filter.configure();
     this.tln = Object.freeze({
       logger: this.logger,
-      delimiter: path.delimiter,
-      sep: path.sep,
       isWindows: () => this.filter.isWindows(),
       isLinux: () => this.filter.isLinux(),
       isDarwin: () => this.filter.isDarwin(),
