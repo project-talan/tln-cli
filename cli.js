@@ -1,21 +1,6 @@
 #!/usr/bin/env node
 'use strict';
 
-/*
-console.log(require('yargs')([ '--run', '-x', '1', '-y', '2', '--', '--platform=android', '-x' ])
-.option('run', {
-  alias: 'r',
-  describe: 'run your program'
-})  .demandOption(['run'], 'Please provide both run and path arguments to work with this tool')
-  //.help()
-  .argv);
-
-console.log(require('yargs')([ '-x', '1', '-y', '2' ])
-.option('verbose', { alias: 'v', count: true, default: null, demandOption: true })
-.demandOption(['verbose'], 'Please provide both run and path arguments to work with this tool')
-.argv);
-*/
-
 const fs = require('fs');
 const findUp = require('find-up')
 

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   sonarqube:
-    image: ${TLN_SONARQUBE_VERSION}
+    image: ${TLN_SONARQUBE_IMAGE}
     ports:
       - 9000:9000
       - 9002:9002
