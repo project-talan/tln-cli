@@ -1,33 +1,22 @@
-# `Talan cli`
-#### `test`
-has next features:
 * provides `uniform` development environment for multiple projects
-* reflects complex company structure as part of environment structure
-* reserves space for shared libraries and components
-* ensure smooth on-boarding procedure
-* grants flexible structure for micro-services architecture, SOA, N-ties appoaches
-* melts borders between mono- and multi- repo structures
-* configuration for IaC
-* is platform agnostic
-* is polyglot programming friendly
+* reflects `complex company structure`
+* reserves space for `shared` libraries and components
+* ensure `smooth on-boarding` procedure
+* grants `flexible` structure for `micro-services, SOA & N-ties` architecture
+* `melts` borders between `mono- and multi- repo` structures
+* `stores` configuration for IaC, `minimize` CI configuration
+* is platform `agnostic`
+* is `polyglot programming friendly`
 
 ## Prerequisites
 * Install Nodejs 12.x or higher (https://nodejs.org)
-  Linux: 
-  ```
-  curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh
-  sudo bash nodesource_setup.sh
-  sudo apt-get install -y gcc g++ make
-  sudo apt-get install -y nodejs
-  node -v
-  ```
 * Install tln-cli 
   ```
   sudo npm i -g tln-cli
   tln --version
   ```
 
-## Usage scenarios
+## Quick start
 
 ### Configure your workspace
 * Goto to home folder
