@@ -17,26 +17,29 @@
   ```
 
 ## Quick start
+Let say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
+First of all, you need to configure your local development environment, checkout existing projects and create initials structue for the new service.
 
-### Configure your workspace
-* Goto to home folder
+### Local development environment
+* Go to your home folder
+  * Linux/MacOs: ```cd ~```
+  * Windows: ```d: && cd /```
 
-  Linux/MacOs: ```cd ~```
-  Windows: ```d: && cd /```
-
-* Create projects' home and tell tln about it
+* Create projects' home and tell `tln` about it
   ```
   mkdir projects
   cd projects
-  tln init-config
+  tln config --terse
   ```
-* List available components, inspect steps for java and install openjdk-12.0.2 and node-12.10.0
+Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc. We will have detailed look into this features in the next sections.
   ```
   tln ls
-  tln ls java
-  tln inspect openjdk-12.0.2 --yaml
+  tln ls java --all
+  tln ls nodejs:angular:inspect openjdk-12.0.2 --yaml
   tln install openjdk-12.0.2:node-12.10.0
   ```
+  
+  
 * Checkout how virtual dev env works
   ```
   java -version
