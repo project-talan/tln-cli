@@ -39,7 +39,7 @@ Now you can list all available to install third-parties components like Nodejs, 
   ```
 
 ### Calbro projects home
-At this point we are ready to start configuring structure for Calbro.com projects.
+At this point you are ready to start configuring structure for Calbro.com projects.
   ```
   mkdir calbro
   cd calbro
@@ -77,7 +77,7 @@ module.exports = {
 This information will be used by all subsequent git calls inside this and all subdirectories.
 
 ### Checkout, configure & build existing projects
-Calbo is a big companies and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward. 
+Calbo is a big company and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward. You are part of `as` and it can be reftected on to development environment structure.
 
 * Checkout how virtual dev env works
   ```
