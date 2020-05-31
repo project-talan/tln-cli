@@ -35,10 +35,45 @@ Now you can list all available to install third-parties components like Nodejs, 
   ```
   tln ls
   tln ls java --all
-  tln ls nodejs:angular:inspect openjdk-12.0.2 --yaml
-  tln install openjdk-12.0.2:node-12.10.0
+  tln ls nodejs:angular:cmake
   ```
-  
+At this point we are ready to start configuring structure for Calbro.com projects.
+  ```
+  mkdir calbro
+  cd calbro
+  tln config --terse
+  ```
+If you check created configuration file `.tln.con`, you will see next JSON structure
+```
+module.exports = {
+  tags: async (tln) => [],
+  dotenvs: async (tln) => [],
+  env: async (tln, env) => {},
+  options: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  steps: async (tln) => [],
+  components: async (tln) => []
+}
+```
+Open this file in your favorite editor and add you git user name and working email:
+```
+module.exports = {
+  tags: async (tln) => [],
+  options: async (tln) => [],
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  env: async (tln, env) => {
+    env.TLN_GIT_USER = 'Alice';
+    env.TLN_GIT_EMAIL = 'alice@mailserver.com';
+  },
+  steps: async (tln) => [],
+  components: async (tln) => []
+}
+```
+This information will be used inside all subsequent git call inside this and all subdirectories.
+
   
 * Checkout how virtual dev env works
   ```
