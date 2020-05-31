@@ -18,9 +18,9 @@
 
 ## Quick start
 Let say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
-First of all, you need to configure your local development environment, checkout existing projects and create initials structue for the new service.
+First of all, you will configure your local development environment, checkout existing projects and create initials structue for the project.
 
-### Local development environment
+### Local development environment home
 * Go to your home folder
   * Linux/MacOs: ```cd ~```
   * Windows: ```d: && cd /```
@@ -37,6 +37,8 @@ Now you can list all available to install third-parties components like Nodejs, 
   tln ls java --all
   tln ls nodejs:angular:cmake
   ```
+
+### Calbro projects home
 At this point we are ready to start configuring structure for Calbro.com projects.
   ```
   mkdir calbro
@@ -56,7 +58,7 @@ module.exports = {
   components: async (tln) => []
 }
 ```
-Open this file in your favorite editor and add you git user name and working email:
+Open this file using your favorite editor and add your git user name and working email:
 ```
 module.exports = {
   tags: async (tln) => [],
@@ -66,15 +68,17 @@ module.exports = {
   depends: async (tln) => [],
   env: async (tln, env) => {
     env.TLN_GIT_USER = 'Alice';
-    env.TLN_GIT_EMAIL = 'alice@mailserver.com';
+    env.TLN_GIT_EMAIL = 'alice@calbro.com';
   },
   steps: async (tln) => [],
   components: async (tln) => []
 }
 ```
-This information will be used inside all subsequent git call inside this and all subdirectories.
+This information will be used by all subsequent git calls inside this and all subdirectories.
 
-  
+### Checkout, configure & build existing projects
+Calbo is a big companies and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward. 
+
 * Checkout how virtual dev env works
   ```
   java -version
