@@ -17,7 +17,7 @@
   ```
 
 ## Quick start
-Let say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
+Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
 First of all, you will configure your local development environment, checkout existing projects and create initials structure for the project.
 
 ### Local development environment home
