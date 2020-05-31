@@ -239,6 +239,10 @@ class Component {
         }
       }
       if (recursive) {
+        await this.buildAllChildren();
+        for (const component of this.components) {
+          await component.run(steps, recursive, filter, envFromCli, save, dryRun, depends, _);
+        }
       }
     }
   }
