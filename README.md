@@ -2,30 +2,15 @@
 has next features:
 * provides uniform development environment for multiple projects
 * reflects complex company structure as part of environment structure
-* reserves space for shared labraries and components
-* smooth on-boarding procedure for new developers
-* flexible structure for micro-services architecture, SOA, N-ties when every service can be stored using multi-repo/mono-repo approach. Switch between storage models. It good to have somewhere meta description about all services are included into solution.
+* reserves space for shared libraries and components
+* ensure smooth on-boarding procedure
+* grants flexible structure for micro-services architecture, SOA, N-ties appoaches
+* melts borders between mono- and multi- repo structures
+* configuration for IaC
+* is platform agnostic
+* is polyglot programming friendly
 
-Solution should be uniform from build/test/package perspective for local/CI builds
-
-Override subset of projects parameters. For example, you may want to store your Dev/QA/UAT environment's configurations in some shared place, but in the same time be able to change some of them during local development/debug
-
-Manage multiple version of external libraries/frameworks: java, nodejs, maven, boost etc. to be able switch between projects quickly.
-
-Approach should be platform agnostic
-
-Approach should be polyglot programming friendly
-
-
-
-* 
-* Multi-components management system
-* Helps dealing with Standalon/SOA/Microservices architectures, split & merge repositories with less pain than usual
-* Manages structure of projects using hierarchy of components
-* Defines complex relations between components using 'inherits' & 'depends' lists
-* Setups fully isolated development environments
-
-## Setup
+## Prerequisites
 * Install Nodejs 12.x or higher (https://nodejs.org)
   Linux: 
   ```
