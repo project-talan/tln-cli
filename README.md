@@ -31,7 +31,7 @@ First of all, you will configure your local development environment, checkout ex
   cd projects
   tln config --terse
   ```
-Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc. We will have detailed look into this features in the next sections.
+* Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc. We will have detailed look into this features in the next sections.
     ```
     tln ls
     tln ls java --all
