@@ -32,11 +32,11 @@ First of all, you will configure your local development environment, checkout ex
   tln config --terse
   ```
 Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc. We will have detailed look into this features in the next sections.
-  ```
-  tln ls
-  tln ls java --all
-  tln ls nodejs:angular:cmake
-  ```
+    ```
+    tln ls
+    tln ls java --all
+    tln ls nodejs:angular:cmake
+    ```
 
 ### Calbro projects home
 At this point you are ready to start configuring structure for Calbro.com projects.
