@@ -39,7 +39,7 @@ First of all, you will configure your local development environment, checkout ex
     ```
 
 ### Calbro projects home
-* At this point you are ready to start configuring structure for Calbro.com projects.
+* At this point you are ready to start configuring structure for Calbro's projects.
   ```
   mkdir calbro
   cd calbro
@@ -58,7 +58,7 @@ First of all, you will configure your local development environment, checkout ex
     components: async (tln) => []
   }
   ```
-* Open this file using your favorite editor and add your git user name and working email:
+* Open this file using your favorite editor and add your git user name, working email and update `inherits` array with `git` component:
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -77,12 +77,16 @@ First of all, you will configure your local development environment, checkout ex
   This information will be used by all subsequent git calls inside this and all subdirectories.
 
 ### Checkout, configure & build existing projects
-Calbo is a big company and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward. You are part of `teamone` department and this can be reflected on to development environment structure.
+Calbo is a big company and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
+* You are part of `teamone` department and this can be reflected on to development environment structure.
   ```
   mkdir teamone
   cd teamone
   tln config --repo https://github.com/project-talan/tln-calbro-teamone.git
+  tln ls
   ```
+  Two last commands will do the magic: connect with teamone list of projects and display them to you
+* 
 
 
 * Checkout how virtual dev env works
