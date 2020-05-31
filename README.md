@@ -51,7 +51,7 @@ First of all, you will configure your local development environment, checkout ex
     tags: async (tln) => [],
     dotenvs: async (tln) => [],
     env: async (tln, env) => {},
-    options: async (tln) => [],
+    options: async (tln, yargs) => [],
     inherits: async (tln) => [],
     depends: async (tln) => [],
     steps: async (tln) => [],
@@ -62,14 +62,14 @@ First of all, you will configure your local development environment, checkout ex
   ```
   module.exports = {
     tags: async (tln) => [],
-    options: async (tln) => [],
     dotenvs: async (tln) => [],
-    inherits: async (tln) => [],
-    depends: async (tln) => [],
     env: async (tln, env) => {
       env.TLN_GIT_USER = 'Alice';
       env.TLN_GIT_EMAIL = 'alice@calbro.com';
     },
+    options: async (tln, yargs) => [],
+    inherits: async (tln) => ['git'],
+    depends: async (tln) => [],
     steps: async (tln) => [],
     components: async (tln) => []
   }
