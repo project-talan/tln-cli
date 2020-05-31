@@ -1,6 +1,7 @@
-# Talan cli
+# `Talan cli`
+#### `test`
 has next features:
-* provides uniform development environment for multiple projects
+* provides `uniform` development environment for multiple projects
 * reflects complex company structure as part of environment structure
 * reserves space for shared libraries and components
 * ensure smooth on-boarding procedure
