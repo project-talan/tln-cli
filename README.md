@@ -86,45 +86,12 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   tln ls
   ```
   Two last commands will do the magic: connect with teamone list of projects and display them to you
-* 
-
-
-* Checkout how virtual dev env works
+* At this point, you need to get source code for existing projects, build it and become familiar with implemented functionality
   ```
-  java -version
-  tln exec -c "java -version" openjdk-12.0.2
+  tln clone calbro-scanner:calbro-portal
+  tln prereq:init -r
+  tln install -r --depends
   ```
-* Configure your first project
-  ```
-  mkdir company && cd company && tln init-config
-  mkdir team && cd team && tln init-config
-  mkdir project && cd project && tln init-config
-  ```
-* Edit .tln.conf to add java & node dependencies
-  ```
-  change 
-    depends: (tln) => [/*'java'*/],
-  to
-    depends: (tln) => ['openjdk-12.0.2', 'node-12.10.0'],
-  ```
-* Validate your setup
-  ```
-  tln exec -c "java -version && node -v && npm -v"
-  ```
-
-  Expected output:  
-  ```
-  openjdk version "12.0.2" 2019-07-16
-  OpenJDK Runtime Environment (build 12.0.2+10)
-  OpenJDK 64-Bit Server VM (build 12.0.2+10, mixed mode, sharing)
-  v12.10.0
-  6.10.3
-  ```
-
-### Configure your team workspace
-
-### Create skeleton for microsevices project using mono-repo
-
 
 ## Similar projects
 * https://github.com/mateodelnorte/meta
