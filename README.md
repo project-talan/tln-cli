@@ -93,10 +93,7 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   tln install -r --depends
   tln build -r
   ```
-  First command will use git clone and your credentials which were defined early inside .tln.conf
-  Second command will generate .env file if any using template and run initialization commands like npm i
-  Third one will install all necessary third-parties components
-  Last one will recursivelly build all components
+  First command will use git clone and your credentials which were defined early inside .tln.conf. Second command will generate .env file if any using template and run initialization commands like npm i. Third one will install all necessary third-parties components. Last one will recursivelly build all components
 
 ## Similar projects
 * https://github.com/mateodelnorte/meta
