@@ -45,20 +45,20 @@ First of all, you will configure your local development environment, checkout ex
   cd calbro
   tln config --terse
   ```
-* If you check created configuration file `.tln.con`, you will see next JSON structure
+* If you check created configuration file `.tln.conf`, you will see next JSON structure
   ```
   module.exports = {
     tags: async (tln) => [],
     dotenvs: async (tln) => [],
     env: async (tln, env) => {},
-    options: async (tln, yargs) => [],
+    options: async (tln, args) => {},
     inherits: async (tln) => [],
     depends: async (tln) => [],
     steps: async (tln) => [],
     components: async (tln) => []
   }
   ```
-* Open this file using your favorite editor and add your git user name, working email and update `inherits` array with `git` component:
+* Open this file using your favorite editor and add your git user name, working email (for this demo, please use yor Github account) and update `inherits` array with `git` component:
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -67,7 +67,7 @@ First of all, you will configure your local development environment, checkout ex
       env.TLN_GIT_USER = 'Alice';
       env.TLN_GIT_EMAIL = 'alice@calbro.com';
     },
-    options: async (tln, yargs) => [],
+    options: async (tln, args) => {},
     inherits: async (tln) => ['git'],
     depends: async (tln) => [],
     steps: async (tln) => [],
@@ -86,11 +86,11 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   tln ls
   ```
   Two last commands will do the magic: connect with teamone list of projects and display them to you
-* At this point, you need to get source code for existing projects, build it and become familiar with implemented functionality
+* At this point, you are ready to get source code for existing projects, build it and start checking existing functionality
   ```
   tln clone calbro-scanner:calbro-portal
   tln prereq:init -r
-  tln install -r --depends
+  tln install calbro-portal:calbro-scanner --depends
   tln build -r
   ```
   First command will use `git clone` and your credentials which were defined early inside `.tln.conf`. Second command will generate `.env` file if any using template and run initialization commands like `npm i`. Third one will install all necessary `third-parties` components. Last one will recursivelly `build` all components
@@ -99,3 +99,4 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
 * https://sdkman.io
+* https://chocolatey.org/
