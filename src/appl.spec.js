@@ -19,6 +19,6 @@ describe('application', function() {
   })
 
   it.skip('Application can be created', function() {
-    expect(require('./appl').create(logger.create(0), process.cwd(), process.cwd(), null)).to.be.an('object');
+//    expect(require('./appl').create(logger.create(0), process.cwd(), process.cwd(), null)).to.be.an('object');
   });
 });
