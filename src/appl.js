@@ -89,7 +89,7 @@ class Appl {
     } else {
       for(const folder of folders) {
         this.currentComponent = await this.currentComponent.buildChild(folder, true);
-      };
+      }
     }
     //
     this.logger.info('operating system: ', os.type(), os.platform(), os.release());

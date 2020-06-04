@@ -217,7 +217,7 @@ class Component {
         this.logger.warn(`${this.uuid} exec command input parameter is missing`);
       }
     });
-    const { scripts, env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
+    const { env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
     await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
   }
 
@@ -494,7 +494,6 @@ class Component {
   }
 
   static getDependsList(hierarchy, anchor) {
-    const r = [];
     return hierarchy
       .filter(c => c.anchor !== anchor)
       .reverse()
