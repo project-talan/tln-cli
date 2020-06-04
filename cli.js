@@ -1,71 +1,129 @@
 #!/usr/bin/env node
-
 'use strict';
 
-const appl = require('./src/appl');
+const fs = require('fs');
+const findUp = require('find-up')
 
+// workaround for windows Path definition
+if (process.env['Path']) {
+  const p = process.env['Path'];
+  delete process.env['Path'];
+  process.env['PATH'] = p;
+}
+
+const appl = async (verbose, cwd, cliHome, detach, localRepo, fn) => {
+  const a = require('./src/appl').create(verbose, cwd, cliHome, detach, localRepo);
+  await a.init();
+  await fn(a);
+}
+const splitComponents = (components) => {
+  return components?components.split(':'):[];
+}
+const parseEnv = (env) => {
+  const obj = {};
+  env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
+  return obj;
+
+}
+
+const configPath = findUp.sync(['.tlnrc'])
+const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 const argv = require('yargs')
+    .config(config)
   .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
   .help('help').alias('help', 'h')
   .option('verbose', { alias: 'v', count: true, default: 0 })
-  .option('r', { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('p', { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
+  .option('r', { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('a', { describe: 'Show all components', alias: 'all', default: false, type: 'boolean' })
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-  .option('anchor-path', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
+  .option('local-repo', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
+  .option('detach', { describe: 'Shared components will be deployed default location inside tmp folder', default: false, type: 'boolean'  })
   .command(
     /**************************************************************************/
     'config', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
     (yargs) => {
       yargs
-        .option('repo', { describe: 'Git repository url', alias:'repository', default: '', type: 'string' })
-        .option('f', { describe: 'Force override config file, if exists', alias: 'force', default: false, type: 'boolean' })
-        .option('q', { describe: 'Remove help information from the template', alias: 'quite', default: false, type: 'boolean' })
+        .option('repo', { describe: 'Git repository url', alias:'repository', default: null, type: 'string' })
+        .option('prefix', { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
+        .option('force', { describe: 'Force override config file, if exists', default: false, type: 'boolean' })
+        .option('terse', { describe: 'Remove help information from the config', default: false, type: 'boolean' })
     },
     async (argv) => {
-      appl.create(argv.verbose, process.cwd()).config(argv.repository, argv.force, argv.quite);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+        await a.config(splitComponents(argv.components), argv.repo, argv.prefix, argv.force, argv.terse);
+      });
     }
   )
   .command(
     /**************************************************************************/
-    'inspect [components] [-y]', 'Display component internal structure',
+    'inspect [components] [-j]', 'Display component(s) internal structure',
     (yargs) => {
+      yargs
+        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('j', { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+        await a.inspect(splitComponents(argv.components), parseEnv(argv.env), argv.json, argv._);
+      });
     }
   )
   .command(
     /**************************************************************************/
-    'ls [components] [-d]', 'Display components hierarchy',
+    'ls [components] [-d depth] [-l]', 'Display components hierarchy',
     (yargs) => {
+      yargs
+        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('d', { describe: 'depth level', alias: 'depth', default: 1, type: 'number' })
+        .option('l', { describe: 'depth level', alias: 'limit', default: 5, type: 'number' })
+        .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
     },
     async (argv) => {
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+        await a.ls(splitComponents(argv.components), argv.parents, argv.depth, (argv.all ? -1 : argv.limit));
+      });
     }
   )
   .command(
     /**************************************************************************/
     'exec [components] [-r] [-p] [-c] [-i]', 'Execute specified command or script',
     (yargs) => {
+      yargs
+        .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('c', { describe: 'Shell command to execute', alias: 'command', type: 'string' })
+        .option('i', { describe: 'Script name to execute', alias: 'input', type: 'string' })
+        .conflicts('c', 'i')
+        .check(({ command, input }) => {
+          if (!(command || input)) {
+            throw new Error('command or input option is required');
+          }
+          return true;
+        })
     },
     async (argv) => {
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, parseEnv(argv.env), argv.dryRun, argv.command, argv.input, argv._);
+      });
     }
   )
   .command(
     /**************************************************************************/
-    ['$0 <steps> [components] [-r] [-p] [-s] [-l]'], 'Execute set of steps over a set of components',
+    ['$0 <steps> [components] [-r] [-p] [-s] [-u] [--depends]'], 'Execute set of steps over a set of components',
     (yargs) => {
       yargs
         .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
         .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('s', { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
+        .option('depends', { describe: 'Execute steps for all components from depends list too', default: false, type: 'boolean' })
+        .demandOption(['steps'], 'Please provide steps(s) you need to run')
     },
     async (argv) => {
-      console.log('run');
-      console.log(argv);
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, parseEnv(argv.env), argv.save, argv.dryRun, argv.depends, argv._);
+      });
     }
   )
   .command(
