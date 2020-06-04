@@ -45,7 +45,7 @@ First of all, you will configure your local development environment, checkout ex
   cd calbro
   tln config --terse
   ```
-* If you check created configuration file `.tln.con`, you will see next JSON structure
+* If you check created configuration file `.tln.conf`, you will see next JSON structure
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -86,7 +86,7 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   tln ls
   ```
   Two last commands will do the magic: connect with teamone list of projects and display them to you
-* At this point, you need to get source code for existing projects, build it and become familiar with implemented functionality
+* At this point, you are ready to get source code for existing projects, build it and start checking existing functionality
   ```
   tln clone calbro-scanner:calbro-portal
   tln prereq:init -r
@@ -99,3 +99,4 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
 * https://sdkman.io
+* https://chocolatey.org/
