@@ -12,11 +12,12 @@ module.exports = {
     env['TLN_GIT_USER'] = 'john.doe';
     env['PATH'] = `${env['PATH']}${tln.delim}${path.join(env['TLN_COMPONENT_ORIGIN'], 'lib')}`;
     env['PATH'] = `${path.join(env['TLN_COMPONENT_ORIGIN'], 'bin')}${tln.delim}${env['PATH']}`;
-    
   */},
-  options: async (tln, yargs) => [/*
-    yargs.option('c', { describe: 'Configuration to build', alias:'configuration', default: null, type: 'string' });
-  */],
+  options: async (tln, args) => {/*
+    args
+      .prefix('TLN_MY_COMPONENT')
+      .option('configuration', { describe: 'Configuration to build' default: null, type: 'string' });
+  */},
   inherits: async (tln) => [/*'git'*/],
   depends: async (tln) => [/*'java/openjdk-11.0.2'*/],
   steps: async (tln) => [/*
