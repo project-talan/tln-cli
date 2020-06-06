@@ -25,9 +25,19 @@ class Options {
         const argv = { ...yargs.argv };
         delete argv['$0'];
         delete argv['_'];
+        let excluded = [];
+        for (const key of Object.keys(argv)) {
+          const parts = key.split('-');
+          if (parts.length > 1) {
+            const ex = [parts.shift()].concat(parts.map(v => v.charAt(0).toUpperCase() + v.slice(1)));
+            excluded.push(ex.join(''));
+          }
+        }
         //
         for (const key of Object.keys(argv)) {
-          env[[envPrefix, key].join('_').toUpperCase()] = argv[key];
+          if (!excluded.includes(key)) {
+            env[[envPrefix, key.replace(/-/g, '_')].join('_').toUpperCase()] = argv[key];
+          }
         }
       }
     }
