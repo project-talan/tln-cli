@@ -104,13 +104,16 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   ```
   tln clone calbro-scanner:calbro-portal
   tln install calbro-portal:calbro-scanner --depends
-  tln prereq:init calbro-scanner:calbro-portal
+  tln prereq:init -r
   tln build -r
   ```
   First command will use `git clone` and your credentials which were defined early inside `.tln.conf`.
   Second will install all necessary `third-parties` components.
   Third one will generate `.env` file if any using template and run initialization commands like `npm i`.
   The last command will recursivelly `build` all components
+
+### Checkout, configure & build existing projects
+You project is stiil at early stage
 
 ## Similar projects
 * https://github.com/mateodelnorte/meta
