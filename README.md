@@ -41,6 +41,7 @@ First of all, you need to configure your local development environment, checkout
   cd projects
   tln config --terse
   ```
+  
 * Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc. We will have detailed look into this features in the next sections.
     ```
     tln ls
@@ -55,29 +56,31 @@ First of all, you need to configure your local development environment, checkout
   cd calbro
   tln config --terse
   ```
+  
 * If you check created configuration file `.tln.conf`, you will see next JSON structure
   ```
   module.exports = {
     tags: async (tln) => [],
-    dotenvs: async (tln) => [],
-    env: async (tln, env) => {},
     options: async (tln, args) => {},
+    env: async (tln, env) => {},
+    dotenvs: async (tln) => [],
     inherits: async (tln) => [],
     depends: async (tln) => [],
     steps: async (tln) => [],
     components: async (tln) => []
   }
   ```
-* Open this file using your favorite editor and add your git user name, working email (for this demo, please use yor Github account) and update `inherits` array with `git` component:
+  
+* Open this file using your favorite editor and add your git user name and working email (for this demo, please use your Github account) and update `inherits` array with `git` component:
   ```
   module.exports = {
     tags: async (tln) => [],
-    dotenvs: async (tln) => [],
+    options: async (tln, args) => {},
     env: async (tln, env) => {
       env.TLN_GIT_USER = 'Alice';
       env.TLN_GIT_EMAIL = 'alice@calbro.com';
     },
-    options: async (tln, args) => {},
+    dotenvs: async (tln) => [],
     inherits: async (tln) => ['git'],
     depends: async (tln) => [],
     steps: async (tln) => [],
@@ -96,14 +99,18 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   tln ls
   ```
   Two last commands will do the magic: connect with teamone list of projects and display them to you
+  
 * At this point, you are ready to get source code for existing projects, build it and start checking existing functionality
   ```
   tln clone calbro-scanner:calbro-portal
-  tln prereq:init -r
   tln install calbro-portal:calbro-scanner --depends
+  tln prereq:init calbro-scanner:calbro-portal
   tln build -r
   ```
-  First command will use `git clone` and your credentials which were defined early inside `.tln.conf`. Second command will generate `.env` file if any using template and run initialization commands like `npm i`. Third one will install all necessary `third-parties` components. Last one will recursivelly `build` all components
+  First command will use `git clone` and your credentials which were defined early inside `.tln.conf`.
+  Second will install all necessary `third-parties` components.
+  Third one will generate `.env` file if any using template and run initialization commands like `npm i`.
+  The last command will recursivelly `build` all components
 
 ## Similar projects
 * https://github.com/mateodelnorte/meta
