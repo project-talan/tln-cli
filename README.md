@@ -1,12 +1,14 @@
-* provides `uniform` development environment for multiple projects
-* reflects `complex company structure`
-* reserves space for `shared` libraries and components
-* ensure `smooth on-boarding` procedure
-* grants `flexible` structure for `micro-services, SOA & N-ties` architecture
-* `melts` borders between `mono- and multi- repo` structures
-* `stores` configuration for IaC, `minimize` CI configuration
-* is platform `agnostic`
-* is `polyglot programming friendly`
+# Talan cli
+is
+* `uniform` development environment for multiple projects
+* tool to reflect `complex internal company structure`
+* helper for `shared` libraries and components management
+* a set of rules for `smooth on-boarding` procedure
+* `flexible` structure for `micro-services, SOA & N-ties` architecture
+* `ambrella solution` for `mono- and multi- repo` approaches
+* `IaC`
+* platform `agnostic`
+* `polyglot programming friendly`
 
 ## Prerequisites
 * Install Nodejs 12.x or higher (https://nodejs.org)
@@ -18,12 +20,20 @@
 
 ## Quick start
 Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
-First of all, you will configure your local development environment, checkout existing projects and create initials structure for the project.
+
+First of all, you need to configure your local development environment, checkout existing projects and create initials projet structure.
 
 ### Local development environment home
 * Go to your home folder
-  * Linux/MacOs: ```cd ~```
-  * Windows: ```d: && cd /```
+  * Linux/MacOs
+    ```
+    cd ~
+    ```
+  * Windows
+    ```
+    d:
+    cd /
+    ```
 
 * Create projects' home and tell `tln` about it
   ```
