@@ -113,18 +113,18 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   * The last command will recursivelly `build` all components
 
 ### Skeletin for new project
-You project is still at early stage, there are a lot of uncertainty, but you have to push project forward.
+You project is still at early stage, there are a lot of uncertainty, but you have to push it forward.
 
-You are not sure will be project based on SOA or Microservices, so you are ok to start with mono repo, but at the same time you want to build structure which can be slitted later if needed.
+It's also to clear will be project based on SOA or Microservices, so you are ok to start with mono repo, but at the same time you want to build structure which can be slitted later if needed.
 
 Calbro software development culture also includes recommendation to reuse wide range of project templates and you will follow this practice.
 
-This is how you initial concept looks like:
+This is how your initial concept looks like:
 * admin frontend - Angular, a couple of developers have joined your team recently with necessary skills, backend - Nodejs
 * API service - Go, since this is general company strategy and your project should be aligned with it
-* Auth service will utilize Nodejs again, since it will be handled by developer which will be working on admin part
-* You need to have two types of persistance storages - SQL & NoSQL, since initial analysis shows that we can't have "shoes for all feets" approach
-* Managment wants to go with mobile-first approach, so we will try satisfy it using Cordova and reuse our Javascript based frontend
+* Auth service will utilize Nodejs again, since it will be handled by the developer which will be working on admin part
+* You need to have two types of persistance storages - SQL & NoSQL, because initial analysis shows that we can't have "shoes for all feets" approach
+* Managment wants to go with mobile-first approach, so we will try satisfy this request by using Cordova and reuse our Javascript based frontend
 * Main portal web part will use React, because it's cool
 
 So, here we go (you can just copy whole script below and execute it as a single command)
