@@ -115,16 +115,16 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
 ### Skeleton for the new project
 You project is still at early stage, there are a lot of uncertainty, but you have to push it forward.
 
-It's also not clear will be project based on SOA or Microservices, so you are ok to start with mono repo, but at the same time you want to build structure which can be slitted later if needed.
+It's also not clear will be project based on SOA or Microservices, so you are ok to start with mono repo, but at the same time you want to build structure which can be splitted later if needed.
 
 Calbro software development culture also includes recommendation to reuse wide range of project templates and you will follow this practice.
 
 * This is how your initial concept looks like:
-  * admin frontend - Angular, a couple of developers have joined your team recently with necessary skills, admin backend - Nodejs
+  * Admin Frontend - Angular, a couple of developers have joined your team recently with necessary skills, Admin Backend - Nodejs
   * API service - Go, since this is general company strategy and your project should be aligned with it
-  * Auth service will utilize Nodejs again, since it will be handled by the developer which will be working on admin part
+  * Auth service will utilize Nodejs again, since it will be handled by the developer which will be working on Admin part
   * You need to have two types of persistent storages - SQL & NoSQL, because initial analysis shows that we can't have "shoes for all feets" approach
-  * Managment wants to go with mobile-first approach, so we will try satisfy this request by using Cordova and reuse our Javascript based frontend
+  * Managment wants to go with mobile-first approach, so you will try satisfy this request by using Cordova and reuse our Javascript based frontend
   * Main portal web part will use React, because it's cool
   * We also need Java to build our automated test framework
 
