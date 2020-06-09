@@ -80,10 +80,11 @@ const argv = require('yargs')
         .option('d', { describe: 'depth level', alias: 'depth', default: 1, type: 'number' })
         .option('l', { describe: 'depth level', alias: 'limit', default: 5, type: 'number' })
         .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
+        .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.ls(splitComponents(argv.components), argv.parents, argv.depth, (argv.all ? -1 : argv.limit));
+        await a.ls(splitComponents(argv.components), argv.parents, argv.depth, (argv.all ? -1 : argv.limit), argv.installedOnly);
       });
     }
   )
