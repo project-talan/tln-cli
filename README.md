@@ -151,6 +151,41 @@ Calbro software development culture also includes recommendation to reuse wide r
   | qa/load | https://github.com/project-talan/tln-java.git | master |
   | qa/e2e | https://github.com/project-talan/tln-java.git | master |
 
+* And the fina step is to observe whole development environment structure
+  ```
+  tln ls / -d 5 --all
+  ```
+  ```
+    /
+    ├ calbro
+    │ └ teamone
+    │   ├ calbro-scanner
+    │   ├ calbro-portal
+    │   └ calbro-reporting
+    │     ├ dbs
+    │     │ ├ mongo
+    │     │ └ postgresql
+    │     ├ mobile
+    │     │ └ cordova
+    │     ├ qa
+    │     │ ├ api
+    │     │ ├ e2e
+    │     │ └ load
+    │     ├ services
+    │     │ ├ admin
+    │     │ ├ api
+    │     │ └ auth
+    │     └ static
+    │       ├ admin
+    │       └ portal
+    ├ angular
+    │ └ angular-9.1.7
+    ├ java
+    │ └ openjdk-11.0.2
+    └ maven
+      └ mvn-3.6.3
+  ```
+
 
 ## Similar projects
 * https://github.com/mateodelnorte/meta
