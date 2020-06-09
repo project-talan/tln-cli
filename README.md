@@ -21,7 +21,7 @@ is
 ## Quick start <sub><sup>~10 min</sup></sub>
 Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
 
-First of all, you need to configure your local development environment, checkout existing projects and create initials structure for the new projet.
+First of all, you need to configure your local development environment, checkout existing projects and create initial structure for the new projet.
 
 ### Local development environment home
 * Go to your home folder
