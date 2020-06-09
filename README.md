@@ -126,9 +126,31 @@ This is how your initial concept looks like:
 * You need to have two types of persistance storages - SQL & NoSQL, because initial analysis shows that we can't have "shoes for all feets" approach
 * Managment wants to go with mobile-first approach, so we will try satisfy this request by using Cordova and reuse our Javascript based frontend
 * Main portal web part will use React, because it's cool
+* We also need Java to build our automated test framework
 
 So, here we go (you can just copy whole script below and execute it as a single command)
+```
+mkdir calbro-reporting && pushd calbro-reporting && git init && tln exec -c 'git config --local user.email ${TLN_GIT_EMAIL} && git config --local user.name ${TLN_GIT_USER}' && tln config --terse && git add -A && git commit -m"empty repo" && tln add-subtree -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && pushd static && tln config --terse && popd && git add -A && git commit -m"Admin static" && tln add-subtree -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && git add -A && git commit -m"Portal static" && tln add-subtree -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && pushd services && tln config --terse && popd && git add -A && git commit -m"Admin back" && tln add-subtree -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && git add -A && git commit -m"API back" && tln add-subtree -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && git add -A && git commit -m"Auth back" && tln add-subtree -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && pushd dbs && tln config --terse && popd && git add -A && git commit -m"Mongo DB" && tln add-subtree -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && git add -A && git commit -m"Postgresql DB" && tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && pushd mobile && tln config --terse && popd && git add -A && git commit -m"Cordova" && tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && pushd qa && tln config --terse && popd && git add -A && git commit -m"QA api tests" && tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && git add -A && git commit -m"QA load tests" && tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && git add -A && git commit -m"QA e2e tests" && popd
+```
 
+```
+tln ls-subtrees calbro-reporting
+``
+
+```
+Prefix                   Subtree                                                          Ref
+static/admin             https://github.com/project-talan/tln-angular.git                 master
+static/portal            https://github.com/project-talan/tln-react.git                   master
+services/admin           https://github.com/project-talan/tln-nodejs.git                  master
+services/api             https://github.com/project-talan/tln-golang.git                  master
+services/auth            https://github.com/project-talan/tln-nodejs.git                  master
+dbs/mongo                https://github.com/project-talan/tln-mongodb.git                 master
+dbs/postgresql           https://github.com/project-talan/tln-postgresql.git              master
+mobile/cordova           https://github.com/project-talan/tln-cordova.git                 master
+qa/api                   https://github.com/project-talan/tln-java.git                    master
+qa/load                  https://github.com/project-talan/tln-java.git                    master
+qa/e2e                   https://github.com/project-talan/tln-java.git                    master
+```
 
 
 
