@@ -1,5 +1,8 @@
 # Talan cli
-is
+## Motivation
+
+## Key features
+tln is
 * `uniform` development environment for multiple projects
 * tool to describe `internal company structure`
 * set of rules for `smooth on-boarding` procedure
