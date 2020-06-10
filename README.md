@@ -5,7 +5,7 @@ is
 * set of rules for `smooth on-boarding` procedure
 * helper to manage `shared` libraries and components
 * `flexible` structure for `micro-services, SOA & N-ties` architectures
-* `ambrella solution` for `mono- and multi- repo` approaches
+* `umbrella solution` for `mono- and multi- repo` approaches
 * `IaC`
 * platform `agnostic`
 * `polyglot programming friendly`
