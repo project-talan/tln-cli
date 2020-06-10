@@ -116,9 +116,9 @@ class Appl {
   }
 
   //
-  async ls(components, parents, depth, limit) {
+  async ls(components, parents, depth, limit, installedOnly) {
     for(const component of await this.resolve(components)) {
-      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, parents, depth, limit);
+      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, parents, depth, limit, installedOnly);
     }
   }
 

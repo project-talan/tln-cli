@@ -33,6 +33,13 @@ class Component {
     return '/';
   }
 
+  getRoot() {
+    if (this.parent) {
+      return this.parent.getRoot();
+    }
+    return this;
+  }
+
   /*
   * 
   * params:
@@ -136,24 +143,27 @@ class Component {
   * 
   * params:
   */
-  async ls(cout, parents, depth, limit) {
+  async ls(cout, parents, depth, limit, installedOnly) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}' limit:'${limit}'`);
-    await this.print(cout, parents, depth, limit);
+    await this.print(cout, parents, depth, limit, installedOnly);
   }
 
   /*
   * Print hierarchy of components
   * params:
   */
-  async print(cout, parents, depth, limit, offset = '', last = false) {
+  async print(cout, parents, depth, limit, installedOnly, offset = '', last = false) {
     let prefix = ' ';
     if (parents && this.parent) {
-      offset = `${await this.parent.print(cout, parents, 0, 0)} └`;
+      offset = `${await this.parent.print(cout, parents, 0, 0, installedOnly)} └`;
     }
     // output yourself
     let status = '';
     if (!fs.existsSync(this.home)) {
-      status = '*'
+      status = '*';
+      if (installedOnly) {
+        return offset;
+      }
     }
     const id = this.id === '' ? '/' : this.id;
     cout(`${offset}${prefix}${id} ${status}`);
@@ -183,7 +193,7 @@ class Component {
       for (const component of this.components) {
         cnt--;
         const delim = (cnt) ? (' ├') : (' └');
-        await component.print(cout, false, depth - 1, limit, `${no}${delim}`, cnt === 0);
+        await component.print(cout, false, depth - 1, limit, installedOnly, `${no}${delim}`, cnt === 0);
         if (!cnt) {
           break;
         }
@@ -442,12 +452,16 @@ class Component {
     let r = [];
     if (components.length) {
       for (let component of components) {
-        // find component
-        const c = await this.find(component.split('/'));
-        if (c) {
-          r.push(c);
+        if (component === '/') {
+            r.push(this.getRoot());
         } else {
-          this.logger.error(`Component '${component}' was not found`);
+          // find component
+          const c = await this.find(component.split('/'));
+          if (c) {
+            r.push(c);
+          } else {
+            this.logger.error(`Component '${component}' was not found`);
+          }
         }
       }
       return r;
