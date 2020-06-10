@@ -90,7 +90,7 @@ First of all, you need to configure your local development environment, checkout
   This information will be used by all subsequent git calls inside this and all subdirectories.
 
 ### Checkout, configure & build existing projects
-Calbo is a big company and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
+Calbo is a big company and has a lot of teams and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
 * You are part of `teamone` team and this can be reflected on to development environment structure
   ```
   > mkdir teamone
