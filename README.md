@@ -100,7 +100,7 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   ```
   Two last commands will do the magic: connect with teamone list of projects and display them to you
   
-* At this point, you are ready to get source code for the existing projects, build it and start checking implemented functionality
+* At this point, you are ready to get source code of the existing projects, build it and start checking implemented functionality
   ```
   > tln clone calbro-scanner:calbro-portal
   > tln install calbro-portal:calbro-scanner --depends
