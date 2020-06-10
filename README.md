@@ -1,8 +1,9 @@
-# Talan cli
+# talan cli (tln) - Advanced Component Management System
+
 ## Motivation
 
 ## Key features
-tln is
+**tln is**
 * `uniform` development environment for multiple projects
 * tool to describe `internal company structure`
 * set of rules for `smooth on-boarding` procedure
@@ -60,7 +61,7 @@ First of all, you need to configure your local development environment, checkout
   > tln config --terse
   ```
   
-* If you check created configuration file `.tln.conf`, you will see next JSON structure
+* If you check created configuration file `.tln.conf`, you will see following JSON structure
   ```
   module.exports = {
     tags: async (tln) => [],
