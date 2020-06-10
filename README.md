@@ -71,7 +71,7 @@ First of all, you need to configure your local development environment, checkout
   }
   ```
   
-* Open this file using your favorite editor and add your git user name and working email (for this demo, please use your Github account) and update `inherits` array with `git` component
+* Open this file using your favorite editor, add your git user name and working email (for this tutorial, please use your Github account) and update `inherits` array with `git` component
   ```
   module.exports = {
     tags: async (tln) => [],
