@@ -103,7 +103,7 @@ class Appl {
 
   //
   async config(components, repository, prefix, force, quite) {
-    for(const component of await this.resolve(components)) {
+    for(const component of await this.resolve(components, true, false, true)) {
       await component.config(repository, prefix, force, quite);
     }
   }
@@ -145,8 +145,8 @@ class Appl {
   }
 
   //
-  async resolve(components) {
-    return this.currentComponent.resolve(components, true);
+  async resolve(components, resolveEmptyToThis = true, popup = true, force = false) {
+    return this.currentComponent.resolve(components, resolveEmptyToThis, popup, force);
   }
 
   //

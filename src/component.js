@@ -430,7 +430,7 @@ class Component {
   * Find entity inside children or pop up to check parent and continue search there
   * params:
   */
-  async find(ids, recursive = true, depth = 0, exclude = []) {
+  async find(ids, recursive = true, depth = 0, exclude = [], force = false) {
     let component = null;
     this.logger.trace(`uuid: '${this.uuid}' finds ${ids}`);
     if (ids.length) {
@@ -449,7 +449,7 @@ class Component {
       if ((component && (ids.length > 1)) || (!component && recursive)) {
         for (const item of await this.getIDs()) {
           if (!exclude.includes(item)) {
-            const c = await this.buildChild(item, false);
+            const c = await this.buildChild(item, force);
             if (c) {
               component = await c.find(nIds, nRecursive, depth + 1);
               if (component) {
@@ -467,7 +467,7 @@ class Component {
     return component;
   }
 
-  async resolve(components, resolveEmptyToThis = false) {
+  async resolve(components, resolveEmptyToThis = false, popup = true, force = false) {
     let r = [];
     if (components.length) {
       this.logger.debug(`uuid: '${this.uuid}' resolves ${components}`);
@@ -476,7 +476,7 @@ class Component {
             r.push(this.getRoot());
         } else {
           // find component
-          const c = await this.find(component.split('/'));
+          const c = await this.find(component.split('/'), true, popup ? 0 : 1, [], force);
           if (c) {
             r.push(c);
           } else {

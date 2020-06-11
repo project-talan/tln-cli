@@ -29,7 +29,7 @@ const parseEnv = (env) => {
 const configPath = findUp.sync(['.tlnrc'])
 const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 const argv = require('yargs')
-    .config(config)
+  .config(config)
   .usage('Multi-component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
   .help('help').alias('help', 'h')
   .option('verbose', { alias: 'v', count: true, default: 0 })
@@ -43,9 +43,10 @@ const argv = require('yargs')
   .option('detach', { describe: 'Shared components will be deployed default location inside tmp folder', default: false, type: 'boolean'  })
   .command(
     /**************************************************************************/
-    'config', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
+    'config [components]', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
     (yargs) => {
       yargs
+        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
         .option('repo', { describe: 'Git repository url', alias:'repository', default: null, type: 'string' })
         .option('prefix', { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
         .option('force', { describe: 'Force override config file, if exists', default: false, type: 'boolean' })
