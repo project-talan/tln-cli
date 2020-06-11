@@ -241,10 +241,31 @@ class Component {
       }
     } else {
       for(const step of steps) {
-        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, _);
-        for(const script of scripts) {
-          if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
-            break;
+        let stepId = step;
+        let h = herarchy;
+        let error = false;
+        // check if we need to inject run-time component
+        const parts = stepId.split('@');
+        console.log(parts);
+        if (parts.length > 1) {
+          stepId = parts[0];
+          const componentId = parts[1];
+          error = true;
+          console.log(stepId, componentId, error);
+          for (let component of await this.resolve([componentId])) {
+            h = await this.unfoldHierarchy(this.uuid, this.id, this.home, true, await component.unfoldHierarchy(this.uuid, this.id, this.home));
+            error = false;
+          }
+        }
+        //
+        if (error) {
+          this.logger.error(`${step} could not be resolved`);
+        } else {
+          const {scripts, env, dotenvs} = await this.collectScripts(h, new RegExp(`\^${stepId}\$`), filter, envFromCli, _);
+          for(const script of scripts) {
+            if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+              break;
+            }
           }
         }
       }
