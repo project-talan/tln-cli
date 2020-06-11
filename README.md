@@ -1,11 +1,22 @@
-# Talan cli
-is
+# talan cli (tln) - Advanced Component Management System
+
+## Motivation
+Modern software development has a complex internal structure.
+Here is just a couple of challanges we are facing every day:
+* multiple versions of your product can rely on different versions of third-party components
+* polyglot programming environment assumes dependecies from a lot of external components from different ecosystems (java, nodejs, c++, javscript etc.)
+* onboarding procedure for the new developer in most cases is non-trivial process
+* multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
+* use uniform build process for local development and CI is a bit of a challange
+* ... put your daily software development headaches here
+
+## Key features
+**tln is**
 * `uniform` development environment for multiple projects
-* tool to describe `complex internal company structure`
 * set of rules for `smooth on-boarding` procedure
 * helper to manage `shared` libraries and components
 * `flexible` structure for `micro-services, SOA & N-ties` architectures
-* `ambrella solution` for `mono- and multi- repo` approaches
+* `umbrella solution` for `mono- and multi- repo` approaches
 * `IaC`
 * platform `agnostic`
 * `polyglot programming friendly`
@@ -14,11 +25,11 @@ is
 * Install Nodejs 12.x or higher (https://nodejs.org)
 * Install tln-cli 
   ```
-  > sudo npm i -g tln-cli
+  > npm i -g tln-cli
   > tln --version
   ```
 
-## Quick start <sub><sup>~10 min</sup></sub>
+## Quick start <sub><sup>~15 min</sup></sub>
 Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications.
 
 First of all, you need to configure your local development environment, checkout existing projects and create initial structure for the new projet.
@@ -35,7 +46,7 @@ First of all, you need to configure your local development environment, checkout
     > cd /
     ```
 
-* Create projects' home and tell `tln` about it
+* Next step is to create folder where all your projects will be stored
   ```
   > mkdir projects
   > cd projects
@@ -57,7 +68,7 @@ First of all, you need to configure your local development environment, checkout
   > tln config --terse
   ```
   
-* If you check created configuration file `.tln.conf`, you will see next JSON structure
+* If you check created configuration file `.tln.conf`, you will see following JSON structure
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -71,7 +82,7 @@ First of all, you need to configure your local development environment, checkout
   }
   ```
   
-* Open this file using your favorite editor and add your git user name and working email (for this demo, please use your Github account) and update `inherits` array with `git` component
+* Open this file using your favorite editor, add your git user name and working email (for this tutorial, please use your Github account) and update `inherits` array with `git` component
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -90,7 +101,7 @@ First of all, you need to configure your local development environment, checkout
   This information will be used by all subsequent git calls inside this and all subdirectories.
 
 ### Checkout, configure & build existing projects
-Calbo is a big company and has a lot of departments and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
+Calbo is a big company and has a lot of teams and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
 * You are part of `teamone` team and this can be reflected on to development environment structure
   ```
   > mkdir teamone
@@ -100,14 +111,14 @@ Calbo is a big company and has a lot of departments and ongoing projects. You kn
   ```
   Two last commands will do the magic: connect with teamone list of projects and display them to you
   
-* At this point, you are ready to get source code for the existing projects, build it and start checking implemented functionality
+* At this point, you are ready to get source code of the existing projects, build it and start checking implemented functionality
   ```
   > tln clone calbro-scanner:calbro-portal
   > tln install calbro-portal:calbro-scanner --depends
   > tln prereq:init -r
   > tln build -r
   ```
-  * First command will use `git clone` and your credentials which were defined early inside `.tln.conf`
+  * First command will use `git clone` and your credentials were defined early inside `.tln.conf`
   * Second will install all necessary `third-parties` components
   * Third one will generate `.env` file if any using template and run initialization commands like `npm i`
   * The last command will recursivelly `build` all components
