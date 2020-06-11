@@ -246,12 +246,10 @@ class Component {
         let error = false;
         // check if we need to inject run-time component
         const parts = stepId.split('@');
-        console.log(parts);
         if (parts.length > 1) {
           stepId = parts[0];
           const componentId = parts[1];
           error = true;
-          console.log(stepId, componentId, error);
           for (let component of await this.resolve([componentId])) {
             h = await this.unfoldHierarchy(this.uuid, this.id, this.home, true, await component.unfoldHierarchy(this.uuid, this.id, this.home));
             error = false;
@@ -434,7 +432,7 @@ class Component {
   */
   async find(ids, recursive = true, depth = 0, exclude = []) {
     let component = null;
-    //console.log(this.id, ' ', ids);
+    this.logger.trace(`uuid: '${this.uuid}' finds ${ids}`);
     if (ids.length) {
       const id = ids[0];
       let nIds = ids;
@@ -472,6 +470,7 @@ class Component {
   async resolve(components, resolveEmptyToThis = false) {
     let r = [];
     if (components.length) {
+      this.logger.debug(`uuid: '${this.uuid}' resolves ${components}`);
       for (let component of components) {
         if (component === '/') {
             r.push(this.getRoot());
