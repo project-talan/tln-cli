@@ -13,7 +13,6 @@ Here is just a couple of challanges we are facing every day:
 ## Key features
 **tln is**
 * `uniform` development environment for multiple projects
-* tool to describe `internal company structure`
 * set of rules for `smooth on-boarding` procedure
 * helper to manage `shared` libraries and components
 * `flexible` structure for `micro-services, SOA & N-ties` architectures
