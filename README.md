@@ -8,12 +8,11 @@ Here is just a couple of challanges we are facing every day:
 * onboarding procedure for the new developer in most cases is non-trivial process
 * multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
 * use uniform build process for local development and CI is a bit of a challange
-* ... put your daily software development headache here
+* ... put your daily software development headaches here
 
 ## Key features
 **tln is**
 * `uniform` development environment for multiple projects
-* tool to describe `internal company structure`
 * set of rules for `smooth on-boarding` procedure
 * helper to manage `shared` libraries and components
 * `flexible` structure for `micro-services, SOA & N-ties` architectures
@@ -26,7 +25,7 @@ Here is just a couple of challanges we are facing every day:
 * Install Nodejs 12.x or higher (https://nodejs.org)
 * Install tln-cli 
   ```
-  > sudo npm i -g tln-cli
+  > npm i -g tln-cli
   > tln --version
   ```
 
@@ -47,7 +46,7 @@ First of all, you need to configure your local development environment, checkout
     > cd /
     ```
 
-* Create projects' home and tell `tln` about it
+* Next step is to create folder where all your projects will be stored
   ```
   > mkdir projects
   > cd projects
