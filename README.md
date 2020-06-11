@@ -46,18 +46,19 @@ First of all, you need to configure your local development environment, checkout
     > cd /
     ```
 
-* Next step is to create folder where all your projects will be stored
+* Next step is to create folder where all your projects will be located
   ```
   > mkdir projects
   > cd projects
   > tln config --terse
   ```
   
-* Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc.
+* tln ships with a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angilar, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
   ```
   > tln ls
   > tln ls java --all
   > tln ls nodejs:angular:cmake
+  > tln install openjdk-14.0.1:angular-9.1.8:cmake-3.17.3
   ```
 
 ### Calbro projects home
