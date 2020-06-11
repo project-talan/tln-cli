@@ -1,10 +1,18 @@
-# Talan cli
+# talan cli (tln) - Advanced Component Management System
+
 ## Motivation
+Modern software development has a complex internal structure.
+Here is just a couple of challanges we are facing every day:
+* multiple versions of your product can rely on different versions of third-party components
+* polyglot programming environment assumes dependecies from a lot of external components from different ecosystems (java, nodejs, c++, javscript etc.)
+* onboarding procedure for the new developer in most cases is non-trivial process
+* multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
+* use uniform build process for local development and CI is a bit of a challange
+* ... put your daily software development headaches here
 
 ## Key features
-tln is
+**tln is**
 * `uniform` development environment for multiple projects
-* tool to describe `internal company structure`
 * set of rules for `smooth on-boarding` procedure
 * helper to manage `shared` libraries and components
 * `flexible` structure for `micro-services, SOA & N-ties` architectures
@@ -17,7 +25,7 @@ tln is
 * Install Nodejs 12.x or higher (https://nodejs.org)
 * Install tln-cli 
   ```
-  > sudo npm i -g tln-cli
+  > npm i -g tln-cli
   > tln --version
   ```
 
@@ -38,18 +46,19 @@ First of all, you need to configure your local development environment, checkout
     > cd /
     ```
 
-* Create projects' home and tell `tln` about it
+* Next step is to create folder where all your projects will be located
   ```
   > mkdir projects
   > cd projects
   > tln config --terse
   ```
   
-* Now you can list all available to install third-parties components like Nodejs, Java, Angular, Boost etc.
+* tln ships with a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angilar, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
   ```
   > tln ls
   > tln ls java --all
   > tln ls nodejs:angular:cmake
+  > tln install openjdk-14.0.1:angular-9.1.8:cmake-3.17.3
   ```
 
 ### Calbro projects home
@@ -60,7 +69,7 @@ First of all, you need to configure your local development environment, checkout
   > tln config --terse
   ```
   
-* If you check created configuration file `.tln.conf`, you will see next JSON structure
+* If you check created configuration file `.tln.conf`, you will see following JSON structure
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -131,15 +140,26 @@ Calbro software development culture also includes recommendation to reuse wide r
   * Main portal web part will use React, because it's cool
   * We also need Java to build our automated test framework
 
-* So, here we go (you can just copy whole script below and execute it as a single command)
-
-  * Linux/MacOs
+* So, here we go
   ```
-  > mkdir calbro-reporting && pushd calbro-reporting && git init && tln exec -c 'git config --local user.email ${TLN_GIT_EMAIL} && git config --local user.name ${TLN_GIT_USER}' && tln config --terse && git add -A && git commit -m"empty repo" && tln add-subtree -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && pushd static && tln config --terse && popd && git add -A && git commit -m"Admin static" && tln add-subtree -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && git add -A && git commit -m"Portal static" && tln add-subtree -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && pushd services && tln config --terse && popd && git add -A && git commit -m"Admin back" && tln add-subtree -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && git add -A && git commit -m"API back" && tln add-subtree -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && git add -A && git commit -m"Auth back" && tln add-subtree -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && pushd dbs && tln config --terse && popd && git add -A && git commit -m"Mongo DB" && tln add-subtree -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && git add -A && git commit -m"Postgresql DB" && tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && pushd mobile && tln config --terse && popd && git add -A && git commit -m"Cordova" && tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && pushd qa && tln config --terse && popd && git add -A && git commit -m"QA api tests" && tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && git add -A && git commit -m"QA load tests" && tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && git add -A && git commit -m"QA e2e tests" && popd
-  ```
-  * Windows
-  ```
-  > mkdir calbro-reporting && pushd calbro-reporting && git init && tln exec -c "git config --local user.email %TLN_GIT_EMAIL% && git config --local user.name %TLN_GIT_USER%" && tln config --terse && git add -A && git commit -m"empty repo" && tln add-subtree -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && pushd static && tln config --terse && popd && git add -A && git commit -m"Admin static" && tln add-subtree -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && git add -A && git commit -m"Portal static" && tln add-subtree -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && pushd services && tln config --terse && popd && git add -A && git commit -m"Admin back" && tln add-subtree -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && git add -A && git commit -m"API back" && tln add-subtree -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && git add -A && git commit -m"Auth back" && tln add-subtree -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && pushd dbs && tln config --terse && popd && git add -A && git commit -m"Mongo DB" && tln add-subtree -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && git add -A && git commit -m"Postgresql DB" && tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && pushd mobile && tln config --terse && popd && git add -A && git commit -m"Cordova" && tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && pushd qa && tln config --terse && popd && git add -A && git commit -m"QA api tests" && tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && git add -A && git commit -m"QA load tests" && tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && git add -A && git commit -m"QA e2e tests" && popd
+  mkdir calbro-reporting && \
+  cd calbro-reporting && \
+  tln init-repo && \
+  tln config --terse && git add . && git commit -m"empty repo" && \
+  tln add-subtree -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && \
+  tln add-subtree -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && \
+  tln add-subtree -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
+  tln add-subtree -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && \
+  tln add-subtree -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
+  tln add-subtree -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && \
+  tln add-subtree -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && \
+  tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && \
+  tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && \
+  tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && \
+  tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master
+  tln config dbs:mobile:qa:services:static --terse && \
+  git add . && git commit -m"Initial skeleton" && \
+  cd ..
   ```
 
 * Initial structure is ready and we can verify mounted subtrees
@@ -160,7 +180,7 @@ Calbro software development culture also includes recommendation to reuse wide r
   | qa/load | https://github.com/project-talan/tln-java.git | master |
   | qa/e2e | https://github.com/project-talan/tln-java.git | master |
 
-* And the final step is to observe ready to use development environment structure
+* And the final step is to observe ready to use development environment structure with all necessary dependencies
   ```
   > tln ls / -d 5 --all --installed-only
   ```
@@ -197,6 +217,7 @@ Calbro software development culture also includes recommendation to reuse wide r
 
 
 ## Similar projects
+* https://brew.sh/
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
 * https://sdkman.io

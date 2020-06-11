@@ -241,10 +241,29 @@ class Component {
       }
     } else {
       for(const step of steps) {
-        const {scripts, env, dotenvs} = await this.collectScripts(herarchy, new RegExp(`\^${step}\$`), filter, envFromCli, _);
-        for(const script of scripts) {
-          if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
-            break;
+        let stepId = step;
+        let h = herarchy;
+        let error = false;
+        // check if we need to inject run-time component
+        const parts = stepId.split('@');
+        if (parts.length > 1) {
+          stepId = parts[0];
+          const componentId = parts[1];
+          error = true;
+          for (let component of await this.resolve([componentId])) {
+            h = await this.unfoldHierarchy(this.uuid, this.id, this.home, true, await component.unfoldHierarchy(this.uuid, this.id, this.home));
+            error = false;
+          }
+        }
+        //
+        if (error) {
+          this.logger.error(`${step} could not be resolved`);
+        } else {
+          const {scripts, env, dotenvs} = await this.collectScripts(h, new RegExp(`\^${stepId}\$`), filter, envFromCli, _);
+          for(const script of scripts) {
+            if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+              break;
+            }
           }
         }
       }
@@ -411,9 +430,9 @@ class Component {
   * Find entity inside children or pop up to check parent and continue search there
   * params:
   */
-  async find(ids, recursive = true, depth = 0, exclude = []) {
+  async find(ids, recursive = true, depth = 0, exclude = [], force = false) {
     let component = null;
-    //console.log(this.id, ' ', ids);
+    this.logger.trace(`uuid: '${this.uuid}' finds ${ids}`);
     if (ids.length) {
       const id = ids[0];
       let nIds = ids;
@@ -430,7 +449,7 @@ class Component {
       if ((component && (ids.length > 1)) || (!component && recursive)) {
         for (const item of await this.getIDs()) {
           if (!exclude.includes(item)) {
-            const c = await this.buildChild(item, false);
+            const c = await this.buildChild(item, force);
             if (c) {
               component = await c.find(nIds, nRecursive, depth + 1);
               if (component) {
@@ -448,15 +467,16 @@ class Component {
     return component;
   }
 
-  async resolve(components, resolveEmptyToThis = false) {
+  async resolve(components, resolveEmptyToThis = false, popup = true, force = false) {
     let r = [];
     if (components.length) {
+      this.logger.debug(`uuid: '${this.uuid}' resolves ${components}`);
       for (let component of components) {
         if (component === '/') {
             r.push(this.getRoot());
         } else {
           // find component
-          const c = await this.find(component.split('/'));
+          const c = await this.find(component.split('/'), true, popup ? 0 : 1, [], force);
           if (c) {
             r.push(c);
           } else {

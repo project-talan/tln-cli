@@ -1,6 +1,6 @@
 {
   "name": "tln-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Multi-component management tool",
   "main": "cli.js",
   "scripts": {
