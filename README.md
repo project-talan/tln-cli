@@ -46,7 +46,7 @@ First of all, you need to configure your local development environment, checkout
     > cd /
     ```
 
-* Next step is to create folder where all you projects will be stored
+* Next step is to create folder where all your projects will be stored
   ```
   > mkdir projects
   > cd projects
