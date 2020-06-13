@@ -107,7 +107,7 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   ```
   Two last commands will do the magic: connect with teamone's list of projects and display them to you
   
-  Configuration file .tln/.tlf.conf can unhide more details
+  Configuration file `.tln/.tlf.conf` can unhide more details
   ```
   module.exports = {
     tags: async (tln) => [],
