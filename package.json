@@ -1,7 +1,7 @@
 {
   "name": "tln-cli",
   "version": "1.0.5",
-  "description": "Multi-component management tool",
+  "description": "Advanced Component Management System",
   "main": "cli.js",
   "scripts": {
     "test": "nyc --reporter=text --reporter=lcov mocha **/*spec.js",
