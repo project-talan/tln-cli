@@ -12,20 +12,11 @@ Here is just a couple of challanges we are facing every day:
 
 ## Key features
 * `uniform` installation procedure for wide range of third-party components and tracking their history of versions
-* ability to create fully isolated development environments, based of information where even every branch can use different version of components
+* ability to create fully isolated development environments, here even every branch can use different version of third-party components
 * additional layer to store common information about company/team/projects/service (list of teams, SCM system parameters etc.) and user/environment specidic data (user name/email, environment variables etc.)
 * all configurations are fully customizable, user can define any environment variable, SDLC steps, .env files to be part of development process
-* simple configuration file will help to manage `mono- and multi- repo` approaches and even mixed variations.
-
-**tln is**
-* `uniform` development environment for multiple projects
-* set of rules for `smooth on-boarding` procedure
-* helper to manage `shared` libraries and components
-* `flexible` structure for `micro-services, SOA & N-ties` architectures
-* `umbrella solution` for 
-* `IaC`
-* platform `agnostic`
-* 
+* simple configuration file will help to manage `mono- and multi- repo` approaches and mixed variations too.
+* the same dependency installation and build process can be used inside local development environment and at CI side without any changes.
 
 ## Prerequisites
 * Install Nodejs 12.x or higher (https://nodejs.org)
