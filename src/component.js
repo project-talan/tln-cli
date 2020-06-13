@@ -237,7 +237,7 @@ class Component {
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
       for(const d of Component.getDependsList(herarchy, this.uuid)) {
-        await d.component.run(steps, false, filter, envFromCli, _, save, dryRun, false);
+        await d.component.run(steps, false, filter, envFromCli, save, dryRun, false, _);
       }
     } else {
       for(const step of steps) {
