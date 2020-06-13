@@ -3,23 +3,29 @@
 ## Motivation
 Modern software development has a complex internal structure.
 Here is just a couple of challanges we are facing every day:
-* multiple versions of your product can rely on different versions of third-party components
-* polyglot programming environment assumes dependecies from a lot of external components from different ecosystems (java, nodejs, c++, javscript etc.)
+* multiple versions (branches) of your product can rely on different versions of third-party components
+* polyglot programming environment assumes dependencies from a lot of external components and from different ecosystems (java, nodejs, c++, javscript etc.)
 * onboarding procedure for the new developer in most cases is non-trivial process
 * multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
-* use uniform build process for local development and CI is a bit of a challange
+* use uniform build process for the local development and CI is a bit of a challange
 * ... put your daily software development headaches here
 
 ## Key features
+* `uniform` installation procedure for wide range of third-party components and tracking their history of versions
+* ability to create fully isolated development environments, based of information where even every branch can use different version of components
+* additional layer to store common information about company/team/projects/service (list of teams, SCM system parameters etc.) and user/environment specidic data (user name/email, environment variables etc.)
+* all configurations are fully customizable, user can define any environment variable, SDLC steps, .env files to be part of development process
+* simple configuration file will help to manage `mono- and multi- repo` approaches and even mixed variations.
+
 **tln is**
 * `uniform` development environment for multiple projects
 * set of rules for `smooth on-boarding` procedure
 * helper to manage `shared` libraries and components
 * `flexible` structure for `micro-services, SOA & N-ties` architectures
-* `umbrella solution` for `mono- and multi- repo` approaches
+* `umbrella solution` for 
 * `IaC`
 * platform `agnostic`
-* `polyglot programming friendly`
+* 
 
 ## Prerequisites
 * Install Nodejs 12.x or higher (https://nodejs.org)
@@ -53,7 +59,7 @@ First of all, you need to configure your local development environment, checkout
   > tln config --terse
   ```
   
-* tln ships with a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angilar, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
+* tln ships with a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angular, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
   ```
   > tln ls
   > tln ls java --all
