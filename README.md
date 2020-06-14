@@ -232,6 +232,9 @@ Calbro software development culture also includes recommendation to reuse wide r
 
 
 ## Similar projects
+* https://buildpacks.io/
+* https://garden.io/
+
 * https://brew.sh/
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
