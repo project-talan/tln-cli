@@ -27,7 +27,7 @@ Here is just a couple of challanges we are facing every day:
   ```
 
 ## Quick start <sub><sup>~15 min</sup></sub>
-Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. You first steps are: configure your local development environment, checkout existing projects and create initial structure for the new one.
+Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. Your first steps are: configure your local development environment, checkout existing projects and create initial structure for the new one.
 
 ### Local development environment home
 * Go to your home folder
@@ -107,7 +107,7 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   ```
   Two last commands will do the magic: connect with teamone's list of projects and display them to you
   
-  Configuration file .tln/.tlf.conf can unhide more details
+  Configuration file `.tln/.tlf.conf` can unhide more details
   ```
   module.exports = {
     tags: async (tln) => [],
@@ -171,7 +171,7 @@ Calbro software development culture also includes recommendation to reuse wide r
   tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && \
   tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && \
   tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && \
-  tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master
+  tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && \
   tln config dbs:mobile:qa:services:static --terse && \
   git add . && git commit -m"Initial skeleton" && \
   cd ..
@@ -232,6 +232,9 @@ Calbro software development culture also includes recommendation to reuse wide r
 
 
 ## Similar projects
+* https://buildpacks.io/
+* https://garden.io/
+
 * https://brew.sh/
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
