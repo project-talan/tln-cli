@@ -168,7 +168,7 @@ class Component {
     for (const i of item.children) {
       cnt--;
       const delim = (cnt) ? (' ├') : (' └');
-      this.print2(cout, i, `${no}${delim}`, cnt === 0);
+      this.print(cout, i, `${no}${delim}`, cnt === 0);
     }
     if (item.more) {
       cout(`${no}   ... ${item.more} more`);
