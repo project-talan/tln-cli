@@ -78,8 +78,8 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('d', { describe: 'depth level', alias: 'depth', default: 1, type: 'number' })
-        .option('l', { describe: 'depth level', alias: 'limit', default: 5, type: 'number' })
+        .option('d', { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
+        .option('l', { describe: 'Limit of children to show', alias: 'limit', default: 5, type: 'number' })
         .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
     },

@@ -145,13 +145,73 @@ class Component {
   */
   async ls(cout, parents, depth, limit, installedOnly) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}' limit:'${limit}'`);
-    await this.print(cout, parents, depth, limit, installedOnly);
+    await this.print(cout, await this.filterComponents({parents, depth, limit, installedOnly}));
   }
 
   /*
   * Print hierarchy of components
   * params:
   */
+  async print(cout, item, offset = '', last = false) {
+    const installed = item.installed ? '' : ' *';
+    cout(`${offset} ${item.id}${installed}`);
+    let cnt = item.children.length;
+    let no = offset;
+    if (offset.length) {
+      if (this.components.length) {
+        no = offset.substring(0, offset.length - 1) + '│';
+      }
+      if (last) {
+        no = offset.substring(0, offset.length - 1) + ' ';
+      }
+    }
+    for (const i of item.children) {
+      cnt--;
+      const delim = (cnt) ? (' ├') : (' └');
+      this.print2(cout, i, `${no}${delim}`, cnt === 0);
+    }
+    if (item.more) {
+      cout(`${no}   ... ${item.more} more`);
+    }
+  }
+
+  async filterComponents({parents, depth, limit, installedOnly}, children = []) {
+    let item = {
+      id: this.id === '' ? '/' : this.id,
+      installed: fs.existsSync(this.home),
+      children: children,
+      more: 0 };
+    //
+    if (!item.installed && installedOnly) {
+      return null;
+    }
+    //
+    if (depth) {
+      await this.buildAllChildren();
+      let cnt = this.components.length;
+      if (limit > 0) {
+        if (limit < cnt) {
+          cnt = limit;
+        }
+      }
+      for (const component of this.components) {
+        const e = await component.filterComponents({ parents:false, depth: depth - 1, limit, installedOnly});
+        if (e) {
+          item.children.push(e);
+          if (item.children.length >= cnt) {
+            item.more = this.components.length - item.children.length;
+            break;
+          }
+        }
+      }
+    }
+    //
+    if (parents && this.parent) {
+      return await this.parent.filterComponents({parents, depth: 0, limit: 0, installedOnly}, [item]);
+    }
+    return item;
+  }
+ /*
   async print(cout, parents, depth, limit, installedOnly, offset = '', last = false) {
     let prefix = ' ';
     if (parents && this.parent) {
@@ -204,7 +264,7 @@ class Component {
     }
     return offset;
   }
-
+  */
 
   //
   async exec(recursive, filter, envFromCli, dryRun, command, input, _) {
