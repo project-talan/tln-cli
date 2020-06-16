@@ -7,7 +7,7 @@ Here is just a couple of challanges we are facing every day:
 * polyglot programming environment assumes dependencies from a lot of external components and from different ecosystems (java, nodejs, c++, javscript etc.)
 * onboarding procedure for the new developer in most cases is non-trivial process
 * multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
-* use uniform build process for the local development and CI is a bit of a challange
+* use uniform build process for the local development and CI is a bit of a challenge
 * ... put your daily software development headaches here
 
 ## Key features
