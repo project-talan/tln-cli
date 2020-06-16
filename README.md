@@ -112,7 +112,6 @@ Let's say, you've joined Calbro.com company to head software project development
 * If you check created configuration file `.tln.conf`, you will see following JSON structure
   ```
   module.exports = {
-    tags: async (tln) => [],
     options: async (tln, args) => {},
     env: async (tln, env) => {},
     dotenvs: async (tln) => [],
@@ -126,7 +125,6 @@ Let's say, you've joined Calbro.com company to head software project development
 * Open this file using your text editor, add your `git user name and working email` (for this tutorial, please use your Github account) and update `inherits` array with `git` component
   ```
   module.exports = {
-    tags: async (tln) => [],
     options: async (tln, args) => {},
     env: async (tln, env) => {
       env.TLN_GIT_USER = 'Alice';
@@ -155,7 +153,6 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   Configuration file `.tln/.tlf.conf` can unhide more details
   ```
   module.exports = {
-    tags: async (tln) => [],
     options: async (tln) => [],
     dotenvs: async (tln) => [],
     inherits: async (tln) => [],
