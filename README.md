@@ -25,12 +25,7 @@ Here is just a couple of challanges we are facing every day:
   > npm i -g tln-cli
   > tln --version
   ```
-
-## Quick start <sub><sup>~15 min</sup></sub>
-Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. Your first steps are: configure your local development environment, checkout existing projects and create initial structure for the new one.
-
-### Local development environment home
-* Go to your home folder
+* Create folder where all your projects will be located
   * Linux/MacOs
     ```
     > cd ~
@@ -40,15 +35,32 @@ Let's say, you've joined Calbro.com company to head software project development
     > d:
     > cd /
     ```
-
-* Next step is to create folder where all your projects will be located
   ```
   > mkdir projects
   > cd projects
   > tln config --terse
   ```
-  
-* tln ships with a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angular, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
+
+## Quick start <sub><sup>~3 min</sup></sub>
+  * Linux/MacOs
+    ```
+    > mkdir hellotalan
+    > cd hellotalan
+    > tln config --terse
+    ```
+  * Edit `.tln.conf` file to have next configuration
+    ```
+    > mkdir hellotalan
+    > cd hellotalan
+    > tln config --terse
+    ```
+    
+
+## Real life scenario <sub><sup>~15 min</sup></sub>
+Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. You first steps are: configure your local development environment, checkout existing projects and create initial structure for the new one.
+
+### Local development environment home
+tln ships a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angular, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
   ```
   > tln ls
   > tln ls java --all
@@ -232,9 +244,6 @@ Calbro software development culture also includes recommendation to reuse wide r
 
 
 ## Similar projects
-* https://buildpacks.io/
-* https://garden.io/
-
 * https://brew.sh/
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
