@@ -92,17 +92,17 @@ Here is just a couple of challanges we are facing every day:
 ## Real life scenario <sub><sup>~15 min</sup></sub>
 Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. You first steps are: configure your local development environment, checkout existing projects and create initial structure for the new one.
 
-### Local development environment home
-tln ships a long list of recipes for third-party components deployment. Any time you need specific version of Java, Angular, Nodejs, Boost, Cordova, Maven, Gradle, Golang etc. simply use install command to add this component into your local development environment.
-  ```
-  > tln ls
-  > tln ls java --all
-  > tln ls nodejs:angular:cmake
-  > tln install openjdk-14.0.1:angular-9.1.8:cmake-3.17.3
-  ```
-
 ### Calbro projects home
-* Now you are ready to start configuring Calbro specific components
+* First step is configuring Calbro components
+  * Linux/MacOs
+    ```
+    > cd ~/projects
+    ```
+  * Windows
+    ```
+    > d:
+    > cd /projects
+    ```
   ```
   > mkdir calbro
   > cd calbro
