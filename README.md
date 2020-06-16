@@ -7,12 +7,12 @@ Here is just a couple of challanges we are facing every day:
 * polyglot programming environment assumes dependencies from a lot of external components and from different ecosystems (java, nodejs, c++, javscript etc.)
 * onboarding procedure for the new developer in most cases is non-trivial process
 * multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
-* use uniform build process for the local development and CI is a bit of a challange
+* use uniform build process for the local development and CI is a bit of a challenge
 * ... put your daily software development headaches here
 
 ## Key features
 * `uniform` installation procedure for wide range of third-party components and tracking their history of versions
-* ability to create fully isolated development environments, here even every branch can use different version of third-party components
+* ability to create fully isolated development environments, where even every branch can use different version of third-party components
 * additional layer to store common information about company/team/projects/service (list of projects, SCM parameters etc.) and user/environment specidic data (user name/email, environment variables etc.)
 * all configurations are fully customizable, user can define any environment variable, SDLC steps, .env files to be part of development process
 * simple configuration file will help to manage `mono- and multi- repo` approaches and mixed variations too.
