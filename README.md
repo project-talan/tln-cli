@@ -42,7 +42,7 @@ Here is just a couple of challanges we are facing every day:
   ```
 
 ## Quick start <sub><sup>~3 min</sup></sub>
-  * Linux/MacOs
+  * Create folder for test project
     ```
     > mkdir hellotalan
     > cd hellotalan
@@ -64,7 +64,7 @@ Here is just a couple of challanges we are facing every day:
     ```
     > tln install --depends
     ```
-  * Install dependencies
+  * Check version of required components
     ```
     > tln exec -c "tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version""
     ```
