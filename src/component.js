@@ -179,7 +179,7 @@ class Component {
     let item = {
       id: this.id === '' ? '/' : this.id,
       installed: fs.existsSync(this.home),
-      children: children,
+      children,
       more: 0 };
     //
     if (!item.installed && installedOnly) {

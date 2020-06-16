@@ -6,7 +6,6 @@
   const path = require('path');
 */
 module.exports = {
-  tags: async (tln) => [/*'tag'*/],
   options: async (tln, args) => {/*
     args
       .prefix('TLN_MY_COMPONENT')
