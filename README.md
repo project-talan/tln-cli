@@ -50,9 +50,42 @@ Here is just a couple of challanges we are facing every day:
     ```
   * Edit `.tln.conf` file to have next configuration
     ```
-    > mkdir hellotalan
-    > cd hellotalan
-    > tln config --terse
+    module.exports = {
+      options: async (tln, args) => {},
+      env: async (tln, env) => {},
+      dotenvs: async (tln) => [],
+      inherits: async (tln) => [],
+      depends: async (tln) => ['mvn-3.6.3', 'openjdk-11.0.2', 'go-1.14.4', 'node-14.4.0', 'angular-9.1.8', 'cordova-9.0.0'],
+      steps: async (tln) => [],
+      components: async (tln) => []
+    }
+    ```
+  * Install dependencies
+    ```
+    > tln install --depends
+    ```
+  * Install dependencies
+    ```
+    > tln exec -c "tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version""
+    ```
+    ```
+    openjdk version "11.0.2" 2019-01-15
+    OpenJDK Runtime Environment 18.9 (build 11.0.2+9)
+    OpenJDK 64-Bit Server VM 18.9 (build 11.0.2+9, mixed mode)
+    
+    Apache Maven 3.6.3 (cecedd343002696d0abb50b32b541b8a6ba2883f)
+    Maven home: D:\projects2\maven\mvn-3.6.3\bin\..
+    Java version: 11.0.2, vendor: Oracle Corporation, runtime: D:\projects2\java\openjdk-11.0.2
+    Default locale: en_US, platform encoding: Cp1251
+    OS name: "windows 10", version: "10.0", arch: "amd64", family: "windows"
+    
+    go version go1.14.4 windows/amd64
+    
+    v14.4.0
+    
+    9.0.0 (cordova-lib@9.0.1)
+    
+    Angular CLI: 9.1.8    
     ```
     
 
