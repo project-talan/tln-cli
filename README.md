@@ -285,7 +285,8 @@ Calbro software development culture also includes recommendation to reuse wide r
     ├ angular
     │ └ angular-9.1.7
     ├ java
-    │ └ openjdk-11.0.2
+    │ ├ openjdk-14.0.1
+    │ └ openjdk-11.0.2    
     └ maven
       └ mvn-3.6.3
   ```
