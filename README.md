@@ -66,7 +66,7 @@ Here is just a couple of challanges we are facing every day:
     ```
   * Check version of required components
     ```
-    > tln exec -c "tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version""
+    > tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version"
     ```
     ```
     openjdk version "11.0.2" 2019-01-15
