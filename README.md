@@ -56,7 +56,14 @@ Here is just a couple of challanges we are facing every day:
       dotenvs: async (tln) => [],
       inherits: async (tln) => [],
       depends: async (tln) => ['mvn-3.6.3', 'openjdk-11.0.2', 'go-1.14.4', 'node-14.4.0', 'angular-9.1.8', 'cordova-9.0.0'],
-      steps: async (tln) => [],
+      steps: async (tln) => [
+        {
+          id: "versions",
+          builder: async (tln, script) => script.set([
+            'tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version"'
+          ])
+        }
+      ],
       components: async (tln) => []
     }
     ```
@@ -66,7 +73,7 @@ Here is just a couple of challanges we are facing every day:
     ```
   * Check version of required components
     ```
-    > tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version"
+    > tln versions
     ```
     ```
     openjdk version "11.0.2" 2019-01-15
