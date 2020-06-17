@@ -60,7 +60,7 @@ Here is just a couple of challanges we are facing every day:
         {
           id: "versions",
           builder: async (tln, script) => script.set([
-            'tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version"'
+            'java -version && mvn -v && go version && node -v && cordova -v && ng version'
           ])
         }
       ],
