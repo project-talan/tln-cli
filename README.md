@@ -152,7 +152,12 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   ```
   > mkdir teamone
   > cd teamone
+  
+  # for https access
   > tln config --repo https://github.com/project-talan/tln-calbro-teamone.git
+  # for ssh access
+  > tln config --repo git@github.com:project-talan/calbro-teamone-tln.git
+  
   > tln ls
   ```
   Two last commands will do the magic: connect with teamone's list of projects and display them to you
@@ -165,8 +170,10 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
     inherits: async (tln) => [],
     depends: async (tln) => [],
     env: async (tln, env) => {
-      env.TLN_GIT_ORIGIN = `https://github.com/${env.TLN_GIT_USER}/${env.TLN_COMPONENT_ID}.git`;
-      env.TLN_GIT_UPSTREAM = `https://github.com/project-talan/${env.TLN_COMPONENT_ID}.git`;
+      env.TLN_GIT_SSH_PREFIX = 'git@github.com:';
+      env.TLN_GIT_HTTPS_PREFIX = 'https://github.com/';  
+      env.TLN_GIT_ORIGIN = `${env.TLN_GIT_USER}/${env.TLN_COMPONENT_ID}.git`;
+      env.TLN_GIT_UPSTREAM = `project-talan/${env.TLN_COMPONENT_ID}.git`;
     },
     steps: async (tln) => [],
     components: async (tln) => [
