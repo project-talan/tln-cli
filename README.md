@@ -185,7 +185,11 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   
 * At this point, you are ready to get source code of the existing projects, build it and start checking implemented functionality
   ```
+  # for https access
+  > tln clone calbro-scanner:calbro-portal -- --https
+  # for ssh access
   > tln clone calbro-scanner:calbro-portal
+  
   > tln install calbro-portal:calbro-scanner --depends
   > tln prereq:init -r
   > tln build -r
