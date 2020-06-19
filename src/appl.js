@@ -109,37 +109,37 @@ class Appl {
   }
 
   //
-  async inspect(components, env, outputAsJson, _) {
+  async inspect(components, options) {
     for(const component of await this.resolve(components)) {
-      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, env, outputAsJson, _);
+      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, options);
     }
   }
 
   //
-  async ls(components, parents, depth, limit, installedOnly) {
+  async ls(components, options) {
     for(const component of await this.resolve(components)) {
-      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, parents, depth, limit, installedOnly);
+      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, options);
     }
   }
 
   //
-  async exec(components, parallel, recursive, envFromCli, dryRun, command, input, _) {
+  async exec(components, parallel, recursive, options) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.exec(recursive, this.filter, envFromCli, dryRun, command, input, _);
+        component.exec(recursive, this.filter, options);
       } else {
-        await component.exec(recursive, this.filter, envFromCli, dryRun, command, input, _);
+        await component.exec(recursive, this.filter, options);
       }
     }
   }
 
   //
-  async run(components, parallel, steps, recursive, envFromCli, save, dryRun, depends, _) {
+  async run(components, parallel, steps, recursive, options) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.run(steps, recursive, this.filter, envFromCli, save, dryRun, depends, _);
+        component.run(steps, recursive, this.filter, options);
       } else {
-        await component.run(steps, recursive, this.filter, envFromCli, save, dryRun, depends, _);
+        await component.run(steps, recursive, this.filter, options);
       }
     }
   }

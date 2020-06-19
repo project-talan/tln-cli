@@ -38,6 +38,7 @@ const argv = require('yargs')
   .option('a', { describe: 'Show all components', alias: 'all', default: false, type: 'boolean' })
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+  .option('catalog', { describe: 'URL to the external components description', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('local-repo', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
   .option('detach', { describe: 'Shared components will be deployed default location inside tmp folder', default: false, type: 'boolean'  })
@@ -68,7 +69,12 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.inspect(splitComponents(argv.components), parseEnv(argv.env), argv.json, argv._);
+        await a.inspect(splitComponents(argv.components), {
+          envFromCli: parseEnv(argv.env),
+          outputAsJson: argv.json,
+          _: argv._,
+          catalogs: argv.catalog
+        });
       });
     }
   )
@@ -85,7 +91,13 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.ls(splitComponents(argv.components), argv.parents, argv.depth, (argv.all ? -1 : argv.limit), argv.installedOnly);
+        await a.ls(splitComponents(argv.components), {
+          parents: argv.parents,
+          depth: argv.depth,
+          limit: (argv.all ? -1 : argv.limit),
+          installedOnly: argv.installedOnly,
+          catalogs: argv.catalog
+        });
       });
     }
   )
@@ -107,7 +119,14 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, parseEnv(argv.env), argv.dryRun, argv.command, argv.input, argv._);
+        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, {
+          envFromCli: parseEnv(argv.env),
+          dryRun: argv.dryRun,
+          command: argv.command,
+          input: argv.input,
+          _: argv._,
+          catalogs: argv.catalog
+          });
       });
     }
   )
@@ -124,7 +143,14 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, parseEnv(argv.env), argv.save, argv.dryRun, argv.depends, argv._);
+        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, {
+          envFromCli: parseEnv(argv.env),
+          save: argv.save,
+          dryRun: argv.dryRun,
+          depends: argv.depends,
+          _: argv._,
+          catalogs: argv.catalog
+        });
       });
     }
   )
