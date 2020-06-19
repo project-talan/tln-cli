@@ -6,9 +6,6 @@
   const path = require('path');
 */
 module.exports = {
-  catalogs: async (tln, args) => [/*
-    'url-to-catalog-this-components-description'
-  */],
   options: async (tln, args) => {/*
     args
       .prefix('TLN_MY_COMPONENT')
