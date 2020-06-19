@@ -261,39 +261,46 @@ Calbro software development culture also includes recommendation to reuse wide r
   > tln ls / -d 5 --all --installed-only
   ```
   ```
-    /
-    ├ calbro
-    │ └ teamone
-    │   ├ calbro-scanner
-    │   ├ calbro-portal
-    │   └ calbro-reporting
-    │     ├ dbs
-    │     │ ├ mongo
-    │     │ └ postgresql
-    │     ├ mobile
-    │     │ └ cordova
-    │     ├ qa
-    │     │ ├ api
-    │     │ ├ e2e
-    │     │ └ load
-    │     ├ services
-    │     │ ├ admin
-    │     │ ├ api
-    │     │ └ auth
-    │     └ static
-    │       ├ admin
-    │       └ portal
-    ├ angular
-    │ └ angular-9.1.7
-    ├ java
-    │ ├ openjdk-14.0.1
-    │ └ openjdk-11.0.2    
-    └ maven
-      └ mvn-3.6.3
+  /
+  ├ calbro
+  │ └ teamone
+  │   ├ calbro-scanner
+  │   ├ calbro-portal
+  │   └ calbro-reporting
+  │     ├ dbs
+  │     │ ├ mongo
+  │     │ └ postgresql
+  │     ├ mobile
+  │     │ └ cordova
+  │     ├ qa
+  │     │ ├ api
+  │     │ ├ e2e
+  │     │ └ load
+  │     ├ services
+  │     │ ├ admin
+  │     │ ├ api
+  │     │ └ auth
+  │     └ static
+  │       ├ admin
+  │       └ portal
+  ├ angular
+  │ ├ angular-9.1.8
+  │ └ angular-9.1.7
+  ├ cordova
+  │ └ cordova-9.0.0
+  ├ golang
+  │ └ go-1.14.4
+  ├ java
+  │ ├ openjdk-14.0.1
+  │ └ openjdk-11.0.2
+  ├ maven
+  │ └ mvn-3.6.3
+  ├ nodejs
+  │ └ node-14.4.0
+  └ hellotalan
   ```
 
-
-## Similar projects
+## Similar or related projects
 * https://brew.sh/
 * https://conan.io/
 * https://github.com/mateodelnorte/meta
