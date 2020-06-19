@@ -19,7 +19,8 @@ Here is just a couple of challanges we are facing every day:
 * the same dependency installation and build process can be used inside local development environment and at CI side without any changes.
 
 ## Prerequisites
-* Install Nodejs 12.x or higher (https://nodejs.org)
+* Install `Nodejs 12.x` or higher (https://nodejs.org)
+* Make sure that `wget` is accessible via command line
 * Install tln-cli 
   ```
   > npm i -g tln-cli
