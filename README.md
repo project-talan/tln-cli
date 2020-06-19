@@ -19,7 +19,8 @@ Here is just a couple of challanges we are facing every day:
 * the same dependency installation and build process can be used inside local development environment and at CI side without any changes.
 
 ## Prerequisites
-* Install Nodejs 12.x or higher (https://nodejs.org)
+* Install `Nodejs 12.x` or higher (https://nodejs.org)
+* Make sure that `wget` is accessible via command line
 * Install tln-cli 
   ```
   > npm i -g tln-cli
@@ -56,7 +57,14 @@ Here is just a couple of challanges we are facing every day:
       dotenvs: async (tln) => [],
       inherits: async (tln) => [],
       depends: async (tln) => ['mvn-3.6.3', 'openjdk-11.0.2', 'go-1.14.4', 'node-14.4.0', 'angular-9.1.8', 'cordova-9.0.0'],
-      steps: async (tln) => [],
+      steps: async (tln) => [
+        {
+          id: "versions",
+          builder: async (tln, script) => script.set([
+            'java -version && mvn -v && go version && node -v && cordova -v && ng version'
+          ])
+        }
+      ],
       components: async (tln) => []
     }
     ```
@@ -66,7 +74,7 @@ Here is just a couple of challanges we are facing every day:
     ```
   * Check version of required components
     ```
-    > tln exec -c "java -version && mvn -v && go version && node -v && cordova -v && ng version"
+    > tln versions
     ```
     ```
     openjdk version "11.0.2" 2019-01-15
@@ -112,7 +120,6 @@ Let's say, you've joined Calbro.com company to head software project development
 * If you check created configuration file `.tln.conf`, you will see following JSON structure
   ```
   module.exports = {
-    tags: async (tln) => [],
     options: async (tln, args) => {},
     env: async (tln, env) => {},
     dotenvs: async (tln) => [],
@@ -126,7 +133,6 @@ Let's say, you've joined Calbro.com company to head software project development
 * Open this file using your text editor, add your `git user name and working email` (for this tutorial, please use your Github account) and update `inherits` array with `git` component
   ```
   module.exports = {
-    tags: async (tln) => [],
     options: async (tln, args) => {},
     env: async (tln, env) => {
       env.TLN_GIT_USER = 'Alice';
@@ -147,7 +153,12 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   ```
   > mkdir teamone
   > cd teamone
+  
+  # for https access
   > tln config --repo https://github.com/project-talan/tln-calbro-teamone.git
+  # for ssh access
+  > tln config --repo git@github.com:project-talan/calbro-teamone-tln.git
+  
   > tln ls
   ```
   Two last commands will do the magic: connect with teamone's list of projects and display them to you
@@ -155,14 +166,15 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   Configuration file `.tln/.tlf.conf` can unhide more details
   ```
   module.exports = {
-    tags: async (tln) => [],
     options: async (tln) => [],
     dotenvs: async (tln) => [],
     inherits: async (tln) => [],
     depends: async (tln) => [],
     env: async (tln, env) => {
-      env.TLN_GIT_ORIGIN = `https://github.com/${env.TLN_GIT_USER}/${env.TLN_COMPONENT_ID}.git`;
-      env.TLN_GIT_UPSTREAM = `https://github.com/project-talan/${env.TLN_COMPONENT_ID}.git`;
+      env.TLN_GIT_SSH_PREFIX = 'git@github.com:';
+      env.TLN_GIT_HTTPS_PREFIX = 'https://github.com/';  
+      env.TLN_GIT_ORIGIN = `${env.TLN_GIT_USER}/${env.TLN_COMPONENT_ID}.git`;
+      env.TLN_GIT_UPSTREAM = `project-talan/${env.TLN_COMPONENT_ID}.git`;
     },
     steps: async (tln) => [],
     components: async (tln) => [
@@ -174,7 +186,11 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   
 * At this point, you are ready to get source code of the existing projects, build it and start checking implemented functionality
   ```
+  # for https access
+  > tln clone calbro-scanner:calbro-portal -- --https
+  # for ssh access
   > tln clone calbro-scanner:calbro-portal
+  
   > tln install calbro-portal:calbro-scanner --depends
   > tln prereq:init -r
   > tln build -r
@@ -245,40 +261,50 @@ Calbro software development culture also includes recommendation to reuse wide r
   > tln ls / -d 5 --all --installed-only
   ```
   ```
-    /
-    ├ calbro
-    │ └ teamone
-    │   ├ calbro-scanner
-    │   ├ calbro-portal
-    │   └ calbro-reporting
-    │     ├ dbs
-    │     │ ├ mongo
-    │     │ └ postgresql
-    │     ├ mobile
-    │     │ └ cordova
-    │     ├ qa
-    │     │ ├ api
-    │     │ ├ e2e
-    │     │ └ load
-    │     ├ services
-    │     │ ├ admin
-    │     │ ├ api
-    │     │ └ auth
-    │     └ static
-    │       ├ admin
-    │       └ portal
-    ├ angular
-    │ └ angular-9.1.7
-    ├ java
-    │ └ openjdk-11.0.2
-    └ maven
-      └ mvn-3.6.3
+  /
+  ├ calbro
+  │ └ teamone
+  │   ├ calbro-scanner
+  │   ├ calbro-portal
+  │   └ calbro-reporting
+  │     ├ dbs
+  │     │ ├ mongo
+  │     │ └ postgresql
+  │     ├ mobile
+  │     │ └ cordova
+  │     ├ qa
+  │     │ ├ api
+  │     │ ├ e2e
+  │     │ └ load
+  │     ├ services
+  │     │ ├ admin
+  │     │ ├ api
+  │     │ └ auth
+  │     └ static
+  │       ├ admin
+  │       └ portal
+  ├ angular
+  │ ├ angular-9.1.8
+  │ └ angular-9.1.7
+  ├ cordova
+  │ └ cordova-9.0.0
+  ├ golang
+  │ └ go-1.14.4
+  ├ java
+  │ ├ openjdk-14.0.1
+  │ └ openjdk-11.0.2
+  ├ maven
+  │ └ mvn-3.6.3
+  ├ nodejs
+  │ └ node-14.4.0
+  └ hellotalan
   ```
 
-
-## Similar projects
+## Similar or related projects
 * https://brew.sh/
+* https://conan.io/
 * https://github.com/mateodelnorte/meta
 * https://github.com/lerna/lerna
 * https://sdkman.io
+* https://www.jenv.be/
 * https://chocolatey.org/

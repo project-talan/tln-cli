@@ -27,7 +27,7 @@ module.exports = {
     if (emptyDir.sync(home)) {
       return true;
     }
-    tln.logger.con(`Component '${id}' is already installed at '${home}'`);
+    tln.logger.con(`Component '${id}' is at '${home}'`);
     return false;
   },
   getDownloadScriptById: (tln, id, distrs) => {

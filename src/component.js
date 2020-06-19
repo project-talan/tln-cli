@@ -2,7 +2,9 @@
 
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const { execSync } = require('child_process');
+const tmp = require('tmp');
 
 const scriptFactory = require('./script');
 const optionsFactory = require('./options');
@@ -96,8 +98,9 @@ class Component {
   * 
   * params:
   */
-  async inspect(cout, filter, envFromCli, outputAsJson, _) {
+  async inspect(cout, filter, { envFromCli, outputAsJson, _, catalogs }) {
     this.logger.info(`inspect - '${this.uuid}' outputAsJson:'${outputAsJson}'`);
+    await this.loadDescriptionsFromCatalogs(catalogs);
     //
     let r = {};
     r.id = this.id;
@@ -143,15 +146,76 @@ class Component {
   * 
   * params:
   */
-  async ls(cout, parents, depth, limit, installedOnly) {
+  async ls(cout, { parents, depth, limit, installedOnly, catalogs}) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}' limit:'${limit}'`);
-    await this.print(cout, parents, depth, limit, installedOnly);
+    await this.loadDescriptionsFromCatalogs(catalogs);
+    await this.print(cout, await this.filterComponents({parents, depth, limit, installedOnly}));
   }
 
   /*
   * Print hierarchy of components
   * params:
   */
+  async print(cout, item, offset = '', last = false) {
+    const installed = item.installed ? '' : ' *';
+    cout(`${offset} ${item.id}${installed}`);
+    let cnt = item.children.length;
+    let no = offset;
+    if (offset.length) {
+      if (this.components.length) {
+        no = offset.substring(0, offset.length - 1) + '│';
+      }
+      if (last) {
+        no = offset.substring(0, offset.length - 1) + ' ';
+      }
+    }
+    for (const i of item.children) {
+      cnt--;
+      const delim = (cnt) ? (' ├') : (' └');
+      this.print(cout, i, `${no}${delim}`, cnt === 0);
+    }
+    if (item.more) {
+      cout(`${no}   ... ${item.more} more`);
+    }
+  }
+
+  async filterComponents({parents, depth, limit, installedOnly}, children = []) {
+    let item = {
+      id: this.id === '' ? '/' : this.id,
+      installed: fs.existsSync(this.home),
+      children,
+      more: 0 };
+    //
+    if (!item.installed && installedOnly) {
+      return null;
+    }
+    //
+    if (depth) {
+      await this.buildAllChildren();
+      let cnt = this.components.length;
+      if (limit > 0) {
+        if (limit < cnt) {
+          cnt = limit;
+        }
+      }
+      for (const component of this.components) {
+        const e = await component.filterComponents({ parents:false, depth: depth - 1, limit, installedOnly});
+        if (e) {
+          item.children.push(e);
+          if (item.children.length >= cnt) {
+            item.more = this.components.length - item.children.length;
+            break;
+          }
+        }
+      }
+    }
+    //
+    if (parents && this.parent) {
+      return await this.parent.filterComponents({parents, depth: 0, limit: 0, installedOnly}, [item]);
+    }
+    return item;
+  }
+ /*
   async print(cout, parents, depth, limit, installedOnly, offset = '', last = false) {
     let prefix = ' ';
     if (parents && this.parent) {
@@ -204,11 +268,12 @@ class Component {
     }
     return offset;
   }
-
+  */
 
   //
-  async exec(recursive, filter, envFromCli, dryRun, command, input, _) {
+  async exec(recursive, filter, { envFromCli, dryRun, command, input, _, catalogs }) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
+    await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     //
     if (recursive) {
@@ -232,12 +297,13 @@ class Component {
   }
 
   //
-  async run(steps, recursive, filter, envFromCli, save, dryRun, depends, _) {
+  async run(steps, recursive, filter, {envFromCli, save, dryRun, depends, _, catalogs} ) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
+    await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
       for(const d of Component.getDependsList(herarchy, this.uuid)) {
-        await d.component.run(steps, false, filter, envFromCli, save, dryRun, false, _);
+        await d.component.run(steps, false, filter, {envFromCli, save, dryRun, depends: false, _, catalogs} );
       }
     } else {
       for(const step of steps) {
@@ -270,7 +336,7 @@ class Component {
       if (recursive) {
         await this.buildAllChildren();
         for (const component of this.components) {
-          await component.run(steps, recursive, filter, envFromCli, save, dryRun, depends, _);
+          await component.run(steps, recursive, filter, {envFromCli, save, dryRun, depends, _, catalogs});
         }
       }
     }
@@ -368,6 +434,20 @@ class Component {
   }
 
   //
+  async loadDescriptionsFromCatalogs(catalogs) {
+    const descs = [];
+    for (const c of catalogs) {
+      const tmpobj = tmp.fileSync();
+      const fl = `${tmpobj.name}.conf`;
+      const response = await fetch(c);
+      fs.writeFileSync(fl, await response.text());
+      const d = require(fl);
+      descs.push(d);
+    }
+    this.descriptions = descs.concat(this.descriptions);
+  }
+  
+  //
   loadDescriptionsFromFolder(location, configFolderOnly) {
     this.descriptions = this.descriptions.concat(this.mergeDescriptions(location, configFolderOnly));
   }
@@ -376,6 +456,7 @@ class Component {
   loadDescriptions() {
     this.loadDescriptionsFromFolder(this.home, true);
   }
+
 
   // --------------------------------------------------------------------------
 
