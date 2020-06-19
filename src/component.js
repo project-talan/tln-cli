@@ -336,7 +336,7 @@ class Component {
       if (recursive) {
         await this.buildAllChildren();
         for (const component of this.components) {
-          await component.run(steps, recursive, filter, options);
+          await component.run(steps, recursive, filter, {envFromCli, save, dryRun, depends, _, catalogs});
         }
       }
     }
