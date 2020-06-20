@@ -116,5 +116,13 @@ module.exports = {
       arr.push(`${cat_cmd} ${i} >> ${dest}`);
     }
     script.set(arr);
+  },
+  unpackId: (id) => {
+    const arr = id.split('-');
+    let version = null;
+    if (arr.length > 1){
+      version = arr.pop();
+    }
+    return {name: arr.join('-'), version};
   }
 }

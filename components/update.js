@@ -6,12 +6,14 @@ const compareVersions = require('compare-versions');
 
 const update = async () => {
   const endpoints = [
-    //
+    /*/ ------------------------------------------------------------------------
+    // NodeJS
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
       const json = await response.json();
       return json.map( v => { return { id: 'node-' + v.version.substring(1) } });
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Boost
     { url: 'https://dl.bintray.com/boostorg/release/', path: 'boost', fn: async (response) => {
       const result = []
       const html = await response.text();
@@ -25,7 +27,8 @@ const update = async () => {
       });
       return result.reverse();
     }},
-    //
+    // ------------------------------------------------------------------------
+    // CMake
     { url: 'https://api.github.com/repos/Kitware/CMake/tags', path: 'cmake', fn: async (response) => {
       const json = await response.json();
       return json.map( v => v.name.substring(1) );
@@ -35,7 +38,8 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `cmake-${v}` } } );
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Docker
     { url: 'https://api.github.com/repos/docker/compose/releases', path: 'docker-compose', fn: async (response) => {
       const json = await response.json();
       if (Array.isArray(json)) {
@@ -55,7 +59,8 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `docker-compose-${v}` } } );
     }},
-    //
+    // ------------------------------------------------------------------------
+    /*/ Golang
     { url: 'https://golang.org/dl/', path: 'golang', fn: async (response) => {
       const result = []
       const html = await response.text();
@@ -70,7 +75,8 @@ const update = async () => {
       result.sort(compareVersions).reverse();
       return result.map(i => { return {id:`go-${i}`}});
     }},
-    //
+    /*/ ------------------------------------------------------------------------
+    // Gradle
     { url: 'https://api.github.com/repos/gradle/gradle/releases', path: 'gradle', fn: async (response) => {
       const json = await response.json();
       if (Array.isArray(json)) {
@@ -83,7 +89,8 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `gradle-${v}` } } );
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Maven
     { url: 'https://archive.apache.org/dist/maven/maven-3/', path: 'maven', fn: async (response) => {
       const result = []
       const html = await response.text();
@@ -98,7 +105,8 @@ const update = async () => {
       });
       return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 );
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Python
     { url: 'https://www.python.org/downloads/', path: 'python', fn: async (response) => {
       const result = []
       const html = await response.text();
@@ -110,7 +118,8 @@ const update = async () => {
       });
       return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 ).reverse();
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Bitcoin
     { url: 'https://api.github.com/repos/bitcoin/bitcoin/releases', path: 'bitcoin/bitcoin-core', fn: async (response) => {
       const json = await response.json();
       if (Array.isArray(json)) {
@@ -123,21 +132,23 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `bitcoin-core-${v}` } } );
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Angular
     { url: 'https://registry.npmjs.com/@angular/cli', path: 'angular', fn: async (response) => {
       const json = await response.json();
       const data = Object.keys(json.versions);
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `angular-${v}` } });
     }},
-    //
+    // ------------------------------------------------------------------------
+    // Cordova
     { url: 'https://registry.npmjs.com/cordova', path: 'cordova', fn: async (response) => {
       const json = await response.json();
       const data = Object.keys(json.versions).filter(v => !v.match('nightly'));
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `cordova-${v}` } });
     }},
-    //
+    /*/
   ];
   //
   for(const endpoint of endpoints) {
