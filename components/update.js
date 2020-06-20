@@ -6,7 +6,7 @@ const compareVersions = require('compare-versions');
 
 const update = async () => {
   const endpoints = [
-    /*/ ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // NodeJS
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
       const json = await response.json();
@@ -60,7 +60,7 @@ const update = async () => {
       return data.map( v => { return { id: `docker-compose-${v}` } } );
     }},
     // ------------------------------------------------------------------------
-    /*/ Golang
+    // Golang
     { url: 'https://golang.org/dl/', path: 'golang', fn: async (response) => {
       const result = []
       const html = await response.text();
@@ -75,7 +75,7 @@ const update = async () => {
       result.sort(compareVersions).reverse();
       return result.map(i => { return {id:`go-${i}`}});
     }},
-    /*/ ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     // Gradle
     { url: 'https://api.github.com/repos/gradle/gradle/releases', path: 'gradle', fn: async (response) => {
       const json = await response.json();
@@ -148,7 +148,7 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `cordova-${v}` } });
     }},
-    /*/
+    //
   ];
   //
   for(const endpoint of endpoints) {
@@ -182,4 +182,3 @@ const update = async () => {
 }
 
 update();
-
