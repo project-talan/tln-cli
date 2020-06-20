@@ -262,42 +262,42 @@ Calbro software development culture also includes recommendation to reuse wide r
   ```
   ```
   /
-  ├ calbro
-  │ └ teamone
-  │   ├ calbro-scanner
-  │   ├ calbro-portal
-  │   └ calbro-reporting
-  │     ├ dbs
-  │     │ ├ mongo
-  │     │ └ postgresql
-  │     ├ mobile
-  │     │ └ cordova
-  │     ├ qa
-  │     │ ├ api
-  │     │ ├ e2e
-  │     │ └ load
-  │     ├ services
-  │     │ ├ admin
-  │     │ ├ api
-  │     │ └ auth
-  │     └ static
-  │       ├ admin
-  │       └ portal
   ├ angular
   │ ├ angular-9.1.8
   │ └ angular-9.1.7
+  ├ calbro
+  │ └ teamone
+  │   ├ calbro-portal
+  │   ├ calbro-reporting
+  │   │ ├ dbs
+  │   │ │ ├ mongo
+  │   │ │ └ postgresql
+  │   │ ├ mobile
+  │   │ │ └ cordova
+  │   │ ├ qa
+  │   │ │ ├ api
+  │   │ │ ├ e2e
+  │   │ │ └ load
+  │   │ ├ services
+  │   │ │ ├ admin
+  │   │ │ ├ api
+  │   │ │ └ auth
+  │   │ └ static
+  │   │   ├ admin
+  │   │   └ portal
+  │   └ calbro-scanner
   ├ cordova
   │ └ cordova-9.0.0
   ├ golang
   │ └ go-1.14.4
+  ├ hellotalan
   ├ java
   │ ├ openjdk-14.0.1
   │ └ openjdk-11.0.2
   ├ maven
   │ └ mvn-3.6.3
-  ├ nodejs
-  │ └ node-14.4.0
-  └ hellotalan
+  └ nodejs
+    └ node-14.4.0
   ```
 
 ## Similar or related projects
