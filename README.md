@@ -4,7 +4,7 @@
 Modern software development has a complex internal structure.
 Here is just a couple of challanges we are facing every day:
 * multiple versions (branches) of your product can rely on different versions of third-party components
-* polyglot programming environment assumes dependencies from a lot of external components and from different ecosystems (java, nodejs, c++, javscript etc.)
+* polyglot programming environment assumes dependencies from a lot of external components and from different ecosystems (java, nodejs, c++, go etc.)
 * onboarding procedure for the new developer in most cases is non-trivial process
 * multiple teams inside big company usally do the same things by a different ways extremelly increasing overhead
 * use uniform build process for the local development and CI is a bit of a challenge
@@ -20,7 +20,7 @@ Here is just a couple of challanges we are facing every day:
 
 ## Prerequisites
 * Install `Nodejs 12.x` or higher (https://nodejs.org)
-* Make sure that `wget` is accessible via command line
+* Make sure that `wget` is accessible via command line (for Linux/MacOS)
 * Install tln-cli 
   ```
   > npm i -g tln-cli
@@ -101,7 +101,7 @@ Here is just a couple of challanges we are facing every day:
 Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. Your first steps are: configure local development environment, checkout existing projects and create initial structure for the new one.
 
 ### Calbro projects home
-* First step is configuring Calbro components
+* First step is to configure Calbro components
   * Linux/MacOs
     ```
     > cd ~/projects
@@ -130,7 +130,7 @@ Let's say, you've joined Calbro.com company to head software project development
   }
   ```
   
-* Open this file using your text editor, add your `git user name and working email` (for this tutorial, please use your Github account) and update `inherits` array with `git` component
+* Open this file using text editor, add your `git user name and working email` (for this tutorial, please use your Github account) and update `inherits` array with `git` component
   ```
   module.exports = {
     options: async (tln, args) => {},
@@ -154,14 +154,14 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   > mkdir teamone
   > cd teamone
   
-  # for https access
-  > tln config --repo https://github.com/project-talan/tln-calbro-teamone.git
   # for ssh access
   > tln config --repo git@github.com:project-talan/calbro-teamone-tln.git
+  # for https access
+  # tln config --repo https://github.com/project-talan/tln-calbro-teamone.git
   
   > tln ls
   ```
-  Two last commands will do the magic: connect with teamone's list of projects and display them to you
+  Two last commands will do the magic: get teamone list of projects and display them to you
   
   Configuration file `.tln/.tlf.conf` can unhide more details
   ```
@@ -186,10 +186,10 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
   
 * At this point, you are ready to get source code of the existing projects, build it and start checking implemented functionality
   ```
-  # for https access
-  > tln clone calbro-scanner:calbro-portal -- --https
   # for ssh access
   > tln clone calbro-scanner:calbro-portal
+  # for https access
+  # tln clone calbro-scanner:calbro-portal -- --https
   
   > tln install calbro-portal:calbro-scanner --depends
   > tln prereq:init -r
@@ -203,20 +203,20 @@ Calbo is a big company and has a lot of teams and ongoing projects. You know tha
 ### Skeleton for the new project
 You project is still at early stage, there are a lot of uncertainty, but you have to push it forward.
 
-It's also not clear will be project based on SOA or Microservices, so you are ok to start with mono repo, but at the same time you want to build structure which can be splitted later if needed.
+It's also not clear will be project based on SOA or Microservices or even N-tier, so you are ok to start with mono repo, but at the same time you want to build structure which can be splitted later if needed.
 
-Calbro software development culture also includes recommendation to reuse wide range of project templates and you will follow this practice.
+Calbro software development culture also includes recommendation to reuse wide range of project templates and you will follow this practice too.
 
 * This is how your initial concept looks like:
   * Admin Frontend - Angular, a couple of developers have joined your team recently with necessary skills, Admin Backend - Nodejs
   * API service - Go, since this is general company strategy and your project should be aligned with it
-  * Auth service will utilize Nodejs again, since it will be handled by the developer which will be working on Admin part
+  * Auth service will utilize Nodejs again, since it will be handled by the developer who will be working on Admin part
   * You need to have two types of persistent storages - SQL & NoSQL, because initial analysis shows that we can't have "shoes for all feets" approach
   * Managment wants to go with mobile-first approach, so you will try satisfy this requirement by using Cordova and reuse our Javascript based frontend
   * Main portal web part will use React, because it's cool
   * We also need Java to build our automated test framework
 
-* So, here we go
+* So, here we go (you can copy commands below into create.sh script and execute them in a single run)
   ```
   mkdir calbro-reporting && \
   cd calbro-reporting && \
