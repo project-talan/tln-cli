@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const compareVersions = require('compare-versions');
 
 module.exports = {
   //
@@ -116,5 +117,23 @@ module.exports = {
       arr.push(`${cat_cmd} ${i} >> ${dest}`);
     }
     script.set(arr);
+  },
+  unpackId: (id) => {
+    const arr = id.split('-');
+    let name = id;
+    let version = null;
+    if (arr.length > 1){
+      let i = 0;
+      for (let e of arr) {
+        if (compareVersions.validate(e)) {
+          name = arr.slice(0, i).join('-');
+          version = arr.slice(i).join('-');
+          break;
+        }
+        i++;
+        //: arr.join('-')
+      }
+    }
+    return {name, version};
   }
 }

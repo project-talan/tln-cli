@@ -5,6 +5,7 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const { execSync } = require('child_process');
 const tmp = require('tmp');
+const compareVersions = require('compare-versions');
 
 const scriptFactory = require('./script');
 const optionsFactory = require('./options');
@@ -180,8 +181,11 @@ class Component {
   }
 
   async filterComponents({parents, depth, limit, installedOnly}, children = []) {
+    const id = this.id === '' ? '/' : this.id;
+    const {name, version} = utils.unpackId(id);
     let item = {
-      id: this.id === '' ? '/' : this.id,
+      id,
+      version,
       installed: fs.existsSync(this.home),
       children,
       more: 0 };
@@ -208,6 +212,18 @@ class Component {
           }
         }
       }
+      // sort
+      if (item.children.length > 0) {
+        if (compareVersions.validate(item.children[0].version)) {
+          item.children.sort((l, r) => { 
+            if (compareVersions.compare(l.version, r.version, '>')) { return -1; } return 1; 
+          });
+        } else {
+          item.children.sort((l, r) => { if (l.id > r.id) { return 1; } else if (l.id < r.id) { return -1; } return 0; } );
+        }
+
+      }
+
     }
     //
     if (parents && this.parent) {
@@ -442,6 +458,7 @@ class Component {
       const response = await fetch(c);
       fs.writeFileSync(fl, await response.text());
       const d = require(fl);
+      d.source = c;
       descs.push(d);
     }
     this.descriptions = descs.concat(this.descriptions);
