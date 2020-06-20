@@ -98,7 +98,7 @@ Here is just a couple of challanges we are facing every day:
     
 
 ## Real life scenario <sub><sup>~15 min</sup></sub>
-Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. You first steps are: configure your local development environment, checkout existing projects and create initial structure for the new one.
+Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. Your first steps are: configure local development environment, checkout existing projects and create initial structure for the new one.
 
 ### Calbro projects home
 * First step is configuring Calbro components
