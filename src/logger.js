@@ -24,6 +24,13 @@ class Logger {
   fatal(...args) { this.logger.fatal.apply(this.logger, args); }
 
   con(...args) { console.log.apply(console, args); }
+
+  getFunctonCallDescription(name, params) {
+    const vals = Object.keys(params).map(p => {
+      return `${p}: ${params[p]}`
+    }).join(', ');
+    return `${name}(${vals})`;
+  }
 }
 
 module.exports.create = (verbose) => {

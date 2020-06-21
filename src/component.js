@@ -592,6 +592,7 @@ class Component {
   }
 
   async unfoldHierarchy(anchor, id, home, unique = true, list = []) {
+    this.logger.debug(this.logger.getFunctonCallDescription('unfoldHierarchy', {anchor, id, home, unique, list}));
     if (unique) {
       list = list.filter((item) => (item.anchor !== anchor) || (item.component.uuid !== this.uuid) && (item.anchor === anchor));
     }
