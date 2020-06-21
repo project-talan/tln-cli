@@ -53,7 +53,7 @@ Here is just a couple of challanges we are facing every day:
   ```
 
 ## Quick start <sub><sup>~3 min</sup></sub>
-  * Create folder for the test project (inside projects folder)
+  * Create folder for the test project (inside `projects` folder)
     ```
     > mkdir hellotalan
     > cd hellotalan
