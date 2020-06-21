@@ -30,7 +30,7 @@ Here is just a couple of challanges we are facing every day:
 ## Prerequisites
 * Install `Nodejs 12.x` or higher (https://nodejs.org)
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
-* Make sure that Powershell script can be executed, [check this link](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) (Windows)
+* Make sure that `Powershell` script can be executed, [check this link](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) (Windows)
 * Install tln-cli 
   ```
   > npm i -g tln-cli
