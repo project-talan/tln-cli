@@ -4,6 +4,39 @@ const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const compareVersions = require('compare-versions');
 
+function unpackId(id) {
+  const arr = id.split('-');
+  let name = id;
+  let version = null;
+  if (arr.length > 1){
+    let i = 0;
+    for (let e of arr) {
+      if (e.match(/^[0-9]/)) {
+        name = arr.slice(0, i).join('-');
+        version = arr.slice(i).join('-');
+        break;
+      }
+      i++;
+    }
+  }
+  return {name, version};
+}
+
+
+function validateVersion(version) {
+  if (compareVersions.validate(version)) {
+    return true;
+  }
+  console.log(`[ERROR] Version with invalid format was found: ${version}`);
+  return false;
+}
+
+function validateId(id) {
+  const {name, version} = unpackId(id);
+  return validateVersion(version);
+}
+
+
 const update = async () => {
   const endpoints = [
     // ------------------------------------------------------------------------
@@ -68,12 +101,12 @@ const update = async () => {
       const items = [];
       $("div.toggleVisible,.toggle").each(function (i, e) {
         const id = $(this).attr('id').slice(2);
-        if (id.match(/^[0-9]/)) {
+        if (id.match(/^[0-9]/) && validateVersion(id)) {
           result.push(id)
         }
       });
       result.sort(compareVersions).reverse();
-      return result.map(i => { return {id:`go-${i}`}});
+      return result.map(id => { return {id:`go-${id}`}});
     }},
     // ------------------------------------------------------------------------
     // Gradle
@@ -105,6 +138,7 @@ const update = async () => {
       });
       return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 );
     }},
+    //
     // ------------------------------------------------------------------------
     // Python
     { url: 'https://www.python.org/downloads/', path: 'python', fn: async (response) => {
@@ -114,7 +148,9 @@ const update = async () => {
       const items = [];
       $("#content > div > section > div.row.download-list-widget > ol > li").each(function (i, e) {
         let version = $(this).find('span > a').first().text().replace(' ', '-').toLowerCase();
-        result.push({id:`${version}`});
+        if (validateId(version)) {
+          result.push({id:`${version}`});
+        }
       });
       return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 ).reverse();
     }},

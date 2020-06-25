@@ -131,7 +131,6 @@ module.exports = {
           break;
         }
         i++;
-        //: arr.join('-')
       }
     }
     return {name, version};
