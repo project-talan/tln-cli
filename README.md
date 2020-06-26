@@ -1,5 +1,11 @@
 # talan cli (tln) - Advanced Component Management System
 
+<img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg">
+
+The Confidential Consortium Framework (CCF) is an open-source framework for building a new category of secure, highly available, and performant applications that focus on multi-party compute and data. CCF can enable high-scale, confidential networks that meet key enterprise requirements — providing a means to accelerate production and enterprise adoption of consortium based blockchain and multi-party compute technology.
+
+Leveraging the power of trusted execution environments (TEEs), decentralized systems concepts, and cryptography, CCF enables enterprise-ready multiparty computation or blockchains.
+
 ## Motivation
 Modern software development has a complex internal structure.
 Here is just a couple of challanges we are facing every day:
