@@ -124,23 +124,13 @@ Let's say, you've joined Calbro.com company to head software project development
   ```
   > mkdir calbro
   > cd calbro
-  > tln config --terse
+  ```
+  For the next commnd replace Alice account name and email with your own (for this tutorial, please use your Github account)
+  ```
+  > tln config --terse -e TLN_GIT_USER=Alice -e TLN_GIT_EMAIL=alice@calbro.com --inherit git
   ```
   
 * If you check created configuration file `.tln.conf`, you will see following JSON structure
-  ```
-  module.exports = {
-    options: async (tln, args) => {},
-    env: async (tln, env) => {},
-    dotenvs: async (tln) => [],
-    inherits: async (tln) => [],
-    depends: async (tln) => [],
-    steps: async (tln) => [],
-    components: async (tln) => []
-  }
-  ```
-  
-* Open this file using text editor, add your `git user name and working email` (for this tutorial, please use your Github account) and update `inherits` array with `git` component
   ```
   module.exports = {
     options: async (tln, args) => {},
