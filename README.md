@@ -46,7 +46,7 @@ Talan CLI is an open-source framework for managing third-parties components from
   > cd hellotalan
   > tln config --terse
   ```
-* Edit `.tln.conf` file to have next configuration
+* Edit `.tln.conf` file to get next configuration (you can just copy-paste it)
   ```
   module.exports = {
     options: async (tln, args) => {},
