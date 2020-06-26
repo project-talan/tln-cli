@@ -1,28 +1,8 @@
 # talan cli (tln) - Advanced Component Management System
 
-<img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg">
+<img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
 
-The Confidential Consortium Framework (CCF) is an open-source framework for building a new category of secure, highly available, and performant applications that focus on multi-party compute and data. CCF can enable high-scale, confidential networks that meet key enterprise requirements — providing a means to accelerate production and enterprise adoption of consortium based blockchain and multi-party compute technology.
-
-Leveraging the power of trusted execution environments (TEEs), decentralized systems concepts, and cryptography, CCF enables enterprise-ready multiparty computation or blockchains.
-
-## Motivation
-Modern software development has a complex internal structure.
-Here is just a couple of challanges we are facing every day:
-* multiple versions (branches) of your product can rely on different versions of third-party components
-* polyglot programming environment assumes dependencies from a lot of external components and from different ecosystems (Java, Node.js, C++, Golang etc.)
-* onboarding procedure for the new developer in most cases is non-trivial process
-* multiple teams inside big company usually do the same things in different ways, which extremely increases development overhead
-* use uniform build process for the local development and CI is a bit of a challenge
-* ... put your daily software development headaches here
-
-## Key features
-* `uniform` installation procedure for wide range of third-party components and tracking their history of versions
-* ability to create fully isolated development environments, where even every branch can use different version of third-party components
-* additional layer to store common information about company/team/projects/service (list of projects, SCM parameters etc.) and user/environment specific data (user name/email, environment variables etc.)
-* all configurations are fully customizable, user can define any environment variable, SDLC steps, .env files to be part of development process
-* simple configuration file will help to manage `mono- and multi- repo` approaches and mixed variations too.
-* the same dependency installation and build process can be used inside local development environment and at CI side without any changes.
+Talan CLI is an open-source framework for managing third-parties components from wide range of ecosystems (Java, Node.js, C++, Golang etc.). TLN helps to create fully isolated development environments, uniformly manage mono- & multi- repo solutions, build smooth onboaring experience for new team members, melts border between local development environments and CI/CT/CD setups. It also helps to get maximum from Polyglot Programming Polyglot Persistence solutions (4Ps).
 
 ## Similar or related projects
 * https://brew.sh/
