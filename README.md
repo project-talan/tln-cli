@@ -2,7 +2,7 @@
 
 <img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
 
-Talan CLI is an open-source framework for managing third-parties components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). TLN helps to create fully isolated development environments, uniformly manage mono- & multi- repo solutions, build smooth onboaring experience for new team members, melt borders between local development environments and CI/CT/CD setups, get maximum from Polyglot Programming Polyglot Persistence (4Ps) design.
+Talan CLI is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). TLN helps to create fully isolated development environments, uniformly manage mono- & multi- repo solutions, build smooth onboaring experience for new team members, melt borders between local development environments and CI/CT/CD setups, get maximum from Polyglot Programming Polyglot Persistence (4Ps) design.
 
 ## Similar or related projects
 * https://brew.sh/
@@ -29,7 +29,7 @@ Talan CLI is an open-source framework for managing third-parties components from
     ```
     > cd ~
     ```
-  * Windows
+  * Windows (you can use any disk, disk d: is used for demonstration purpose)
     ```
     > d:
     > cd /
@@ -65,11 +65,11 @@ Talan CLI is an open-source framework for managing third-parties components from
     components: async (tln) => []
   }
   ```
-* Install dependencies
+* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside projects folder and will not affect any other already installed versions.
   ```
   > tln install --depends
   ```
-* Check version of required components
+* Check version of installed components
   ```
   > tln versions
   ```
@@ -112,7 +112,7 @@ Let's say, you've joined Calbro.com company to head software project development
   > mkdir calbro
   > cd calbro
   ```
-  For the next commnd replace Alice account name and email with your own (for this tutorial, please use your Github account)
+  For the next command replace Alice account name and email with your own (for this tutorial, please use your Github account)
   ```
   > tln config --terse -e TLN_GIT_USER=Alice -e TLN_GIT_EMAIL=alice@calbro.com --inherit git
   ```
