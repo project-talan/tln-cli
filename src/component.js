@@ -43,6 +43,10 @@ class Component {
     return this;
   }
 
+  isRoot() {
+    return this.parent === null;
+  }
+
   /*
   * 
   * params:
@@ -609,7 +613,12 @@ class Component {
       }
     }
     for (let component of await this.resolve(depends)) {
-      list = await component.unfoldHierarchy(component.uuid, component.id, component.home, unique, list);
+      // TODO cover scenarios where current component is not root
+      if (/*this.id || */this.isRoot()) {
+        this.logger.error(`Component ${this.id} depends on nested component ${component.id}`);
+      } else {
+        list = await component.unfoldHierarchy(component.uuid, component.id, component.home, unique, list);
+      }
     }
 
     // check inherits list first
