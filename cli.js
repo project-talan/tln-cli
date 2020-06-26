@@ -52,10 +52,20 @@ const argv = require('yargs')
         .option('prefix', { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
         .option('force', { describe: 'Force override config file, if exists', default: false, type: 'boolean' })
         .option('terse', { describe: 'Remove help information from the config', default: false, type: 'boolean' })
+        .option('depend', { describe: 'Component to insert into depends list', default: [], type: 'array' })
+        .option('inherit', { describe: 'Component to insert into inherits list', default: [], type: 'array' })
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.config(splitComponents(argv.components), argv.repo, argv.prefix, argv.force, argv.terse);
+        await a.config(splitComponents(argv.components), {
+          envFromCli: parseEnv(argv.env),
+          repository: argv.repo,
+          prefix: argv.prefix,
+          force: argv.force,
+          terse: argv.terse,
+          depend: argv.depend,
+          inherit: argv.inherit,
+        });
       });
     }
   )
