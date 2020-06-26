@@ -1,27 +1,29 @@
 // https://github.com/project-talan/tln-jenkins-shared-libraries
-@Library('tln-jenkins-shared-libraries@19.10.0') _
-import org.talan.jenkins.*
+@Library('tln-jenkins-shared-libraries@20.6.0') _
+import sh.tln.jenkins.*
 
 properties([
   parameters(
-    componentParams.getCommonParameters(paramConstant.PARAMS_COMMON, [
-      //'COMPONENT_PARAM_HOST': '',
-      //'COMPONENT_PARAM_LSTN': '',
-      //'COMPONENT_PARAM_PORT': '',
-      //'COMPONENT_PARAM_PORTS': '',
-      'TALAN_PRESETS_PATH': "path/2/shared/folder",
-      'SONARQUBE_SERVER': '',
-      'SONARQUBE_SCANNER': '',
-      'SONARQUBE_QUALITY_GATES': false,
-      'SONARQUBE_ACCESS_TOKEN': "",
-      'GITHUB_ACCESS_TOKEN': ""
+    componentParams.getCommonParameters(paramConstant.TLN_PARAMS_COMMON | paramConstant.TLN_PARAMS_SCM | paramConstant.TLN_PARAMS_SONARQUBE, [
+      //'TLN_COMPONENT_PARAM_HOST': '',
+      //'TLN_COMPONENT_PARAM_LSTN': '',
+      //'TLN_COMPONENT_PARAM_PORT': '',
+      //'TLN_COMPONENT_PARAM_PORTS': '',
+      //'TLN_SHARED_COMPONENTS_HOME': '',
+
+      'TLN_GITHUB_ACCESS_TOKEN': '',
+
+      'TLN_SONARQUBE_SERVER': '',
+      'TLN_SONARQUBE_SCANNER': '',
+      'TLN_SONARQUBE_QUALITY_GATES': false,
+      'TLN_SONARQUBE_ACCESS_TOKEN': ''
     ])
   )
 ])
 
 node {
   //
-  def helper = new buildHelper(this, SONARQUBE_ACCESS_TOKEN, GITHUB_ACCESS_TOKEN)
+  def helper = new buildHelper(this, TLN_GITHUB_ACCESS_TOKEN, TLN_SONARQUBE_ACCESS_TOKEN)
   //
   stage('Checkout') {
     //
@@ -30,9 +32,7 @@ node {
     helper.collectBuildInfo(scmVars, params)
     //
     // Create config for detached build
-    sh "echo '{\"detach-presets\": \"${TALAN_PRESETS_PATH}\"}' > '.tlnclirc'"
-    //
-    // Project specific steps
+    sh "echo '{\"detach\": \"true\"}' > '.tlnrc'"
   }
 
   try {
@@ -50,7 +50,7 @@ node {
     }
 
     stage('SonarQube analysis') {
-      helper.runSonarQubeChecks(SONARQUBE_SCANNER, SONARQUBE_SERVER, SONARQUBE_QUALITY_GATES.toString().toBoolean())
+      // helper.runSonarQubeChecks(TLN_SONARQUBE_SERVER, TLN_SONARQUBE_SCANNER, TLN_SONARQUBE_QUALITY_GATES.toString().toBoolean())
     }
 
     stage('Delivery') {

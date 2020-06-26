@@ -47,7 +47,7 @@ class Component {
   * 
   * params:
   */
-  async config(repository, prefix, force, terse) {
+  async config({envFromCli, repository, prefix, force, terse, depend, inherit}) {
     this.logger.info(`config - '${this.uuid}' repository:'${repository}' prefix:'${prefix}' force:'${force}' terse:'${terse}'`);
     //
     if (repository) {
@@ -73,24 +73,27 @@ class Component {
       }
       if (generateFile) {
         const templateFileName = path.join(__dirname, '.tln.conf.template');
+        let content = fs.readFileSync(templateFileName).toString();
         if (terse) {
           const reg = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
-          fs.writeFile(fileName, fs.readFileSync(templateFileName).toString().replace(reg, ''), (err) => {
-            if (err) {
-              this.logger.con(err);
-            } else {
-              this.logger.con(`done: ${fileName}`);
-            }
-          });
-        } else {
-          await fs.copyFile(templateFileName, fileName, (err) => {
-            if (err) {
-              this.logger.error(err);
-            } else {
-              this.logger.con(`done: ${fileName}`);
-            }
-          });
+          content = content.replace(reg, '');
         }
+        const envs = Object.keys(envFromCli).map(e => `    env.${e} = '${envFromCli[e]}';`).join('\n');
+        content = content.replace(/ENVS/gm, `\n${envs}\n  `);
+        //
+        const inherits = inherit.map(v => `'${v}'`).join(',');
+        content = content.replace(/INHERITS/gm, inherits);
+        //
+        const depends = depend.map(v => `'${v}'`).join(',');
+        content = content.replace(/DEPENDS/gm, depends);
+        // write config
+        fs.writeFile(fileName, content, (err) => {
+          if (err) {
+            this.logger.con(err);
+          } else {
+            this.logger.con(`done: ${fileName}`);
+          }
+        });
       }
     }
   }
