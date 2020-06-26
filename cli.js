@@ -41,7 +41,7 @@ const argv = require('yargs')
   .option('catalog', { describe: 'URL to the external components description', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('local-repo', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
-  .option('detach', { describe: 'Shared components will be deployed default location inside tmp folder', default: false, type: 'boolean'  })
+  .option('detach', { describe: 'Shared components will be deployed inside tmp folder', default: false, type: 'boolean'  })
   .command(
     /**************************************************************************/
     'config [components]', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
