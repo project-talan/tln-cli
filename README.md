@@ -195,13 +195,13 @@ It's also not clear will be project based on SOA or Microservices or even N-tier
 Calbro software development culture also includes recommendation to reuse wide range of project templates and you will follow this practice too.
 
 * This is how your initial concept looks like:
-  * Admin Frontend - Angular, a couple of developers have joined your team recently with necessary skills, Admin Backend - Nodejs
-  * API service - Go, since this is general company strategy and your project should be aligned with it
-  * Auth service will utilize Nodejs again, since it will be handled by the developer who will be working on Admin part
-  * You need to have two types of persistent storages - SQL & NoSQL, because initial analysis shows that we can't have "shoes for all feets" approach
-  * Managment wants to go with mobile-first approach, so you will try satisfy this requirement by using Cordova and reuse our Javascript based frontend
-  * Main portal web part will use React, because it's cool
-  * We also need Java to build our automated test framework
+  * Admin `Frontend` - `Angular`, a couple of developers have joined your team recently with necessary skills, Admin `Backend` - `Nodejs`
+  * `API` service - `Go`, since this is general company strategy and your project should be aligned with it
+  * `Auth` service will utilize `Nodejs` again, since it will be handled by the developer who will be working on Admin part
+  * You need to have two types of persistent storages - `SQL & NoSQL`, because initial analysis shows that we can't have "shoes for all feets" approach
+  * Managment wants to go with `mobile-first` approach, so you will try satisfy this requirement by using `Cordova` and reuse our Javascript based frontend
+  * `Main portal` web part will use `React`, because it's cool
+  * We also need `Java` to build our automated test framework
 
 * So, here we go (you can copy commands below into create.sh script and execute them in a single run)
   ```
