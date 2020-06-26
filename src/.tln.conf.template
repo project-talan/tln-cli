@@ -11,13 +11,13 @@ module.exports = {
       .prefix('TLN_MY_COMPONENT')
       .option('configuration', { describe: 'Configuration to build' default: null, type: 'string' });
   */},
-  env: async (tln, env) => {/*
+  env: async (tln, env) => {ENVS/*
     env.TLN_GIT_USER = 'john.doe';
     env.PATH = [path.join(env.TLN_COMPONENT_HOME, 'bin'), env.PATH].join(path.delimiter);
   */},
   dotenvs: async (tln) => [/*'.env'*/],
-  inherits: async (tln) => [/*'git'*/],
-  depends: async (tln) => [/*'java/openjdk-11.0.2'*/],
+  inherits: async (tln) => [INHERITS/*'git'*/],
+  depends: async (tln) => [DEPENDS/*'java/openjdk-11.0.2'*/],
   steps: async (tln) => [/*
     {
       id: 'hi',
