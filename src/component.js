@@ -295,6 +295,7 @@ class Component {
 
   //
   async exec(recursive, filter, { envFromCli, dryRun, command, input, _, catalogs }) {
+    console.log(`-- ${this.uuid}`);
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
@@ -302,7 +303,7 @@ class Component {
     if (recursive) {
       await this.buildAllChildren();
       for (const component of this.components) {
-        await component.exec(recursive, filter, envFromCli, _, dryRun, command, input);
+        await component.exec(recursive, filter, { envFromCli, dryRun, command, input, _, catalogs});
       }
     }
     //
