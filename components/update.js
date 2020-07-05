@@ -39,7 +39,7 @@ function validateId(id) {
 
 const update = async () => {
   const endpoints = [
-    /*/
+    //
     // ------------------------------------------------------------------------
     // NodeJS
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
@@ -185,9 +185,9 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `cordova-${v}` } });
     }},
-    /*/
+    //
     // ------------------------------------------------------------------------
-    // Helm
+    // Helm chart
     { url: 'https://api.github.com/repos/helm/helm/releases', path: 'helm', fn: async (response) => {
       const json = await response.json();
       if (Array.isArray(json)) {
