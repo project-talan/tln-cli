@@ -45,14 +45,18 @@ module.exports = {
       const opts = dist[platform].opts;
       const name = dist[platform].name;
       const url = dist[platform].url;
+      const cmd = dist[platform].cmd;
       //
       if (platform === 'win32') {
         r.push(`echo Downloading ${url}`);
         r.push(`powershell -Command "(New-Object System.Net.WebClient).DownloadFile('${url}', '${name}')"`);
+        console.log('!!!!!!!', name);
         if (name.match('tar.gz')) {
           r.push(`tar -xvzf ${name}`);
         } else {
-          r.push(`powershell -Command "Expand-Archive -LiteralPath '${name}' -DestinationPath '.'"`);
+          if (name.match('.zip')) {
+            r.push(`powershell -Command "Expand-Archive -LiteralPath '${name}' -DestinationPath '.'"`);
+          }
         }
         // move content
         if (opts) {
@@ -62,6 +66,9 @@ module.exports = {
               r.push(`powershell -Command "Remove-Item '${opts.rmv}'"`);
             }
           }
+        }
+        if (cmd) {
+          r.push(cmd);
         }
         r.push(`powershell -Command "Remove-Item '${name}'"`);
       } else /*if (platform === 'linux') {
