@@ -39,7 +39,7 @@ function validateId(id) {
 
 const update = async () => {
   const endpoints = [
-    //
+    /*/
     // ------------------------------------------------------------------------
     // NodeJS
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
@@ -199,6 +199,21 @@ const update = async () => {
     }, finalize: (data) => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `helm-${v}` } } );
+    }},
+    /*/
+    // ------------------------------------------------------------------------
+    // Yarn chart
+    { url: 'https://api.github.com/repos/yarnpkg/yarn/releases', path: 'yarn', fn: async (response) => {
+      const json = await response.json();
+      if (Array.isArray(json)) {
+        return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+      }
+      return [];
+    }, options: {page: 0}, it: (url, options) => {
+      return `${url}?page=${++options.page}`;
+    }, finalize: (data) => {
+      data.sort(compareVersions).reverse();
+      return data.map( v => { return { id: `yarn-${v}` } } );
     }},
   ];
   //
