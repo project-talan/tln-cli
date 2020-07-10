@@ -39,7 +39,7 @@ function validateId(id) {
 
 const update = async () => {
   const endpoints = [
-    /*/
+    //
     // ------------------------------------------------------------------------
     // NodeJS
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
@@ -215,7 +215,7 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `yarn-${v}` } } );
     }},
-    /*/
+    //
     // ------------------------------------------------------------------------
     // Grunt
     { url: 'https://api.github.com/repos/gruntjs/grunt/releases', path: 'grunt', fn: async (response) => {
