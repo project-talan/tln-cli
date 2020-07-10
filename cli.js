@@ -177,8 +177,12 @@ const argv = require('yargs')
       console.log(String.raw` |_|   |_|  \___/| |\___|\___|\__|    |_|\__,_|_|\__,_|_| |_|`);
       console.log(String.raw`                _/ |                                         `);
       console.log(String.raw`               |__/                                          `);
-      console.log(String.raw`  mailto: vladislav.kurmaz@gmail.com                         `);
-      console.log(String.raw`  github: https://github.com/project-talan/tln-cli.git       `);
+      console.log();
+      console.log(String.raw`  version : ${require('./package.json').version}             `);
+      console.log(String.raw`   author : vladislav.kurmaz@gmail.com                       `);
+      console.log(String.raw`     site : http://tln.sh                                    `);
+      console.log(String.raw`   github : https://github.com/project-talan/tln-cli.git     `);
+      console.log();
     }
   )
   .argv;
