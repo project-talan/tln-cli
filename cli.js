@@ -38,6 +38,8 @@ const argv = require('yargs')
   .option('a', { describe: 'Show all components', alias: 'all', default: false, type: 'boolean' })
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+  .option('d', { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
+  .option('parent-first', { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
   .option('catalog', { describe: 'URL to the external components description', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('local-repo', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
@@ -90,11 +92,10 @@ const argv = require('yargs')
   )
   .command(
     /**************************************************************************/
-    'ls [components] [-d depth] [-l]', 'Display components hierarchy',
+    'ls [components] [-d depth] [-l] [--parents] [--installed-only]', 'Display components hierarchy',
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('d', { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
         .option('l', { describe: 'Limit of children to show', alias: 'limit', default: 5, type: 'number' })
         .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
@@ -129,13 +130,14 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, {
+        await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, argv.depth, {
           envFromCli: parseEnv(argv.env),
           dryRun: argv.dryRun,
           command: argv.command,
           input: argv.input,
           _: argv._,
-          catalogs: argv.catalog
+          catalogs: argv.catalog,
+          parentFirst: argv.parentFirst
           });
       });
     }
@@ -153,13 +155,14 @@ const argv = require('yargs')
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
-        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, {
+        await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, argv.depth, {
           envFromCli: parseEnv(argv.env),
           save: argv.save,
           dryRun: argv.dryRun,
           depends: argv.depends,
           _: argv._,
-          catalogs: argv.catalog
+          catalogs: argv.catalog,
+          parentFirst: argv.parentFirst
         });
       });
     }

@@ -294,74 +294,95 @@ class Component {
   */
 
   //
-  async exec(recursive, filter, { envFromCli, dryRun, command, input, _, catalogs }) {
-    console.log(`-- ${this.uuid}`);
+  async exec(recursive, depth, filter, { envFromCli, dryRun, command, input, _, catalogs, parentFirst }) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     //
-    if (recursive) {
-      await this.buildAllChildren();
-      for (const component of this.components) {
-        await component.exec(recursive, filter, { envFromCli, dryRun, command, input, _, catalogs});
+    const execChildren = async () => {
+      if (recursive && (depth > 1)) {
+        await this.buildAllChildren();
+        for (const component of this.components) {
+          await component.exec(recursive, depth - 1, filter, { envFromCli, dryRun, command, input, _, catalogs, parentFirst });
+        }
       }
     }
+    const execSelf = async () => {
+      const script2Execute = scriptFactory.create(this.logger, 'clicmd', this.uuid, async (tln, script) => {
+        if (command) {
+          script.set([command])
+        } else if (input) {
+          script.set(input);
+        } else {
+          this.logger.warn(`${this.uuid} exec command input parameter is missing`);
+        }
+      });
+      const { env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
+      await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
+    }
     //
-    const script2Execute = scriptFactory.create(this.logger, 'clicmd', this.uuid, async (tln, script) => {
-      if (command) {
-        script.set([command])
-      } else if (input) {
-        script.set(input);
-      } else {
-        this.logger.warn(`${this.uuid} exec command input parameter is missing`);
-      }
-    });
-    const { env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
-    await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
+    if (parentFirst) {
+      await execSelf();
+      await execChildren();
+    } else {
+      await execChildren();
+      await execSelf();
+    }
   }
 
   //
-  async run(steps, recursive, filter, {envFromCli, save, dryRun, depends, _, catalogs} ) {
+  async run(steps, recursive, depth, filter, {envFromCli, save, dryRun, depends, _, catalogs, parentFirst} ) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
       for(const d of Component.getDependsList(herarchy, this.uuid)) {
-        await d.component.run(steps, false, filter, {envFromCli, save, dryRun, depends: false, _, catalogs} );
+        await d.component.run(steps, false, 1, filter, {envFromCli, save, dryRun, depends: false, _, catalogs, parentFirst} );
       }
     } else {
-      for(const step of steps) {
-        let stepId = step;
-        let h = herarchy;
-        let error = false;
-        // check if we need to inject run-time component
-        const parts = stepId.split('@');
-        if (parts.length > 1) {
-          stepId = parts[0];
-          const componentId = parts[1];
-          error = true;
-          for (let component of await this.resolve([componentId])) {
-            h = await this.unfoldHierarchy(this.uuid, this.id, this.home, true, await component.unfoldHierarchy(this.uuid, this.id, this.home));
-            error = false;
+      const runChildren = async () => {
+        if (recursive && (depth > 1)) {
+          await this.buildAllChildren();
+          for (const component of this.components) {
+            await component.run(steps, recursive, depth - 1, filter, { envFromCli, save, dryRun, depends, _, catalogs, parentFirst });
           }
         }
-        //
-        if (error) {
-          this.logger.error(`${step} could not be resolved`);
-        } else {
-          const {scripts, env, dotenvs} = await this.collectScripts(h, new RegExp(`\^${stepId}\$`), filter, envFromCli, _);
-          for(const script of scripts) {
-            if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
-              break;
+      }
+      const runSelf = async () => {
+        for (const step of steps) {
+          let stepId = step;
+          let h = herarchy;
+          let error = false;
+          // check if we need to inject run-time component
+          const parts = stepId.split('@');
+          if (parts.length > 1) {
+            stepId = parts[0];
+            const componentId = parts[1];
+            error = true;
+            for (let component of await this.resolve([componentId])) {
+              h = await this.unfoldHierarchy(this.uuid, this.id, this.home, true, await component.unfoldHierarchy(this.uuid, this.id, this.home));
+              error = false;
+            }
+          }
+          //
+          if (error) {
+            this.logger.error(`${step} could not be resolved`);
+          } else {
+            const { scripts, env, dotenvs } = await this.collectScripts(h, new RegExp(`\^${stepId}\$`), filter, envFromCli, _);
+            for (const script of scripts) {
+              if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+                break;
+              }
             }
           }
         }
       }
-      if (recursive) {
-        await this.buildAllChildren();
-        for (const component of this.components) {
-          await component.run(steps, recursive, filter, {envFromCli, save, dryRun, depends, _, catalogs});
-        }
+      if (parentFirst) {
+        await runSelf();
+        await runChildren();
+      } else {
+        await runChildren();
+        await runSelf();
       }
     }
   }
