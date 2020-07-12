@@ -50,7 +50,6 @@ module.exports = {
       if (platform === 'win32') {
         r.push(`echo Downloading ${url}`);
         r.push(`powershell -Command "(New-Object System.Net.WebClient).DownloadFile('${url}', '${name}')"`);
-        console.log('!!!!!!!', name);
         if (name.match('tar.gz')) {
           r.push(`tar -xvzf ${name}`);
         } else {
