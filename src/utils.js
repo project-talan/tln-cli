@@ -50,7 +50,6 @@ module.exports = {
       if (platform === 'win32') {
         r.push(`echo Downloading ${url}`);
         r.push(`powershell -Command "(New-Object System.Net.WebClient).DownloadFile('${url}', '${name}')"`);
-        console.log('!!!!!!!', name);
         if (name.match('tar.gz')) {
           r.push(`tar -xvzf ${name}`);
         } else {
@@ -100,7 +99,7 @@ module.exports = {
           if (opts.src && opts.flt && opts.dest) {
             r.push(`mv ${opts.src}/${opts.flt} ${opts.dest}`);
             if (opts.rmv) {
-              r.push(`rmdir '${opts.rmv}'`);
+              r.push(`rm -rf '${opts.rmv}'`);
             }
           }
         }

@@ -119,23 +119,23 @@ class Appl {
   }
 
   //
-  async exec(components, parallel, recursive, options) {
+  async exec(components, parallel, recursive, depth, options) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.exec(recursive, this.filter, options);
+        component.exec(recursive, depth, this.filter, options);
       } else {
-        await component.exec(recursive, this.filter, options);
+        await component.exec(recursive, depth, this.filter, options);
       }
     }
   }
 
   //
-  async run(components, parallel, steps, recursive, options) {
+  async run(components, parallel, steps, recursive, depth, options) {
     for(const component of await this.resolve(components)) {
       if (parallel) {
-        component.run(steps, recursive, this.filter, options);
+        component.run(steps, recursive, depth, this.filter, options);
       } else {
-        await component.run(steps, recursive, this.filter, options);
+        await component.run(steps, recursive, depth, this.filter, options);
       }
     }
   }
