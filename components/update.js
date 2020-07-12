@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const urlHelper = require("url");
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const compareVersions = require('compare-versions');
@@ -230,6 +231,64 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `grunt-${v}` } } );
     }},
+    //
+    // ------------------------------------------------------------------------
+    // Java
+    { url: 'https://jdk.java.net/archive/', path: 'java', fn: async (response) => {
+      let versions = [];
+      let distrs = {};
+      const prefix = 'openjdk-';
+
+      const html = await response.text();
+      let $ = cheerio.load(html);
+      let version = null;
+      let dist = {};
+      $("table.builds > tbody > tr").each( function (i, e) {
+        const record = $(this).find('th');
+        const id = record.first().text().split(' ')[0];
+        if (record.length === 1) {
+          if (id.match(/^[0-9]/)) {
+            // save prev result
+            if (version) {
+              versions.push(version);
+              distrs[`${prefix}${version}`] = dist;
+            }
+            version = id;
+            dist = {};
+          }
+        } else if (record.length === 2) {
+          const url = $(this).find('td > a').attr('href');
+          const parsed = urlHelper.parse(url);
+          const file = path.basename(parsed.pathname);
+          const folder = file.split('_')[0].substring(4);
+          if (id === 'Windows') {
+            dist.win32 = {
+              name: file,
+              opts: { src: folder, flt: '*', dest: '.', rmv: folder },
+              url
+            };
+          } else if (id === 'Mac') {
+            dist.darwin = {
+              name: file,
+              opts: { src: `${folder}.jdk/Contents/Home`, flt: '*', dest: '.', rmv: folder },
+              url
+            };
+          } if (id === 'Linux') {
+            dist.linux = {
+              name: file,
+              opts: { src: folder, flt: '*', dest: '.', rmv: folder },
+              url
+            };
+          }
+        }
+      });
+      // save last element
+      if (version) {
+        versions.push(version);
+        distrs[`${prefix}${version}`] = dist;
+      }
+      return [versions.sort(compareVersions).map(v => { return {id: `${prefix}${v}`};}).reverse(), distrs];
+    }},
   ];
   //
   for(const endpoint of endpoints) {
@@ -255,7 +314,9 @@ const update = async () => {
       if (endpoint.finalize) {
         result = endpoint.finalize(result);
       }
+      //
       fs.writeFileSync(`./components/${endpoint.path}/components.js`, `module.exports = ${JSON.stringify(result)};`);
+
     } catch (error) {
       console.log(error);
     }
