@@ -99,7 +99,7 @@ module.exports = {
           if (opts.src && opts.flt && opts.dest) {
             r.push(`mv ${opts.src}/${opts.flt} ${opts.dest}`);
             if (opts.rmv) {
-              r.push(`rmdir '${opts.rmv}'`);
+              r.push(`rm -rf '${opts.rmv}'`);
             }
           }
         }
