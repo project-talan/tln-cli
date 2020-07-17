@@ -1,8 +1,8 @@
-# talan cli (tln) - Advanced Component Management System
+# Talan CLI - Advanced Component Management System
 
 <img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
 
-Talan CLI is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). TLN helps to create fully isolated development environments, uniformly manage mono- & multi- repo solutions, build smooth onboaring experience for new team members, melt borders between local development environments and CI/CT/CD setups, get maximum from Polyglot Programming Polyglot Persistence (4Ps) design.
+Talan CLI (`tln`) is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). `tln` helps to create fully isolated development environments, uniformly manage mono- & multi- repo configurations, build smooth onboaring experience, melt borders between local development environments and CI/CT/CD setups and get maximum from Polyglot Programming Polyglot Persistence (4Ps) design.
 
 ## Similar or related projects
 * https://brew.sh/
@@ -65,7 +65,7 @@ Talan CLI is an open-source framework for managing third-party components from w
     components: async (tln) => []
   }
   ```
-* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside projects folder and will not affect any other already installed versions.
+* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside projects folder and will not affect any other already installed software.
   ```
   > tln install --depends
   ```
@@ -92,7 +92,13 @@ Talan CLI is an open-source framework for managing third-party components from w
     
   Angular CLI: 9.1.8    
   ```
-    
+
+## tln architecture & in-depth details
+* [What is Component?](docs/component.md)
+* [Management of environment variables & dotenv files](docs/dotenv.md)
+* [Mono- or multi-repo configurations](docs/repos.md)
+* [MVTs - Minimal Vaible Templates](docs/mvt.md)
+
 
 ## Real life scenario <sub><sup>~15 min</sup></sub>
 Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. Your first steps are: configure local development environment, checkout existing projects and create initial structure for the new one.
