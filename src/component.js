@@ -659,7 +659,7 @@ class Component {
           for (const step of steps) {
             if (step.id.match(id) && filter.validate(step.filter ? step.filter : '')) {
               if (Array.isArray(step.builder)) {
-                patterns.push(...step.builder);
+                patterns.push(...(step.builder.map(v => new RegExp(`\^${v}\$`))));
               } else {
                 scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.builder));
               }
