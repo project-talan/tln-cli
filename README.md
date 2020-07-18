@@ -65,7 +65,7 @@ Talan CLI (`tln`) is an open-source framework for managing third-party component
     components: async (tln) => []
   }
   ```
-* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside projects folder and will not affect any other already installed software.
+* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside `projects` folder and will not affect any other already installed software.
   ```
   > tln install --depends
   ```
