@@ -228,9 +228,7 @@ class Component {
         } else {
           item.children.sort((l, r) => { if (l.id > r.id) { return 1; } else if (l.id < r.id) { return -1; } return 0; } );
         }
-
       }
-
     }
     //
     if (parents && this.parent) {
@@ -238,61 +236,7 @@ class Component {
     }
     return item;
   }
- /*
-  async print(cout, parents, depth, limit, installedOnly, offset = '', last = false) {
-    let prefix = ' ';
-    if (parents && this.parent) {
-      offset = `${await this.parent.print(cout, parents, 0, 0, installedOnly)} └`;
-    }
-    // output yourself
-    let status = '';
-    if (!fs.existsSync(this.home)) {
-      status = '*';
-      if (installedOnly) {
-        return offset;
-      }
-    }
-    const id = this.id === '' ? '/' : this.id;
-    cout(`${offset}${prefix}${id} ${status}`);
-    if (parents && offset.length) {
-      offset = offset.slice(0, -1) + ' ';
-    }
-    //
-    if (depth > 0) {
-      await this.buildAllChildren();
-      let more = 0;
-      let cnt = this.components.length;
-      if (limit > 0) {
-        if (limit < cnt) {
-          more = cnt - limit;
-          cnt = limit;
-        }
-      }
-      let no = offset;
-      if (offset.length && !parents) {
-        if (this.components.length) {
-          no = offset.substring(0, offset.length - 1) + '│';
-        }
-        if (last) {
-          no = offset.substring(0, offset.length - 1) + ' ';
-        }
-      }
-      for (const component of this.components) {
-        cnt--;
-        const delim = (cnt) ? (' ├') : (' └');
-        await component.print(cout, false, depth - 1, limit, installedOnly, `${no}${delim}`, cnt === 0);
-        if (!cnt) {
-          break;
-        }
-      }
-      if (more) {
-        cout(`${offset}   ... ${more} more`);
-      }
-    }
-    return offset;
-  }
-  */
-
+ 
   //
   async exec(recursive, depth, filter, { envFromCli, dryRun, command, input, _, catalogs, parentFirst }) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
@@ -682,7 +626,7 @@ class Component {
     // check all components from hierarchy and locate scripts
     for (const h of hierarchy) {
       (await h.component.findSteps(pattern, filter)).map(i => {
-        // collect script from direct parent of inherits list
+        // collect script from direct parent or inherits list
         if ((h.anchor === this.uuid) && (i.scripts.length)) {
           scripts.push(...i.scripts);
         }
@@ -707,11 +651,21 @@ class Component {
       let dotenvs = [];
       // locate script
       if (desc.steps) {
-        (await desc.steps(this.tln)).forEach(step => {
-          if (step.id.match(pattern) && filter.validate(step.filter ? step.filter : '')) {
-            scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.builder));
+        // TODO implement protection from cycle references
+        const steps = await desc.steps(this.tln);
+        const patterns = [pattern];
+        while (patterns.length) {
+          const id = patterns.shift();
+          for (const step of steps) {
+            if (step.id.match(id) && filter.validate(step.filter ? step.filter : '')) {
+              if (Array.isArray(step.builder)) {
+                patterns.push(...(step.builder.map(v => new RegExp(`\^${v}\$`))));
+              } else {
+                scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.builder));
+              }
+            }
           }
-        });
+        }
       }
       // get env & options
       if (desc.env) {
