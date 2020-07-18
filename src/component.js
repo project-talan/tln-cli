@@ -222,8 +222,15 @@ class Component {
       // sort
       if (item.children.length > 0) {
         if (compareVersions.validate(item.children[0].version)) {
-          item.children.sort((l, r) => { 
-            if (compareVersions.compare(l.version, r.version, '>')) { return -1; } return 1; 
+          item.children.sort((l, r) => {
+            if (l.version && r.version) {
+              if (compareVersions.compare(l.version, r.version, '>')) {
+                return -1;
+              }
+            } else {
+              this.logger.warn('Invalid versions', l, r);
+            }
+            return 1;
           });
         } else {
           item.children.sort((l, r) => { if (l.id > r.id) { return 1; } else if (l.id < r.id) { return -1; } return 0; } );
