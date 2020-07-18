@@ -47,6 +47,7 @@ const update = async () => {
       const json = await response.json();
       return json.map( v => { return { id: 'node-' + v.version.substring(1) } });
     }},
+    //
     // ------------------------------------------------------------------------
     // Boost
     { url: 'https://dl.bintray.com/boostorg/release/', path: 'boost', fn: async (response) => {
@@ -57,11 +58,12 @@ const update = async () => {
         let version = $(this).text();
         if (version.match(/^[0-9]/)) {
           version = version.slice(0, -1);
-          result.push({id:`boost-${version}`});
+          result.push(version);
         }
       });
-      return result.reverse();
+      return result.filter(v => validateVersion(v)).sort(compareVersions).reverse().map( v => { return { id: `boost-${v}` } } );
     }},
+    //
     // ------------------------------------------------------------------------
     // CMake
     { url: 'https://api.github.com/repos/Kitware/CMake/tags', path: 'cmake', fn: async (response) => {
@@ -289,6 +291,7 @@ const update = async () => {
       }
       return [versions.sort(compareVersions).map(v => { return {id: `${prefix}${v}`};}).reverse(), distrs];
     }},
+    //
   ];
   //
   for(const endpoint of endpoints) {
