@@ -143,7 +143,7 @@ Let's say, you've joined Calbro.com company to head software project development
 
 ### Checkout, configure & build existing projects
 Calbo is a big company and has a lot of teams and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
-* You are part of `teamone` team and this can be reflected into development environment structure
+* You are part of `teamone` team and this should be reflected as part of your local dev environment
   ```
   > mkdir teamone
   > cd teamone
