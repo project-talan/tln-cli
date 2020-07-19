@@ -2,7 +2,7 @@
 
 <img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
 
-Talan CLI (`tln`) is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). `tln` helps to create fully isolated development environments, uniformly manage mono- & multi- repo configurations, build smooth onboaring experience, melt borders between local development environments and CI/CT/CD setups and get maximum from Polyglot Programming Polyglot Persistence (4Ps) design.
+Talan CLI (`tln`) is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). `tln` helps to create fully `isolated` development environments, uniformly manage `mono- & multi-` repo configurations, build `smooth onboaring` experience, melt borders between `local` development environments and `CI/CT/CD` setups, get maximum from `Polyglot Programming Polyglot Persistence` (4Ps) design.
 
 ## Similar or related projects
 * https://brew.sh/
