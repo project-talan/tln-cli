@@ -2,7 +2,7 @@
 
 <img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
 
-Talan CLI (`tln`) is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). `tln` helps to create fully isolated development environments, uniformly manage mono- & multi- repo configurations, build smooth onboaring experience, melt borders between local development environments and CI/CT/CD setups and get maximum from Polyglot Programming Polyglot Persistence (4Ps) design.
+Talan CLI (`tln`) is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). `tln` helps to create fully `isolated` development environments, uniformly manage `mono- & multi-` repo configurations, build `smooth onboaring` experience, melt borders between `local` development environments and `CI/CT/CD` setups, get maximum from `Polyglot Programming Polyglot Persistence` (4Ps) design.
 
 ## Similar or related projects
 * https://brew.sh/
@@ -65,7 +65,7 @@ Talan CLI (`tln`) is an open-source framework for managing third-party component
     components: async (tln) => []
   }
   ```
-* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside `projects` folder and will not affect any other already installed software.
+* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside `projects` folder and `will not affect any other already installed software`.
   ```
   > tln install --depends
   ```
@@ -98,6 +98,7 @@ Talan CLI (`tln`) is an open-source framework for managing third-party component
 * [Management of environment variables & dotenv files](docs/dotenv.md)
 * [Mono- & multi-repo configurations](docs/repos.md)
 * [MVTs - Minimal Vaible Templates](docs/mvt.md)
+* [Software Development Life Cycle](docs/sdlc.md)
 
 
 ## Real life scenario <sub><sup>~15 min</sup></sub>
@@ -142,7 +143,7 @@ Let's say, you've joined Calbro.com company to head software project development
 
 ### Checkout, configure & build existing projects
 Calbo is a big company and has a lot of teams and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
-* You are part of `teamone` team and this can be reflected into development environment structure
+* You are part of `teamone` team and this should be reflected as part of your local dev environment
   ```
   > mkdir teamone
   > cd teamone
