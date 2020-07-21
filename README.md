@@ -96,6 +96,7 @@ Talan CLI (`tln`) is an open-source framework for managing third-party component
 ## tln architecture & in-depth details
 * [What is Component?](docs/component.md)
 * [Management of environment variables & dotenv files](docs/dotenv.md)
+* [Versioning](docs/versioning.md)
 * [Mono- & multi-repo configurations](docs/repos.md)
 * [MVTs - Minimal Vaible Templates](docs/mvt.md)
 * [Software Development Life Cycle](docs/sdlc.md)
