@@ -3,7 +3,7 @@
 Let's go deeper into use cases.
 
 Hierachy bellow represents not very complex stucture, but this will be enought to demonstrate key features.
-`project1` and `projects` are stored in separate repositories. At the right side of component, you can see list of environment variables defined at this level (by default they should be stored inside `.env.template` file)
+`project1` and `project2` are stored in separate repositories. At the right side of component, you can see list of environment variables defined at this level (by default they should be stored inside `.env.template` file)
 ```
  /
  └ company
@@ -21,8 +21,9 @@ Hierachy bellow represents not very complex stucture, but this will be enought t
            └ auth            [PORT=9082]
 ```
 
-* First obious step is to collect all variables from project's root. If we execute next commnd from `company/department/teamone/project1`
+* First obvious step is to collect all variables from project's root. If we execute next command from `company/department/teamone/project1`
   > \> tln dotenv --downstream=2
+  
     the output will be (by default, it will be stored inside `.env` file)
     ```
       DBS_MONGO_CONNECTION=localhost:27017
