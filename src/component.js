@@ -128,7 +128,7 @@ class Component {
   async transformDotenv(vars, prefixes, input, upstream, downstream, exclude, neighbor = true) {
     let r = [];
     exclude.push(this.id);
-    console.log(`[+] ${this.id}`, prefixes, exclude);
+    //console.log(`[+] ${this.id}`, prefixes, exclude);
     if (upstream > 0 && this.parent && !exclude.includes(this.parent.id)) {
       r = [this.id.toUpperCase()];
       const ids = await this.parent.transformDotenv(vars, [], input, upstream - 1, downstream + 1, exclude);
@@ -136,7 +136,7 @@ class Component {
         prefixes = ids.concat(this.id.toUpperCase());
       }
     }
-    console.log(`    ${this.id}`, prefixes);
+    //console.log(`    ${this.id}`, prefixes);
     //
     const fn = path.join(this.home, input);
     if (fs.existsSync(fn)) {
@@ -147,12 +147,12 @@ class Component {
     if (downstream > 0) {
       await this.buildAllChildren();
       for (const component of this.components) {
-        if (!exclude.includes(component.id)) {
+        if (!exclude.includes(component.id) && fs.existsSync(component.home)) {
           await component.transformDotenv(vars, prefixes.concat(component.id.toUpperCase()), input, upstream + 1, downstream - 1, exclude);
         }
       }
     }
-    console.log(`[-] ${this.id}`);
+    //console.log(`[-] ${this.id}`);
     return r;
   }
 
