@@ -25,7 +25,11 @@ const parseEnv = (env) => {
   return obj;
 
 }
-
+/*
+Rename
+--catalog --repo
+--local-repo ???
+*/
 const configPath = findUp.sync(['.tlnrc'])
 const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 const argv = require('yargs')
@@ -44,8 +48,8 @@ const argv = require('yargs')
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('local-repo', { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
   .option('detach', { describe: 'Shared components will be deployed inside tmp folder', default: false, type: 'boolean'  })
+  /**************************************************************************/
   .command(
-    /**************************************************************************/
     'config [components]', 'Create tln config in current folder, or clone/pull git repo with shared configuration',
     (yargs) => {
       yargs
@@ -71,8 +75,33 @@ const argv = require('yargs')
       });
     }
   )
+  /**************************************************************************/
   .command(
-    /**************************************************************************/
+    'dotenv [components] [-r]', "Generate dotenv file from templates",
+    (yargs) => {
+      yargs
+      .option('i', { describe: 'Input template name', alias: 'input', default: '.env.template', type: 'string' })
+      .option('o', { describe: 'Output template name', alias: 'output', default: '.env', type: 'string' })
+      .option('prefix', { describe: 'Prefix for every environment variable name', default: null, type: 'string' })
+      .option('upstream', { describe: 'Number of upper layers', default: 0, type: 'number' })
+      .option('downstream', { describe: 'Number of upper layers', default: 0, type: 'number' });
+    },
+    async (argv) => {
+      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+        await a.dotenv(splitComponents(argv.components), {
+          envFromCli: parseEnv(argv.env),
+          prefixes: (argv.prefix)?([argv.prefix]):([]),
+          input: argv.input,
+          output: argv.output,
+          upstream: argv.upstream,
+          downstream: argv.downstream,
+          catalogs: argv.catalog
+        });
+      });
+    }
+  )
+  /**************************************************************************/
+  .command(
     'inspect [components] [-j]', 'Display component(s) internal structure',
     (yargs) => {
       yargs
@@ -90,8 +119,8 @@ const argv = require('yargs')
       });
     }
   )
+  /**************************************************************************/
   .command(
-    /**************************************************************************/
     'ls [components] [-d depth] [-l] [--parents] [--installed-only]', 'Display components hierarchy',
     (yargs) => {
       yargs
@@ -112,8 +141,8 @@ const argv = require('yargs')
       });
     }
   )
+  /**************************************************************************/
   .command(
-    /**************************************************************************/
     'exec [components] [-r] [-p] [-c] [-i]', 'Execute specified command or script',
     (yargs) => {
       yargs
@@ -142,8 +171,8 @@ const argv = require('yargs')
       });
     }
   )
+  /**************************************************************************/
   .command(
-    /**************************************************************************/
     ['$0 <steps> [components] [-r] [-p] [-s] [-u] [--depends]'], 'Execute set of steps over a set of components',
     (yargs) => {
       yargs
@@ -167,6 +196,7 @@ const argv = require('yargs')
       });
     }
   )
+  /**************************************************************************/
   .command(
     'about', 'Dislay project information',
     (yargs) => {

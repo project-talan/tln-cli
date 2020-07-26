@@ -26,6 +26,7 @@ class Appl {
 
   }
 
+  //
   async init() {
     await this.filter.configure();
     this.tln = Object.freeze({
@@ -101,6 +102,13 @@ class Appl {
   async config(components, {envFromCli, repository, prefix, force, terse, depend, inherit}) {
     for(const component of await this.resolve(components, true, false, true)) {
       await component.config({envFromCli, repository, prefix, force, terse, depend, inherit});
+    }
+  }
+
+  //
+  async dotenv(components, options) {
+    for(const component of await this.resolve(components)) {
+      await component.dotenv(options);
     }
   }
 
