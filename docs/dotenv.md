@@ -1,12 +1,13 @@
 # Management of environment variables & dotenv files
 
-```Show me your .env file and I will tell you what issues your project has```
-Managing environment variables is not easy task to do, especially with SOA or Microservices architecture. In some cases it may require additional abstraction layer to sucessfully address all challenges.
+> Show me your .env file and I will tell you what issues your project has
+
+Managing environment variables is not an easy task to do, especially with SOA or Microservices architecture. In some cases it may require additional abstraction layer to sucessfully address all challenges.
 
 Let's go deeper into use cases.
 
 Hierachy bellow represents not very complex stucture, but this will be enought to demonstrate key features.
-`project1` and `project2` are stored in separate repositories. At the right side of component, you can see list of environment variables defined at this level (by default they should be stored inside `.env.template` file)
+For demonstration purpose we can assume that `project1` and `project2` are stored in separate repositories. At the right side of component, you can see list of environment variables defined at component level (by default they should be stored inside `.env.template` file)
 ```
  /
  └ company
@@ -52,7 +53,7 @@ Hierachy bellow represents not very complex stucture, but this will be enought t
      SERVICES_HOST=myserver.io
      VERSION=20.7.0
     ```
-    The difference is that api component is used as anchor and all other variables are constructed relative to it. Variable `PORT` was generated without any prefixes.
+    The difference is that `api` component is used as an anchor and all other variables are constructed relative to it. Variable `PORT` was generated without any prefixes.
     
 You can combine both options `--upstream` and `--downstream` to achieve any traversal scenario required by your use case.   
 
