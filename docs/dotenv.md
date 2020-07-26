@@ -1,5 +1,8 @@
 # Management of environment variables & dotenv files
 
+```Show me your .env file and I will tell you what issues your project has```
+Managing environment variables is not easy task to do, especially with SOA or Microservices architecture. In some cases it may require additional abstraction layer to sucessfully address all challenges.
+
 Let's go deeper into use cases.
 
 Hierachy bellow represents not very complex stucture, but this will be enought to demonstrate key features.
