@@ -35,7 +35,7 @@ Hierachy bellow represents not very complex stucture, but this will be enought t
       SERVICES_HOST=myserver.io
       VERSION=20.7.0
     ```
-    As you can see, this is ready-to-use `.env` file and it can be immediately used by `k8s` or `docker-compose`
+    As you can see, this is complete `.env` file and it can be used by `k8s` or `docker-compose`
     
 * When you need to debug specific component, you can collect environment variables not only from nested components, but also from parents. Run bellow command from `company/department/teamone/project1/services/api`
    > \> tln dotenv --upstream=2
@@ -51,6 +51,16 @@ Hierachy bellow represents not very complex stucture, but this will be enought t
     ```
     The difference is that api component is used as anchor and all other variables are constructed relative to it. Variable `PORT` was generated without any prefixes.
     
-You can combine both options `--upstream` and `--downstream`, to achieve any traversal scenario required by your use case.   
+You can combine both options `--upstream` and `--downstream` to achieve any traversal scenario required by your use case.   
 
 ## Full command specification
+```
+tln dotenv [--upstream=<uint>] [--downstream=<uint>] [--input=<string>] [--output=<string>] [--prefix=<string>]
+```
+| Option name  | Description | Default |
+| ------------- | ------------- | ------------- |
+| upstream  | Number of levels above current component | 0 |
+| downstream  | Number of levels below current component | 0 |
+| input  | Input template file name | .env.template  |
+| output  | Output file name | .env  |
+| prefix  | String which will be prepended to each variable name | null  |
