@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const { execSync } = require('child_process');
 const tmp = require('tmp');
 const compareVersions = require('compare-versions');
+const dotenv = require('dotenv');
 
 const scriptFactory = require('./script');
 const optionsFactory = require('./options');
@@ -51,7 +52,7 @@ class Component {
   * 
   * params:
   */
-  async config({envFromCli, repository, prefix, force, terse, depend, inherit}) {
+  async config({ envFromCli, repository, prefix, force, terse, depend, inherit }) {
     this.logger.info(`config - '${this.uuid}' repository:'${repository}' prefix:'${prefix}' force:'${force}' terse:'${terse}'`);
     //
     if (repository) {
@@ -102,6 +103,59 @@ class Component {
     }
   }
 
+  logParams(funcName, params) {
+    this.logger.info(funcName, [`uuid: ${this.uuid}`].concat(Object.keys(params).map(k => `${k}: ${JSON.stringify(params[k])}`)).join(', '));
+  }
+
+  /*
+  * 
+  * params:
+  */
+  async dotenv({ envFromCli, prefixes, input, output, upstream, downstream, catalogs }) {
+    this.logParams('dotenv', { envFromCli, input, output, catalogs });
+    await this.loadDescriptionsFromCatalogs(catalogs);
+    //
+    let vars = {};
+    await this.transformDotenv(vars, [], input, upstream, downstream, [], false);
+    vars = { ...envFromCli, ...vars };
+    fs.writeFileSync(path.join(this.home, output), Object.keys(vars).sort().map(k => `${prefixes.concat(k).join('_')}=${vars[k]}`).join('\n'));
+  }
+
+  /*
+  * 
+  * params:
+  */
+  async transformDotenv(vars, prefixes, input, upstream, downstream, exclude, neighbor = true) {
+    let r = [];
+    exclude.push(this.id);
+    console.log(`[+] ${this.id}`, prefixes, exclude);
+    if (upstream > 0 && this.parent && !exclude.includes(this.parent.id)) {
+      r = [this.id.toUpperCase()];
+      const ids = await this.parent.transformDotenv(vars, [], input, upstream - 1, downstream + 1, exclude);
+      if (neighbor) {
+        prefixes = ids.concat(this.id.toUpperCase());
+      }
+    }
+    console.log(`    ${this.id}`, prefixes);
+    //
+    const fn = path.join(this.home, input);
+    if (fs.existsSync(fn)) {
+      const config = dotenv.parse(Buffer.from(fs.readFileSync(fn).toString()));
+      Object.keys(config).forEach(k => vars[prefixes.concat(k).join('_')] = config[k]);
+    }
+    //
+    if (downstream > 0) {
+      await this.buildAllChildren();
+      for (const component of this.components) {
+        if (!exclude.includes(component.id)) {
+          await component.transformDotenv(vars, prefixes.concat(component.id.toUpperCase()), input, upstream + 1, downstream - 1, exclude);
+        }
+      }
+    }
+    console.log(`[-] ${this.id}`);
+    return r;
+  }
+
   /*
   * 
   * params:
@@ -121,10 +175,10 @@ class Component {
     });
     // herarchy
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, true);
-    const {scripts, env, dotenvs} = await this.collectScripts(herarchy, /.*/, filter, envFromCli, _);
+    const { scripts, env, dotenvs } = await this.collectScripts(herarchy, /.*/, filter, envFromCli, _);
     r.env = {};
 
-    Object.keys(env).forEach( k => {
+    Object.keys(env).forEach(k => {
       let add = true;
       if (process.env[k]) {
         add = process.env[k] !== env[k];
@@ -134,10 +188,10 @@ class Component {
       }
     });
     r.dotenvs = dotenvs;
-    r.steps = scripts.map( s => {return s.getUuid()});
-    r.graph = herarchy.map( c => `${c.component.id} [${c.component.getUuid()}] [${c.anchor}]`);
-    r.inherits = herarchy.filter(c => c.anchor === this.uuid).map( c => `${c.component.id} [${c.component.getUuid()}]`);
-    r.depends = Component.getDependsList(herarchy, this.uuid).map( c => `${c.component.id} [${c.component.getUuid()}]`);
+    r.steps = scripts.map(s => { return s.getUuid() });
+    r.graph = herarchy.map(c => `${c.component.id} [${c.component.getUuid()}] [${c.anchor}]`);
+    r.inherits = herarchy.filter(c => c.anchor === this.uuid).map(c => `${c.component.id} [${c.component.getUuid()}]`);
+    r.depends = Component.getDependsList(herarchy, this.uuid).map(c => `${c.component.id} [${c.component.getUuid()}]`);
 
 
     /*/
@@ -154,10 +208,10 @@ class Component {
   * 
   * params:
   */
-  async ls(cout, { parents, depth, limit, installedOnly, catalogs}) {
+  async ls(cout, { parents, depth, limit, installedOnly, catalogs }) {
     this.logger.info(`ls ${this.uuid} - depth:'${depth}' limit:'${limit}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
-    await this.print(cout, await this.filterComponents({parents, depth, limit, installedOnly}));
+    await this.print(cout, await this.filterComponents({ parents, depth, limit, installedOnly }));
   }
 
   /*
@@ -187,15 +241,16 @@ class Component {
     }
   }
 
-  async filterComponents({parents, depth, limit, installedOnly}, children = []) {
+  async filterComponents({ parents, depth, limit, installedOnly }, children = []) {
     const id = this.id === '' ? '/' : this.id;
-    const {name, version} = utils.unpackId(id);
+    const { name, version } = utils.unpackId(id);
     let item = {
       id,
       version,
       installed: fs.existsSync(this.home),
       children,
-      more: 0 };
+      more: 0
+    };
     //
     if (!item.installed && installedOnly) {
       return null;
@@ -210,7 +265,7 @@ class Component {
         }
       }
       for (const component of this.components) {
-        const e = await component.filterComponents({ parents:false, depth: depth - 1, limit, installedOnly});
+        const e = await component.filterComponents({ parents: false, depth: depth - 1, limit, installedOnly });
         if (e) {
           item.children.push(e);
           if (item.children.length >= cnt) {
@@ -233,17 +288,17 @@ class Component {
             return 1;
           });
         } else {
-          item.children.sort((l, r) => { if (l.id > r.id) { return 1; } else if (l.id < r.id) { return -1; } return 0; } );
+          item.children.sort((l, r) => { if (l.id > r.id) { return 1; } else if (l.id < r.id) { return -1; } return 0; });
         }
       }
     }
     //
     if (parents && this.parent) {
-      return await this.parent.filterComponents({parents, depth: 0, limit: 0, installedOnly}, [item]);
+      return await this.parent.filterComponents({ parents, depth: 0, limit: 0, installedOnly }, [item]);
     }
     return item;
   }
- 
+
   //
   async exec(recursive, depth, filter, { envFromCli, dryRun, command, input, _, catalogs, parentFirst }) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
@@ -282,13 +337,13 @@ class Component {
   }
 
   //
-  async run(steps, recursive, depth, filter, {envFromCli, save, dryRun, depends, _, catalogs, parentFirst} ) {
+  async run(steps, recursive, depth, filter, { envFromCli, save, dryRun, depends, _, catalogs, parentFirst }) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
-      for(const d of Component.getDependsList(herarchy, this.uuid)) {
-        await d.component.run(steps, false, 1, filter, {envFromCli, save, dryRun, depends: false, _, catalogs, parentFirst} );
+      for (const d of Component.getDependsList(herarchy, this.uuid)) {
+        await d.component.run(steps, false, 1, filter, { envFromCli, save, dryRun, depends: false, _, catalogs, parentFirst });
       }
     } else {
       const runChildren = async () => {
@@ -443,7 +498,7 @@ class Component {
     }
     this.descriptions = descs.concat(this.descriptions);
   }
-  
+
   //
   loadDescriptionsFromFolder(location, configFolderOnly) {
     this.descriptions = this.descriptions.concat(this.mergeDescriptions(location, configFolderOnly));
@@ -551,7 +606,7 @@ class Component {
       this.logger.debug(`uuid: '${this.uuid}' resolves ${components}`);
       for (let component of components) {
         if (component === '/') {
-            r.push(this.getRoot());
+          r.push(this.getRoot());
         } else {
           // find component
           const c = await this.find(component.split('/'), true, popup ? 0 : 1, [], force);
@@ -572,7 +627,7 @@ class Component {
   }
 
   async unfoldHierarchy(anchor, id, home, unique = true, list = []) {
-    this.logger.debug(this.logger.getFunctonCallDescription('unfoldHierarchy', {anchor, id, home, unique, list}));
+    this.logger.debug(this.logger.getFunctonCallDescription('unfoldHierarchy', { anchor, id, home, unique, list }));
     if (unique) {
       list = list.filter((item) => (item.anchor !== anchor) || (item.component.uuid !== this.uuid) && (item.anchor === anchor));
     }
@@ -616,7 +671,7 @@ class Component {
       .filter(c => c.anchor !== anchor)
       .reverse()
       .filter((item, pos, arr) => {
-        for(let i = 0; i < arr.length; i++) {
+        for (let i = 0; i < arr.length; i++) {
           if (arr[i].component.uuid === item.component.uuid) {
             return i === pos;
           }
@@ -642,11 +697,11 @@ class Component {
       });
     }
     // merge all env and apply options
-    let env = {...process.env };
+    let env = { ...process.env };
     for (const e of envs.reverse()) {
-      env = await e.env.build(this.tln, {...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, ...(await e.options.parse(this.tln, _))});
+      env = await e.env.build(this.tln, { ...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, ...(await e.options.parse(this.tln, _)) });
     }
-    return {scripts, env: {...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home}, dotenvs: dotenvs.reverse()};
+    return { scripts, env: { ...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home }, dotenvs: dotenvs.reverse() };
   }
 
   async findSteps(pattern, filter) {
@@ -685,7 +740,7 @@ class Component {
       if (desc.dotenvs) {
         dotenvs = await desc.dotenvs(this.tln);
       }
-      r.push({ scripts, envs: {env : env, options: options}, dotenvs });
+      r.push({ scripts, envs: { env: env, options: options }, dotenvs });
     }
     return r;
   }
