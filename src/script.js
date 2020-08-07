@@ -9,8 +9,8 @@ const tmp = require('tmp');
 class Script {
   constructor(logger, id, componentUuid, builder) {
     this.logger = logger;
-    this.uuid = id;
-    this.uuid = `${this.uuid}@${componentUuid}`;
+    this.id = id;
+    this.uuid = `${this.id}@${componentUuid}`;
     this.builder = builder;
 
     this.body = null;

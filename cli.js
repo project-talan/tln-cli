@@ -77,7 +77,7 @@ const argv = require('yargs')
   )
   /**************************************************************************/
   .command(
-    'dotenv [components] [-r]', "Generate dotenv file from templates",
+    'dotenv [--upstream=<uint>] [--downstream=<uint>] [--input=<string>] [--output=<string>] [--prefix=<string>]', "Generate dotenv file from templates",
     (yargs) => {
       yargs
       .option('i', { describe: 'Input template name', alias: 'input', default: '.env.template', type: 'string' })
