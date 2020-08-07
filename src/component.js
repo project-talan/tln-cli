@@ -375,9 +375,12 @@ class Component {
             this.logger.error(`${step} could not be resolved`);
           } else {
             const { scripts, env, dotenvs } = await this.collectScripts(h, new RegExp(`\^${stepId}\$`), filter, envFromCli, _);
+            const skipList = [];
             for (const script of scripts) {
-              if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
-                break;
+              if (!skipList.includes(script.id)) {
+                if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+                  skipList.push(script.id);
+                }
               }
             }
           }
@@ -686,6 +689,7 @@ class Component {
     let envs = [];
     let dotenvs = [];
     // check all components from hierarchy and locate scripts
+    // TODO there should two steps, first unfold all aliases and the collect scripts
     for (const h of hierarchy) {
       (await h.component.findSteps(pattern, filter)).map(i => {
         // collect script from direct parent or inherits list
