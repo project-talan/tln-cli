@@ -40,7 +40,7 @@ function validateId(id) {
 
 const update = async () => {
   const endpoints = [
-    /*/
+    //
     // ------------------------------------------------------------------------
     // NodeJS
     { url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
@@ -291,7 +291,7 @@ const update = async () => {
       }
       return [versions.sort(compareVersions).map(v => { return {id: `${prefix}${v}`};}).reverse(), distrs];
     }},
-    /*/
+    //
     // ------------------------------------------------------------------------
     // Kotlin
     { url: 'https://api.github.com/repos/JetBrains/kotlin/releases', path: 'kotlin', fn: async (response) => {
