@@ -54,19 +54,27 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('repo', { describe: 'Git repository url', alias:'repository', default: null, type: 'string' })
-        .option('prefix', { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
+        .option('repo', { describe: 'Git repository url', default: null, type: 'string' })
+        .option('update', { describe: 'Update catalog inside .tln folder', default: false, type: 'boolean' })
+        .option('folder', { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
         .option('force', { describe: 'Force override config file, if exists', default: false, type: 'boolean' })
         .option('terse', { describe: 'Remove help information from the config', default: false, type: 'boolean' })
         .option('depend', { describe: 'Component to insert into depends list', default: [], type: 'array' })
         .option('inherit', { describe: 'Component to insert into inherits list', default: [], type: 'array' })
+        .check(({ repo, update }) => {
+          if ( repo && update) {
+            throw new Error('repo and update parameters are conflicting. Please use only one: repo or update');
+          }
+          return true;
+        })
     },
     async (argv) => {
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.config(splitComponents(argv.components), {
           envFromCli: parseEnv(argv.env),
           repository: argv.repo,
-          prefix: argv.prefix,
+          update: argv.update,
+          folder: argv.folder,
           force: argv.force,
           terse: argv.terse,
           depend: argv.depend,

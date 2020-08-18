@@ -99,9 +99,9 @@ class Appl {
   }
 
   //
-  async config(components, {envFromCli, repository, prefix, force, terse, depend, inherit}) {
+  async config(components, options) {
     for(const component of await this.resolve(components, true, false, true)) {
-      await component.config({envFromCli, repository, prefix, force, terse, depend, inherit});
+      await component.config(options);
     }
   }
 
