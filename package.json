@@ -5,7 +5,7 @@
   "main": "cli.js",
   "scripts": {
     "test": "nyc --reporter=text --reporter=lcov mocha **/*spec.js",
-    "update": "node components/update.js"
+    "update": "node update.js"
   },
   "nyc": {
     "all": true,

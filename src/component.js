@@ -52,20 +52,28 @@ class Component {
   * 
   * params:
   */
-  async config({ envFromCli, repository, prefix, force, terse, depend, inherit }) {
-    this.logger.info(`config - '${this.uuid}' repository:'${repository}' prefix:'${prefix}' force:'${force}' terse:'${terse}'`);
+  async config({ envFromCli, repository, update, folder, force, terse, depend, inherit }) {
+    this.logParams('config', { envFromCli, repository, update, folder, force, terse, depend, inherit });
     //
-    if (repository) {
+    if (repository || update) {
       // clone repo with tln configuration
-      let folder = utils.getConfigFolder(this.home);
-      if (prefix) {
-        folder = path.join(folder, prefix);
+      let f = utils.getConfigFolder(this.home);
+      if (folder) {
+        f = path.join(f, folder);
       }
       //
-      if (fs.existsSync(folder)) {
-        this.logger.warn(`Git repository with tln configuration already exists in '${folder}'. Use git pull to update it`);
+      if (fs.existsSync(f)) {
+        if (update) {
+          this.logger.con(execSync(`cd ${f} && git pull origin master`).toString());
+        } else {
+          this.logger.warn(`Git repository with tln configuration already exists in '${f}'. Use 'tln config --update' command.`);
+        }
       } else {
-        this.logger.con(execSync(`git clone ${repository} ${folder}`).toString());
+        if (update) {
+          this.logger.warn(`Git repository with tln configuration does not exist in '${f}'. Use 'tln config --repo <repo>' command.`);
+        } else {
+          this.logger.con(execSync(`git clone ${repository} ${f}`).toString());
+        }
       }
     } else {
       // generate local configuration file

@@ -292,6 +292,20 @@ const update = async () => {
       return [versions.sort(compareVersions).map(v => { return {id: `${prefix}${v}`};}).reverse(), distrs];
     }},
     //
+    // ------------------------------------------------------------------------
+    // Kotlin
+    { url: 'https://api.github.com/repos/JetBrains/kotlin/releases', path: 'kotlin', fn: async (response) => {
+      const json = await response.json();
+      if (Array.isArray(json)) {
+        return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+      }
+      return [];
+    }, options: {page: 0}, it: (url, options) => {
+      return `${url}?page=${++options.page}`;
+    }, finalize: (data) => {
+      data.sort(compareVersions).reverse();
+      return data.map( v => { return { id: `kotlin-${v}` } } );
+    }},
   ];
   //
   for(const endpoint of endpoints) {
