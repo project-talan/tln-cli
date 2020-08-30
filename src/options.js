@@ -14,6 +14,7 @@ class Options {
     const env = {};
     if (this.builder) {
       let envPrefix = null;
+      // parse unparsed parameters
       const yargs = require('yargs')(_);
       const args = Object.freeze({
         prefix: (p) => { envPrefix = p; return args; },
@@ -35,7 +36,7 @@ class Options {
         }
         //
         for (const key of Object.keys(argv)) {
-          if (!excluded.includes(key)) {
+          if (!excluded.includes(key) && argv[key]) {
             env[[envPrefix, key.replace(/-/g, '_')].join('_').toUpperCase()] = argv[key];
           }
         }
