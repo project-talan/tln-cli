@@ -306,6 +306,36 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `kotlin-${v}` } } );
     }},
+    //
+    // ------------------------------------------------------------------------
+    // k8s
+    { url: 'https://api.github.com/repos/kubernetes/kubernetes/releases', path: 'k8s', fn: async (response) => {
+      const json = await response.json();
+      if (Array.isArray(json)) {
+        return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+      }
+      return [];
+    }, options: {page: 0}, it: (url, options) => {
+      return `${url}?page=${++options.page}`;
+    }, finalize: (data) => {
+      data.sort(compareVersions).reverse();
+      return data.map( v => { return { id: `${v}` } } );
+    }},
+    //
+    // ------------------------------------------------------------------------
+    // digitalocean/doctl
+    { url: 'https://api.github.com/repos/digitalocean/doctl/releases', path: path.join('digitalocean', 'doctl'), fn: async (response) => {
+      const json = await response.json();
+      if (Array.isArray(json)) {
+        return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+      }
+      return [];
+    }, options: {page: 0}, it: (url, options) => {
+      return `${url}?page=${++options.page}`;
+    }, finalize: (data) => {
+      data.sort(compareVersions).reverse();
+      return data.map( v => { return { id: `doctl-${v}` } } );
+    }},
   ];
   //
   for(const endpoint of endpoints) {

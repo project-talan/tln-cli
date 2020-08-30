@@ -64,7 +64,11 @@ class Component {
       //
       if (fs.existsSync(f)) {
         if (update) {
-          this.logger.con(execSync(`cd ${f} && git pull origin master`).toString());
+          try {
+            this.logger.con(execSync(`cd ${f} && git pull origin master`).toString());
+          } catch (err) {
+            // this.logger.error(err.message);
+          }
         } else {
           this.logger.warn(`Git repository with tln configuration already exists in '${f}'. Use 'tln config --update' command.`);
         }
@@ -72,7 +76,11 @@ class Component {
         if (update) {
           this.logger.warn(`Git repository with tln configuration does not exist in '${f}'. Use 'tln config --repo <repo>' command.`);
         } else {
-          this.logger.con(execSync(`git clone ${repository} ${f}`).toString());
+          try {
+            this.logger.con(execSync(`git clone ${repository} ${f}`).toString());
+          } catch (err) {
+            // this.logger.error(err.message);
+          }
         }
       }
     } else {
