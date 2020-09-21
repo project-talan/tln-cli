@@ -336,6 +336,21 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `doctl-${v}` } } );
     }},
+    //
+    // ------------------------------------------------------------------------
+    // git-lfs
+    { url: 'https://api.github.com/repos/git-lfs/git-lfs/releases', path: path.join('git', 'git-lfs'), fn: async (response) => {
+      const json = await response.json();
+      if (Array.isArray(json)) {
+        return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+      }
+      return [];
+    }, options: {page: 0}, it: (url, options) => {
+      return `${url}?page=${++options.page}`;
+    }, finalize: (data) => {
+      data.sort(compareVersions).reverse();
+      return data.map( v => { return { id: `git-lfs-${v}` } } );
+    }},
   ];
   //
   for(const endpoint of endpoints) {
@@ -362,7 +377,7 @@ const update = async () => {
         result = endpoint.finalize(result);
       }
       //
-      fs.writeFileSync(`./components/${endpoint.path}/components.js`, `module.exports = ${JSON.stringify(result)};`);
+      fs.writeFileSync(path.join('./components', endpoint.path, 'components.js'), `module.exports = ${JSON.stringify(result)};`);
 
     } catch (error) {
       console.log(error);
