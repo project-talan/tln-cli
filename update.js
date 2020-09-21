@@ -339,7 +339,7 @@ const update = async () => {
     //
     // ------------------------------------------------------------------------
     // git-lfs
-    { url: 'https://api.github.com/repos/git-lfs/git-lfs/releases', path: path.join('git', 'git-lfs'), fn: async (response) => {
+    { url: 'https://api.github.com/repos/git-lfs/git-lfs/releases', path: path.join('github', 'git-lfs'), fn: async (response) => {
       const json = await response.json();
       if (Array.isArray(json)) {
         return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
