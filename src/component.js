@@ -650,7 +650,7 @@ class Component {
     if (unique) {
       list = list.filter((item) => (item.anchor !== anchor) || (item.component.uuid !== this.uuid) && (item.anchor === anchor));
     }
-    list.push({ component: this, anchor, id, home });
+    list.push({ component: this, anchor, id, home, srcId: this.id });
 
     // check depends list first
     let depends = [];
@@ -712,14 +712,14 @@ class Component {
         if ((h.anchor === this.uuid) && (i.scripts.length)) {
           scripts.push(...i.scripts);
         }
-        envs.push({ ...i.envs, id: h.id, home: h.home });
+        envs.push({ ...i.envs, id: h.id, home: h.home, anchor: h.anchor, srcId: h.srcId });
         dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(h.component.home, this.home), de)));
       });
     }
     // merge all env and apply options
     let env = { ...process.env };
     for (const e of envs.reverse()) {
-      env = await e.env.build(this.tln, { ...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, ...(await e.options.parse(this.tln, _)) });
+      env = await e.env.build(this.tln, { ...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, TLN_COMPONENT_SRC_ID: e.srcId, ...(await e.options.parse(this.tln, _)) });
     }
     return { scripts, env: { ...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home }, dotenvs: dotenvs.reverse() };
   }
