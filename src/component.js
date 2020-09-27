@@ -316,7 +316,7 @@ class Component {
   }
 
   //
-  async exec(recursive, depth, filter, { envFromCli, dryRun, command, input, _, catalogs, parentFirst }) {
+  async exec(recursive, depth, filter, { envFromCli, dryRun, failOnStderr, command, input, _, catalogs, parentFirst }) {
     this.logger.info(`exec ${this.uuid} - recursive:'${recursive}' command:'${command}' input:'${input}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
@@ -325,12 +325,12 @@ class Component {
       if (recursive && (depth > 1)) {
         await this.buildAllChildren();
         for (const component of this.components) {
-          await component.exec(recursive, depth - 1, filter, { envFromCli, dryRun, command, input, _, catalogs, parentFirst });
+          await component.exec(recursive, depth - 1, filter, { envFromCli, dryRun, failOnStderr, command, input, _, catalogs, parentFirst });
         }
       }
     }
     const execSelf = async () => {
-      const script2Execute = scriptFactory.create(this.logger, 'clicmd', this.uuid, async (tln, script) => {
+      const script2Execute = scriptFactory.create(this.logger, 'clicmd', this.uuid, true, async (tln, script) => {
         if (command) {
           script.set([command])
         } else if (input) {
@@ -340,7 +340,7 @@ class Component {
         }
       });
       const { env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
-      await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun);
+      await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun, failOnStderr);
     }
     //
     if (parentFirst) {
@@ -353,20 +353,20 @@ class Component {
   }
 
   //
-  async run(steps, recursive, depth, filter, { envFromCli, save, dryRun, depends, _, catalogs, parentFirst }) {
+  async run(steps, recursive, depth, filter, { envFromCli, save, dryRun, failOnStderr, depends, _, catalogs, parentFirst }) {
     this.logger.info(`run ${this.uuid} - recursive:'${recursive}' steps:'${steps}' save:'${save}' dryRun:'${dryRun}' depends:'${depends}'`);
     await this.loadDescriptionsFromCatalogs(catalogs);
     const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home);
     if (depends) {
       for (const d of Component.getDependsList(herarchy, this.uuid)) {
-        await d.component.run(steps, false, 1, filter, { envFromCli, save, dryRun, depends: false, _, catalogs, parentFirst });
+        await d.component.run(steps, false, 1, filter, { envFromCli, save, dryRun, failOnStderr, depends: false, _, catalogs, parentFirst });
       }
     } else {
       const runChildren = async () => {
         if (recursive && (depth > 1)) {
           await this.buildAllChildren();
           for (const component of this.components) {
-            await component.run(steps, recursive, depth - 1, filter, { envFromCli, save, dryRun, depends, _, catalogs, parentFirst });
+            await component.run(steps, recursive, depth - 1, filter, { envFromCli, save, dryRun, failOnStderr, depends, _, catalogs, parentFirst });
           }
         }
       }
@@ -394,7 +394,7 @@ class Component {
             const skipList = [];
             for (const script of scripts) {
               if (!skipList.includes(script.id)) {
-                if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun)) {
+                if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun, failOnStderr)) {
                   skipList.push(script.id);
                 }
               }
@@ -743,7 +743,7 @@ class Component {
               if (Array.isArray(step.builder)) {
                 patterns.push(...(step.builder.map(v => new RegExp(`\^${v}\$`))));
               } else {
-                scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, step.builder));
+                scripts.push(scriptFactory.create(this.logger, step.id, this.uuid, (step.failOnStderr === undefined)?true:step.failOnStderr, step.builder));
               }
             }
           }

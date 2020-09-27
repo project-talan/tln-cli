@@ -7,10 +7,11 @@ const { spawn } = require('child_process');
 const tmp = require('tmp');
 
 class Script {
-  constructor(logger, id, componentUuid, builder) {
+  constructor(logger, id, componentUuid, failOnStderr, builder) {
     this.logger = logger;
     this.id = id;
     this.uuid = `${this.id}@${componentUuid}`;
+    this.failOnStderr = failOnStderr;
     this.builder = builder;
 
     this.body = null;
@@ -25,8 +26,8 @@ class Script {
   set(body) {
     this.body = body;
   }
-  
-  async execute(home, tln, env, dotenvs, save, dryRun) {
+
+  async execute(home, tln, env, dotenvs, save, dryRun, failOnStderr) {
     this.body = null;
     // create component location if not exists
     if (!fs.existsSync(home)) {
@@ -94,11 +95,15 @@ class Script {
                 else
                   this.logger.info(`Command execution completed with code: ${code}`)
                 /*/
-                resolve()
+                resolve(code);
               })
             })
           }
-          await spawnPromise(fl, [], opt);
+          const code = await spawnPromise(fl, [], opt);
+          this.logger.debug(`Script execution completed with code: ${code}`)
+          if (failOnStderr && this.failOnStderr && (code !== 0)) {
+            process.exitCode = code;
+          }
         }
       } else {
         this.logger.error(`${this.uuid} could not save execution script: ${body}`);
@@ -108,6 +113,6 @@ class Script {
   }
 }
 
-module.exports.create = (logger, id, componentUuid, builder) => {
-  return new Script(logger, id, componentUuid, builder);
+module.exports.create = (logger, id, componentUuid, failOnStderr, builder) => {
+  return new Script(logger, id, componentUuid, failOnStderr, builder);
 }

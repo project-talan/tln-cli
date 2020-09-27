@@ -43,6 +43,7 @@ const argv = require('yargs')
   .option('u', { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e', { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('d', { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
+  .option('fail-on-stderr', { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
   .option('parent-first', { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
   .option('catalog', { describe: 'URL to the external components description', default: [], type: 'array' })
   .option('env-file', { describe: 'Read in a file of environment variables', default: [], type: 'array' })
@@ -166,10 +167,12 @@ const argv = require('yargs')
         })
     },
     async (argv) => {
+      const {failOnStderr} = argv;
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, argv.depth, {
           envFromCli: parseEnv(argv.env),
           dryRun: argv.dryRun,
+          failOnStderr,
           command: argv.command,
           input: argv.input,
           _: argv._,
@@ -191,11 +194,13 @@ const argv = require('yargs')
         .demandOption(['steps'], 'Please provide steps(s) you need to run')
     },
     async (argv) => {
+      const {failOnStderr} = argv;
       await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, argv.depth, {
           envFromCli: parseEnv(argv.env),
           save: argv.save,
           dryRun: argv.dryRun,
+          failOnStderr,
           depends: argv.depends,
           _: argv._,
           catalogs: argv.catalog,
