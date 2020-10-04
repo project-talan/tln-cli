@@ -70,6 +70,7 @@ class Script {
       if (fl) {
         if (dryRun) {
           // output script to the console
+          this.logger.con(`[${home}]`);
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
           // run script from file
