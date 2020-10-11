@@ -713,7 +713,7 @@ class Component {
           scripts.push(...i.scripts);
         }
         envs.push({ ...i.envs, id: h.id, home: h.home, anchor: h.anchor, srcId: h.srcId });
-        dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(h.component.home, this.home), de)));
+        dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(this.home, h.component.home), de)));
       });
     }
     // merge all env and apply options
