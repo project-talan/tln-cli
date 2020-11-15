@@ -1,6 +1,6 @@
 {
   "name": "tln-cli",
-  "version": "1.11.4",
+  "version": "1.14.1",
   "description": "Advanced Component Management System",
   "main": "cli.js",
   "scripts": {
