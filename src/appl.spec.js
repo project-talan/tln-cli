@@ -4,7 +4,7 @@ const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
 
-describe('application', function() {
+describe('Application', function() {
 
   before(function() {
   });
@@ -18,7 +18,7 @@ describe('application', function() {
   afterEach(function () {
   })
 
-  it.skip('Application can be created', function() {
-//    expect(require('./appl').create(logger.create(0), process.cwd(), process.cwd(), null)).to.be.an('object');
+  it('can be created', function() {
+    expect(require('./appl').create()).to.be.an('object');
   });
 });
