@@ -14,6 +14,7 @@ class appl extends entity {
   */
   constructor(context) {
     super(context);
+    this.logger.con(os.homedir());
   }
 
 }
