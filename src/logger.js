@@ -1,6 +1,6 @@
 'use strict';
 
-class Logger {
+class logger {
 
   constructor(verbose) {
     this.verbose = 3 - verbose;
@@ -34,5 +34,5 @@ class Logger {
 }
 
 module.exports.create = (verbose) => {
-  return new Logger(verbose);
+  return new logger(verbose);
 }

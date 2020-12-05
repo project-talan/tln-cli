@@ -6,7 +6,7 @@ const os = require('os');
 
 const entity = require('./entity');
 
-class appl extends entity {
+class catalog extends entity {
 
   /*
   *
@@ -19,5 +19,5 @@ class appl extends entity {
 }
 
 module.exports.create = (context) => {
-  return new appl(context);
+  return new catalog(context);
 }

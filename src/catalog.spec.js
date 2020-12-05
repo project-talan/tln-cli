@@ -4,10 +4,10 @@ const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
 
-describe('Application', function() {
+describe('Catalog', function() {
 
   const logger = require('./logger').create(0);
-  const context = require('./context').create({logger, cwd: process.cwd(), home: __dirname});
+  const context = require('./context').create({logger});
 
   before(function() {
   });
@@ -22,6 +22,6 @@ describe('Application', function() {
   })
 
   it('can be created', function() {
-    expect(require('./appl').create(context)).to.be.an('object');
+    expect(require('./catalog').create(context)).to.be.an('object');
   });
 });

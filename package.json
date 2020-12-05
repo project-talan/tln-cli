@@ -4,8 +4,7 @@
   "description": "Advanced Component Management System",
   "main": "cli.js",
   "scripts": {
-    "test": "nyc mocha **/*spec.js",
-    "test1": "nyc --reporter=text --reporter=lcov mocha **/*spec.js",
+    "test": "nyc --reporter=text --reporter=lcov mocha src/*spec.js",
     "update": "node update.js"
   },
   "nyc": {
@@ -14,7 +13,8 @@
       "src/**/*.js"
     ],
     "exclude": [
-      "**/*.spec.js"
+      "**/*.spec.js",
+      "src/logger.js"
     ]
   },
   "bin": {

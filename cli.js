@@ -12,6 +12,11 @@ if (process.env['Path']) {
   process.env['PATH'] = p;
 }
 
+const createAppl = async(verbose) => {
+  const logger = require('./src/logger').create(verbose);
+  return require('./src/appl').create(require('./src/context').create({logger, cwd: process.cwd(), home: __dirname}));
+}
+
 // use local config file
 const configPath = findUp.sync(['.tlnrc'])
 const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
@@ -42,6 +47,8 @@ const argv = require('yargs')
       .positional('url',          { describe: 'Catalog repository URL', default: null, type: 'string' })
     },
     async (argv) => {
+      const {verbose} = argv;
+      const appl = await createAppl(verbose);
     }
   )
   /**************************************************************************/
@@ -163,5 +170,3 @@ const argv = require('yargs')
     }
   )
   .argv;
-
-console.log(argv)
