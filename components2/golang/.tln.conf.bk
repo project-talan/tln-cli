@@ -1,0 +1,106 @@
+module.exports = {
+  tags: (tln) => [],
+  options: (tln, options) => {
+    options
+      .add('cmd', 'TLN_GOLANG_CMD', 'Golang package id', 'service')
+      .add('cmd', 'TLN_GOLANG_TARGET', 'Target folder', 'target')
+      .add('package', 'TLN_GOLANG_PACKAGE', 'Golang package id', [])
+    ;
+  },
+  dotenvs: (tln) => [],
+  depends: (tln) => [],
+  inherits: (tln) => [],
+  variables: (tln, variables) => {
+    variables
+      .set('GOLANG_HOME', (tln, data) => data.env['COMPONENT_ORIGIN'])
+//      .set('GOROOT', (tln, data) => data.env['COMPONENT_ORIGIN'])
+//      .set('GOPATH', (tln, data) => data.env['COMPONENT_HOME'])
+      .prepend('PATH', (tln, data) => `${data.env['COMPONENT_ORIGIN']}${data.sep}bin`);
+  },
+  steps: (tln) => [
+    {
+      id: 'init',
+      desc: '',
+      script: (tln, script) => script.set([`go mod tidy && go mod download`])
+    },
+    {
+      id: 'build',
+      desc: '',
+      script: (tln, script) => script.set([`go build -o ${script.env['TLN_GOLANG_TARGET']}/${script.env['TLN_GOLANG_CMD']} ${script.env['TLN_GOLANG_CMD']}.go`])
+    },
+    {
+      id: 'go-get',
+      desc: '',
+      script: (tln, script) => script.set([`go get ${script.env['TLN_GOLANG_PACKAGE']}`])
+    },
+    {
+      id: 'serve',
+      desc: '',
+      script: (tln, script) => script.set([`${script.env['TLN_GOLANG_TARGET']}/${script.env['TLN_GOLANG_CMD']}`])
+    },
+    {
+      id: 'build-docker',
+      filter: 'linux',
+      desc: '',
+      script: (tln, script) => script.set([
+        'docker build -t ${COMPONENT_ID}:${COMPONENT_VERSION} .'
+      ])
+    },
+    {
+      id: 'run-docker',
+      filter: 'linux',
+      desc: '',
+      script: (tln, script) => script.set([
+        'docker run -d --rm \\',
+        ' -p ${COMPONENT_PARAM_PORT}:${COMPONENT_PARAM_PORT} \\',
+        ' -p ${COMPONENT_PARAM_PORTS}:${COMPONENT_PARAM_PORTS} \\',
+        '  --name ${COMPONENT_ID} ${COMPONENT_ID}:${COMPONENT_VERSION}'
+      ])
+    },
+
+    {
+      id: 'install',
+      filter: '',
+      desc: '',
+      script: (tln, script) => {
+        if (tln.utils.canInstallComponent(tln, script, 'golang')) {
+          let id = script.env["COMPONENT_ID"];
+          if (id === 'golang') {
+            id = 'golang-1.13';
+          }
+          //
+          defaultDistrs = {
+            'default-golang': {
+              'ubuntu': [],
+              'centos': []
+            }
+          };
+          if (!tln.utils.getDefaultScript(tln, id, defaultDistrs, script)) {
+            const version = id.split('-')[1];
+            script.set(tln.utils.getDownloadScript(tln, {
+              linux: {
+                name: `go${version}.linux-amd64.tar.gz`,
+                opts: { src: `go`, flt:`*`, dest:`.`, rmv: `go` },
+                url: `https://dl.google.com/go/go${version}.linux-amd64.tar.gz`
+              },
+              darwin: {
+                name: `go${version}.darwin-amd64.tar.gz`,
+                opts: { src: `go`, flt: `*`, dest: `.`, rmv: `go` },
+                url: `https://dl.google.com/go/go${version}.darwin-amd64.tar.gz`
+              },
+              win32: {
+                name: `go${version}.windows-amd64.zip`,
+                opts: { src: `go`, flt: `*`, dest: `.`, rmv: `go` },
+                url: `https://dl.google.com/go/go${version}.windows-amd64.zip`
+              }
+            }));
+          }
+        }
+      }
+    }
+  ],
+  components: (tln) => [
+    {id: 'default-golang'},
+    {id: 'golang-1.13'}
+  ],
+};

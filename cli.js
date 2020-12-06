@@ -2,6 +2,8 @@
 
 'use strict';
 
+const os = require('os');
+const path = require('path');
 const fs = require('fs');
 const findUp = require('find-up')
 
@@ -12,9 +14,17 @@ if (process.env['Path']) {
   process.env['PATH'] = p;
 }
 
+let logger = null;
 const createAppl = async(verbose) => {
-  const logger = require('./src/logger').create(verbose);
-  return require('./src/appl').create(require('./src/context').create({logger, cwd: process.cwd(), home: __dirname}));
+  logger = require('./src/logger').create(verbose);
+  return require('./src/appl').create(require('./src/context').create(
+    { logger,
+      os,
+      path,
+      fs,
+      cwd: process.cwd(),
+      home: __dirname
+    }));
 }
 
 // use local config file
@@ -31,24 +41,29 @@ const argv = require('yargs')
   .option('r',                    { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('u',                    { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e',                    { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+  .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('d',                    { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
   .option('fail-on-stderr',       { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
   .option('catalog',              { describe: 'URL to the external repository with components\' description', default: [], type: 'array' })
-  .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-  .option('local-repo',           { describe: 'Shared components will be deployed using this path or project\'s root otherwise, if parameter is not defined', default: null })
-  .option('detach',               { describe: 'Shared components will be deployed inside tmp folder', default: false, type: 'boolean'  })
+  .option('local-repo',           { describe: 'Local path for external components to be installed [tmp value will point to the local temp directory]', default: null })
   /**************************************************************************/
   .command(
-    'catalog <command> [name] [url]', 'Manage catalog for components',
+    'catalog <command> [name] [src]', 'Manage catalog for components',
     (yargs) => {
       yargs
-      .positional('command',      { describe: 'Command to execute ls | add | remove | update | enable | disable', default: null, type: 'string' })
+      .positional('command',      { describe: 'Command to execute', choices: ['ls', 'add', 'remove', 'update'], default: null, type: 'string' })
       .positional('name',         { describe: 'Catalog name', default: null, type: 'string' })
-      .positional('url',          { describe: 'Catalog repository URL', default: null, type: 'string' })
+      .positional('src',          { describe: 'Catalog repository URL', default: null, type: 'string' })
     },
     async (argv) => {
-      const {verbose} = argv;
+      const {verbose, command, name, src} = argv;
       const appl = await createAppl(verbose);
+      switch (command) {
+        case "ls": await appl.lsCatalogs(); break;
+        case "add": await appl.addCatalog(name, src); break;
+        case "remove": await appl.removeCatalog(name); break;
+        case "update": await appl.updateCatalog(name); break;
+      }
     }
   )
   /**************************************************************************/

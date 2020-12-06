@@ -17,11 +17,12 @@ module.exports = {
   */},
   dotenvs: async (tln) => [/*'.env'*/],
   inherits: async (tln) => [INHERITS/*'git'*/],
-  depends: async (tln) => [DEPENDS/*'java/openjdk-11.0.2'*/],
+  depends: async (tln) => [DEPENDS/*'openjdk-11.0.2'*/],
   steps: async (tln) => [/*
     {
       id: 'hi',
       desc: 'Say Hi from component home',
+      failOnStrErr: true,
       builder: async (tln, script) => {
         script.set(['echo Hi, home: ${TLN_COMPONENT_HOME}']);
         // return true; // to prevent chain execution

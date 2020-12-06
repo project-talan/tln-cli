@@ -1,13 +1,16 @@
 'use strict';
 
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+
 const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
 
 describe('Application', function() {
 
-  const logger = require('./logger').create(0);
-  const context = require('./context').create({logger, cwd: process.cwd(), home: __dirname});
+  const context = require('./context').create({logger: require('./logger').create(0), os, path, fs, cwd: process.cwd(), home: __dirname});
 
   before(function() {
   });
