@@ -15,7 +15,7 @@ if (process.env['Path']) {
 }
 
 let logger = null;
-const createAppl = async(verbose) => {
+const createAppl = async(verbose, localRepo) => {
   logger = require('./src/logger').create(verbose);
   return require('./src/appl').create(require('./src/context').create(
     { logger,
@@ -23,9 +23,19 @@ const createAppl = async(verbose) => {
       path,
       fs,
       cwd: process.cwd(),
-      home: __dirname
+      home: __dirname,
+      localRepo
     }));
 }
+const splitComponents = (components) => {
+  return components?components.split(':'):[];
+}
+const parseEnv = (env) => {
+  const obj = {};
+  env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
+  return obj;
+}
+
 
 // use local config file
 const configPath = findUp.sync(['.tlnrc'])
@@ -45,7 +55,8 @@ const argv = require('yargs')
   .option('d',                    { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
   .option('fail-on-stderr',       { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
   .option('catalog',              { describe: 'URL to the external repository with components\' description', default: [], type: 'array' })
-  .option('local-repo',           { describe: 'Local path for external components to be installed [tmp value will point to the local temp directory]', default: null })
+  .option('local-repo',           { describe: 'Path where external components will be installed [tmp value will point to the local temp directory]', default: null })
+  .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   /**************************************************************************/
   .command(
     'catalog <command> [name] [src]', 'Manage catalog for components',
@@ -56,8 +67,8 @@ const argv = require('yargs')
       .positional('src',          { describe: 'Catalog repository URL', default: null, type: 'string' })
     },
     async (argv) => {
-      const {verbose, command, name, src} = argv;
-      const appl = await createAppl(verbose);
+      const {verbose, localRepo, command, name, src} = argv;
+      const appl = await createAppl(verbose, localRepo);
       switch (command) {
         case "ls": await appl.lsCatalogs(); break;
         case "add": await appl.addCatalog(name, src); break;
@@ -73,19 +84,20 @@ const argv = require('yargs')
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
         .option('update',         { describe: 'Update catalog inside .tln folder', default: false, type: 'boolean' })
-        .option('folder',         { describe: 'Additional subfolder to extract repository to', default: null, type: 'string' })
-        .option('force',          { describe: 'Force override config file, if exists', default: false, type: 'boolean' })
         .option('terse',          { describe: 'Remove help information from the config', default: false, type: 'boolean' })
         .option('depend',         { describe: 'Component to insert into depends list', default: [], type: 'array' })
         .option('inherit',        { describe: 'Component to insert into inherits list', default: [], type: 'array' })
         .check(({ catalog, update }) => {
           if ( catalog && update) {
-            throw new Error('repo and update parameters are conflicting. Please use only one: catalog or update');
+            throw new Error('catalog and update parameters are conflicting. Please use only one: catalog or update');
           }
           return true;
         })
     },
     async (argv) => {
+      const {verbose, localRepo, components, env, update, terse, depend, inherit} = argv;
+      const appl = await createAppl(verbose, localRepo);
+      await appl.config(splitComponents(components), {env: parseEnv(env), update, terse, depend, inherit});
     }
   )
   /**************************************************************************/

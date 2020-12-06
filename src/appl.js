@@ -27,6 +27,8 @@ class appl extends entity {
       this.logger.error(`Description of catalogs can not be loaded [${this.listOfCatalogs}] ${e.message}`);
       process.exit(1);
     }
+    //
+    // find root component
   }
 
   async lsCatalogs() {
@@ -39,6 +41,10 @@ class appl extends entity {
   }
 
   async updateCatalog(name) {
+  }
+
+  async config(components, options) {
+    console.log(options);
   }
 
 }
