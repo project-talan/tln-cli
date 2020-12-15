@@ -17,7 +17,7 @@ if (process.env['Path']) {
 let logger = null;
 const createAppl = async(verbose, localRepo) => {
   logger = require('./src/logger').create(verbose);
-  return require('./src/appl').create(require('./src/context').create(
+  return await (require('./src/appl').create(require('./src/context').create(
     { logger,
       os,
       path,
@@ -25,7 +25,7 @@ const createAppl = async(verbose, localRepo) => {
       cwd: process.cwd(),
       home: __dirname,
       localRepo
-    }));
+    }))).init();
 }
 const splitComponents = (components) => {
   return components?components.split(':'):[];
@@ -55,7 +55,7 @@ const argv = require('yargs')
   .option('d',                    { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
   .option('fail-on-stderr',       { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
   .option('catalog',              { describe: 'URL to the external repository with components\' description', default: [], type: 'array' })
-  .option('local-repo',           { describe: 'Path where external components will be installed [tmp value will point to the local temp directory]', default: null })
+  .option('local-repo',           { describe: 'Path where external components will be installed ["tmp" value will instruct to use temp directory]', default: null })
   .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   /**************************************************************************/
   .command(

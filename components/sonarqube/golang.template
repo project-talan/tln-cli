@@ -1,7 +1,0 @@
-
-sonar.sources=cmd,pkg
-sonar.inclusions=
-sonar.exclusions=**/*_test.go,**/vendor/**
-sonar.tests=cmd,pkg
-sonar.test.inclusions=**/*_test.go
-sonar.test.exclusions=**/vendor/**
