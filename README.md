@@ -14,7 +14,12 @@ Talan CLI (`tln`) is an open-source framework for managing third-party component
 * https://chocolatey.org/
 
 ## Prerequisites
-* Install `Nodejs 12.x` or higher (https://nodejs.org)
+* Install `Nodejs 14.x` or higher (https://nodejs.org)
+  ```
+  > curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh
+  > sudo bash nodesource_setup.sh
+  > sudo apt-get install -y nodejs
+  ```
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
 * Make sure that `Powershell` script can be executed, [check this link](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) (Windows)
 * Install tln-cli 
