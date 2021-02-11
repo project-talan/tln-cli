@@ -351,6 +351,22 @@ const update = async () => {
       data.sort(compareVersions).reverse();
       return data.map( v => { return { id: `git-lfs-${v}` } } );
     }},
+    //
+    // ------------------------------------------------------------------------
+    // Terraform
+    { url: 'https://releases.hashicorp.com/terraform/', path: 'terraform', fn: async (response) => {
+      const result = []
+      const html = await response.text();
+      let $ = cheerio.load(html);
+      const items = [];
+      $("ul > li").each(function (i, e) {
+        let version = $(this).find('a').first().text().replace('_', '-').toLowerCase();
+        if (validateId(version) && (version.split('-').length == 2)) {
+          result.push({id:`${version}`});
+        }
+      });
+      return result.sort((l, r) => l.id.attr > r.id.attr ? 1: -1 ).reverse();
+    }},
   ];
   //
   for(const endpoint of endpoints) {
