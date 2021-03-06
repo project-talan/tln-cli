@@ -19,26 +19,6 @@ module.exports = {
   },
   steps: (tln) => [
     {
-      id: 'init',
-      desc: '',
-      script: (tln, script) => script.set([`go mod tidy && go mod download`])
-    },
-    {
-      id: 'build',
-      desc: '',
-      script: (tln, script) => script.set([`go build -o ${script.env['TLN_GOLANG_TARGET']}/${script.env['TLN_GOLANG_CMD']} ${script.env['TLN_GOLANG_CMD']}.go`])
-    },
-    {
-      id: 'go-get',
-      desc: '',
-      script: (tln, script) => script.set([`go get ${script.env['TLN_GOLANG_PACKAGE']}`])
-    },
-    {
-      id: 'serve',
-      desc: '',
-      script: (tln, script) => script.set([`${script.env['TLN_GOLANG_TARGET']}/${script.env['TLN_GOLANG_CMD']}`])
-    },
-    {
       id: 'build-docker',
       filter: 'linux',
       desc: '',
