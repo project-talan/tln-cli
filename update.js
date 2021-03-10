@@ -407,6 +407,23 @@ const update = async () => {
         return result.sort((l, r) => l.id.attr > r.id.attr ? 1 : -1).reverse();
       }
     },
+    //
+    // ------------------------------------------------------------------------
+    // ethereum/hardhat
+    {
+      url: 'https://api.github.com/repos/nomiclabs/hardhat/releases', path: path.join('ethereum', 'hardhat'), fn: async (response) => {
+        const json = await response.json();
+        if (Array.isArray(json)) {
+          return json.map(v => v.tag_name.substring(14).toLowerCase()).filter(v => validateVersion(v));
+        }
+        return [];
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `hardhat-${v}` } });
+      }
+    },
   ];
   //
   try {
