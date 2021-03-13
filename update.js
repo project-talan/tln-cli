@@ -177,7 +177,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Bitcoin
     {
-      url: 'https://api.github.com/repos/bitcoin/bitcoin/releases', path: 'bitcoin/bitcoin-core', fn: async (response) => {
+      url: 'https://api.github.com/repos/bitcoin/bitcoin/releases', path: 'bitcoin-core', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase());
