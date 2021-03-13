@@ -47,9 +47,10 @@ module.exports = {
       const url = dist[platform].url;
       const cmd = dist[platform].cmd;
       //
+      r.push(`echo Downloading ${url}`);
       if (platform === 'win32') {
-        r.push(`echo Downloading ${url}`);
         r.push(`powershell -Command "(New-Object System.Net.WebClient).DownloadFile('${url}', '${name}')"`);
+        r.push(`echo Extracting files ...`);
         if (name.match('tar.gz')) {
           r.push(`tar -xvzf ${name}`);
         } else {
@@ -60,6 +61,7 @@ module.exports = {
         // move content
         if (opts) {
           if (opts.src && opts.flt && opts.dest) {
+            r.push(`echo Moving files ...`);
             r.push(`powershell -Command "Get-ChildItem -Path '${opts.src}' -Filter '${opts.flt}' -Recurse | Move-Item -Destination '${opts.dest}'"`);
             if (opts.rmv) {
               r.push(`powershell -Command "Remove-Item '${opts.rmv}'"`);
@@ -89,6 +91,7 @@ module.exports = {
         r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') */ {
         r.push(`wget '${url}'`);
+        r.push(`echo Extracting files ...`);
         if (name.match('tar.gz') || name.match('tgz')) {
           r.push(`tar -xzf '${name}'`);
         } else {
@@ -97,6 +100,7 @@ module.exports = {
         // move content
         if (opts) {
           if (opts.src && opts.flt && opts.dest) {
+            r.push(`echo Moving files ...`);
             r.push(`mv ${opts.src}/${opts.flt} ${opts.dest}`);
             if (opts.rmv) {
               r.push(`rm -rf '${opts.rmv}'`);
