@@ -429,6 +429,7 @@ const update = async () => {
     // Flutter
     {
       url: 'https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json', path: 'flutter', fn: async (response) => {
+        //console.log(await response.text());
         const json = await response.json();
         return json.releases.filter(v => v.channel == 'stable').map(v => { return { id: 'flutter-' + v.version } });
       }
