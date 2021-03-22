@@ -5,13 +5,7 @@
 Talan CLI (`tln`) is an open-source framework for managing third-party components from wide range of ecosystems (Java, Node.js, C++, Golang, Angular etc.). `tln` helps to create fully `isolated` development environments, uniformly manage `mono- & multi-` repo configurations, build `smooth onboaring` experience, melt borders between `local` development environments and `CI/CT/CD` setups, get maximum from `Polyglot Programming Polyglot Persistence` (4Ps) design.
 
 ## Similar or related projects
-* https://brew.sh/
-* https://conan.io/
-* https://github.com/mateodelnorte/meta
-* https://github.com/lerna/lerna
-* https://sdkman.io
-* https://www.jenv.be/
-* https://chocolatey.org/
+[Brew](https://brew.sh/), [Conan](https://conan.io/), [Meta](https://github.com/mateodelnorte/meta), [Lerna](https://github.com/lerna/lerna), [SDKMAN](https://sdkman.io), [jEnv](https://www.jenv.be/), [Chocolatey](https://chocolatey.org/)
 
 ## Prerequisites
 * Install `Nodejs 14.x` or higher (https://nodejs.org)
