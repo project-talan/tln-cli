@@ -39,12 +39,13 @@ function validateId(id) {
 
 
 const update = async () => {
+  const token = fs.readFileSync(path.join(__dirname, 'token')).toString();
   const endpoints = [
     //
     // ------------------------------------------------------------------------
     // NodeJS
     {
-      url: 'https://nodejs.org/dist/index.json', path: 'nodejs', fn: async (response) => {
+      url: 'https://nodejs.org/dist/index.json', token: null, path: 'nodejs', fn: async (response) => {
         const json = await response.json();
         return json.map(v => { return { id: 'node-' + v.version.substring(1) } });
       }
@@ -53,7 +54,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Boost
     {
-      url: 'https://dl.bintray.com/boostorg/release/', path: 'boost', fn: async (response) => {
+      url: 'https://dl.bintray.com/boostorg/release/', token: null, path: 'boost', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -71,7 +72,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // CMake
     {
-      url: 'https://api.github.com/repos/Kitware/CMake/tags', path: 'cmake', fn: async (response) => {
+      url: 'https://api.github.com/repos/Kitware/CMake/tags', token, path: 'cmake', fn: async (response) => {
         const json = await response.json();
         return json.map(v => v.name.substring(1));
       }, options: { page: 0 }, it: (url, options) => {
@@ -84,7 +85,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Docker
     {
-      url: 'https://api.github.com/repos/docker/compose/releases', path: 'docker-compose', fn: async (response) => {
+      url: 'https://api.github.com/repos/docker/compose/releases', token, path: 'docker-compose', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => {
@@ -107,7 +108,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Golang
     {
-      url: 'https://golang.org/dl/', path: 'golang', fn: async (response) => {
+      url: 'https://golang.org/dl/', token: null, path: 'golang', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -125,7 +126,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Gradle
     {
-      url: 'https://api.github.com/repos/gradle/gradle/releases', path: 'gradle', fn: async (response) => {
+      url: 'https://api.github.com/repos/gradle/gradle/releases', token, path: 'gradle', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase());
@@ -141,7 +142,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Maven
     {
-      url: 'https://archive.apache.org/dist/maven/maven-3/', path: 'maven', fn: async (response) => {
+      url: 'https://archive.apache.org/dist/maven/maven-3/', token: null, path: 'maven', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -160,7 +161,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Python
     {
-      url: 'https://www.python.org/downloads/', path: 'python', fn: async (response) => {
+      url: 'https://www.python.org/downloads/', token: null, path: 'python', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -177,7 +178,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Bitcoin
     {
-      url: 'https://api.github.com/repos/bitcoin/bitcoin/releases', path: 'bitcoin-core', fn: async (response) => {
+      url: 'https://api.github.com/repos/bitcoin/bitcoin/releases', token, path: 'bitcoin-core', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase());
@@ -193,7 +194,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Angular
     {
-      url: 'https://registry.npmjs.com/@angular/cli', path: 'angular', fn: async (response) => {
+      url: 'https://registry.npmjs.com/@angular/cli', token: null, path: 'angular', fn: async (response) => {
         const json = await response.json();
         const data = Object.keys(json.versions);
         data.sort(compareVersions).reverse();
@@ -203,7 +204,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Cordova
     {
-      url: 'https://registry.npmjs.com/cordova', path: 'cordova', fn: async (response) => {
+      url: 'https://registry.npmjs.com/cordova', token: null, path: 'cordova', fn: async (response) => {
         const json = await response.json();
         const data = Object.keys(json.versions).filter(v => !v.match('nightly'));
         data.sort(compareVersions).reverse();
@@ -214,7 +215,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Helm chart
     {
-      url: 'https://api.github.com/repos/helm/helm/releases', path: 'helm', fn: async (response) => {
+      url: 'https://api.github.com/repos/helm/helm/releases', token, path: 'helm', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase());
@@ -231,7 +232,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Yarn chart
     {
-      url: 'https://api.github.com/repos/yarnpkg/yarn/releases', path: 'yarn', fn: async (response) => {
+      url: 'https://api.github.com/repos/yarnpkg/yarn/releases', token, path: 'yarn', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
@@ -248,7 +249,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Grunt
     {
-      url: 'https://api.github.com/repos/gruntjs/grunt/releases', path: 'grunt', fn: async (response) => {
+      url: 'https://api.github.com/repos/gruntjs/grunt/releases', token, path: 'grunt', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
@@ -265,7 +266,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Java
     {
-      url: 'https://jdk.java.net/archive/', path: 'java', fn: async (response) => {
+      url: 'https://jdk.java.net/archive/', token, path: 'java', fn: async (response) => {
         let versions = [];
         let distrs = {};
         const prefix = 'openjdk-';
@@ -325,7 +326,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Kotlin
     {
-      url: 'https://api.github.com/repos/JetBrains/kotlin/releases', path: 'kotlin', fn: async (response) => {
+      url: 'https://api.github.com/repos/JetBrains/kotlin/releases', token, path: 'kotlin', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
@@ -342,7 +343,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // k8s
     {
-      url: 'https://api.github.com/repos/kubernetes/kubernetes/releases', path: 'k8s', fn: async (response) => {
+      url: 'https://api.github.com/repos/kubernetes/kubernetes/releases', token, path: 'k8s', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
@@ -359,7 +360,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // digitalocean/doctl
     {
-      url: 'https://api.github.com/repos/digitalocean/doctl/releases', path: path.join('digitalocean', 'doctl'), fn: async (response) => {
+      url: 'https://api.github.com/repos/digitalocean/doctl/releases', token, path: path.join('digitalocean', 'doctl'), fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
@@ -376,7 +377,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // git-lfs
     {
-      url: 'https://api.github.com/repos/git-lfs/git-lfs/releases', path: path.join('github', 'git-lfs'), fn: async (response) => {
+      url: 'https://api.github.com/repos/git-lfs/git-lfs/releases', token, path: path.join('github', 'git-lfs'), fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
@@ -393,7 +394,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Terraform
     {
-      url: 'https://releases.hashicorp.com/terraform/', path: 'terraform', fn: async (response) => {
+      url: 'https://releases.hashicorp.com/terraform/', token: null, path: 'terraform', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -411,7 +412,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // ethereum/hardhat
     {
-      url: 'https://api.github.com/repos/nomiclabs/hardhat/releases', path: path.join('ethereum', 'hardhat'), fn: async (response) => {
+      url: 'https://api.github.com/repos/nomiclabs/hardhat/releases', token, path: path.join('ethereum', 'hardhat'), fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => v.tag_name.substring(14).toLowerCase()).filter(v => validateVersion(v));
@@ -428,7 +429,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Flutter
     {
-      url: 'https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json', path: 'flutter', fn: async (response) => {
+      url: 'https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json', token: null, path: 'flutter', fn: async (response) => {
         //console.log(await response.text());
         const json = await response.json();
         return json.releases.filter(v => v.channel == 'stable').map(v => { return { id: 'flutter-' + v.version } });
@@ -437,7 +438,6 @@ const update = async () => {
   ];
   //
   try {
-    const token = fs.readFileSync(path.join(__dirname, 'token')).toString();
     for (const endpoint of endpoints) {
       console.log(`Processing ... ${endpoint.path} [${endpoint.url}]`);
       let cont = true;
@@ -451,7 +451,7 @@ const update = async () => {
         }
         console.log(` * fetching ${url}`);
         //
-        const response = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+        const response = await fetch(url, endpoint.token?{ headers: { 'Authorization': `token ${endpoint.token}` } }:{});
         const data = await endpoint.fn(response);
         result.push(...data);
         cont = cont && (data.length > 0);
