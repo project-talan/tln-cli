@@ -112,6 +112,15 @@ module.exports = {
     }
     return r;
   },
+  selectScript: (tln, dist) => {
+    let r = [];
+    const osInfo = tln.getOsInfo();
+    const platform = osInfo.platform;
+    if (dist[platform]) {
+      return dist[platform];
+    }
+    return [];
+  },
   copyTemplate: (tln, script, src, dest, tail = []) => {
     const osInfo = tln.getOsInfo();
     const platform = osInfo.platform;
