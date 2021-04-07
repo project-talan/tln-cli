@@ -99,9 +99,15 @@ module.exports = {
         }
         // move content
         if (opts) {
-          if (opts.src && opts.flt && opts.dest) {
+          if (opts.src && opts.dest) {
             r.push(`echo Moving files ...`);
-            r.push(`mv ${opts.src}/${opts.flt} ${opts.src}/.${opts.flt} ${opts.dest} || true`);
+            let f1 = opts.src;
+            let f2 = '';
+            if (opts.flt !== null) {
+              f1 = `${opts.src}/${opts.flt}`;
+              f2 = `${opts.src}/.${opts.flt}`;
+            }
+            r.push(`mv ${f1} ${f2} ${opts.dest} || true`);
             if (opts.rmv) {
               r.push(`rm -rf '${opts.rmv}'`);
             }
