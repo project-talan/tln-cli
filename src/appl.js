@@ -39,7 +39,8 @@ class Appl {
       copyTemplate: (tln, script, src, dest, tail = []) => utils.copyTemplate(tln, script, src, dest, tail),
       canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
       getDownloadScriptById: (tln, id, distrs) => utils.getDownloadScriptById(tln, id, distrs),
-      getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
+      getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist),
+      selectScript: (tln, dist) => utils.selectScript(tln, dist)
     })
 
     //
