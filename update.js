@@ -427,12 +427,29 @@ const update = async () => {
     },
     //
     // ------------------------------------------------------------------------
-    // Flutter
+    // flutter
     {
       url: 'https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json', token: null, path: 'flutter', fn: async (response) => {
         //console.log(await response.text());
         const json = await response.json();
         return json.releases.filter(v => v.channel == 'stable').map(v => { return { id: 'flutter-' + v.version } });
+      }
+    },
+    //
+    // ------------------------------------------------------------------------
+    // terragrunt
+    {
+      url: 'https://api.github.com/repos/gruntwork-io/terragrunt/releases', token, path: 'terragrunt', fn: async (response) => {
+        const json = await response.json();
+        if (Array.isArray(json)) {
+          return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+        }
+        return [];
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `terragrunt-${v}` } });
       }
     },
   ];
