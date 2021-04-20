@@ -305,7 +305,7 @@ const update = async () => {
                 opts: { src: `${folder}.jdk/Contents/Home`, flt: '*', dest: '.', rmv: folder },
                 url
               };
-            } if (id === 'Linux') {
+            } if (id === 'Linux' || id === 'Linux/x64') {
               dist.linux = {
                 name: file,
                 opts: { src: folder, flt: '*', dest: '.', rmv: folder },
