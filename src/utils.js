@@ -46,17 +46,17 @@ module.exports = {
       const name = dist[platform].name;
       const url = dist[platform].url;
       const cmd = dist[platform].cmd;
+      const keep = dist[platform].keep;
       //
       r.push(`echo Downloading ${url}`);
       if (platform === 'win32') {
         r.push(`powershell -Command "(New-Object System.Net.WebClient).DownloadFile('${url}', '${name}')"`);
-        r.push(`echo Extracting files ...`);
         if (name.match('tar.gz')) {
+          r.push(`echo Extracting files ...`);
           r.push(`tar -xvzf ${name}`);
-        } else {
-          if (name.match('.zip')) {
-            r.push(`powershell -Command "Expand-Archive -LiteralPath '${name}' -DestinationPath '.'"`);
-          }
+        } else if (name.match('.zip')) {
+          r.push(`echo Extracting files ...`);
+          r.push(`powershell -Command "Expand-Archive -LiteralPath '${name}' -DestinationPath '.'"`);
         }
         // move content
         if (opts) {
@@ -71,7 +71,10 @@ module.exports = {
         if (cmd) {
           r.push(cmd);
         }
-        r.push(`powershell -Command "Remove-Item '${name}'"`);
+        if (!keep) {
+          r.push(`echo Deleting '${name}' ...`);
+          r.push(`powershell -Command "Remove-Item '${name}'"`);
+        }
       } else /*if (platform === 'linux') {
         r.push(`wget '${url}'`);
         if (name.match('tar.gz')) {
@@ -91,10 +94,11 @@ module.exports = {
         r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') */ {
         r.push(`wget '${url}'`);
-        r.push(`echo Extracting files ...`);
         if (name.match('tar.gz') || name.match('tgz')) {
+          r.push(`echo Extracting files ...`);
           r.push(`tar -xzf '${name}'`);
-        } else {
+        } else if (name.match('.zip')) {
+          r.push(`echo Extracting files ...`);
           r.push(`unzip '${name}'`);
         }
         // move content
@@ -113,7 +117,13 @@ module.exports = {
             }
           }
         }
-        r.push(`rm -f ${name}`);
+        if (cmd) {
+          r.push(cmd);
+        }
+        if (!keep) {
+          r.push(`echo Deleting '${name}' ...`);
+          r.push(`rm -f ${name}`);
+        }
       }
     }
     return r;
