@@ -15,7 +15,12 @@ Talan CLI (`tln`) is an open-source framework for managing third-party component
   > sudo apt-get install -y nodejs
   ```
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
-* Make sure that `Powershell` script can be executed, [check this link](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) (Windows)
+* Make sure that `Powershell` script can be executed:
+  ```
+  > set-executionpolicy remotesigned
+  or
+  > set-ExecutionPolicy unrestricted
+  ```
 * Install tln-cli 
   ```
   > npm i -g tln-cli
