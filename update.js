@@ -452,6 +452,23 @@ const update = async () => {
         return data.map(v => { return { id: `terragrunt-${v}` } });
       }
     },
+    //
+    // ------------------------------------------------------------------------
+    // Configuration Manager
+    {
+      url: 'https://api.github.com/repos/aerokube/cm/releases', token, path: 'cm', fn: async (response) => {
+        const json = await response.json();
+        if (Array.isArray(json)) {
+          return json.map(v => v.tag_name.toLowerCase()).filter(v => validateVersion(v));
+        }
+        return [];
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `cm-${v}` } });
+      }
+    },
   ];
   //
   try {
