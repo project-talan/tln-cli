@@ -174,3 +174,28 @@ echo Variable from donenv file: ${MY_VAR}
 > tln test 
 Variable from donenv file: MY_VAL
 ```
+
+### Inherits section
+Inherits section defines list of components which are used as "base classes" for current component. All steps are defined inside inherited components can be executed in context of current component.
+```
+module.exports = {
+  options: async (tln, args) => {},
+  env: async (tln, env) => {
+    env.TLN_UID = 'io.project.service.auth';
+    env.TLN_VERSION = '21.6.0';
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => ['docker'],
+  depends: async (tln) => [],
+  steps: async (tln) => [],
+  components: async (tln) => []
+}
+```
+
+```
+> tln docker-build --dry-run --detach
+[/root/test-tln]
+#!/bin/bash -e
+
+docker build -t io.project.service.auth:21.6.0 .
+```
