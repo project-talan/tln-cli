@@ -107,3 +107,32 @@ Environment ci will be used
 > tln test -- --environment dev01
 Environment dev01 will be used
 ```
+### Env section
+Env section allows you to initialize environment variables during tln command execution.
+```
+module.exports = {
+  options: async (tln, args) => {},
+  env: async (tln, env) => {
+    env.TLN_PROJECT_DATE = (new Date()).toDateString("YYYY-MM-DD");
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  steps: async (tln) => [
+    {
+      id: 'test', desc: 'Test tln-cli env feature',
+      builder: async (tln, script) => {
+        script.set([`
+echo Current date: ${script.env.TLN_PROJECT_DATE}
+        `]);
+      }
+    }
+  ],
+  components: async (tln) => []
+}
+```
+
+```
+> tln test
+Current date: Sun Jun 06 2021
+```
