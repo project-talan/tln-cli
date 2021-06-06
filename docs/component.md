@@ -241,11 +241,10 @@ module.exports = {
   depends: async (tln) => [],
   steps: async (tln) => [
     {
-      id: 'say-hi', desc: 'Say Hi',
-      builder: async (tln, script) => {
+      id: 'say-hi', desc: 'Say Hi', builder: async (tln, script) => {
         script.set([`
-echo Hi from first shell command
-echo Hi from second shell command
+echo Hi from first shell command, component home: ${script.env.TLN_COMPONENT_HOME}
+echo Hi from second shell command, component id: ${script.env.TLN_COMPONENT_ID}
         `]);
       }
     }
@@ -256,8 +255,8 @@ echo Hi from second shell command
 
 ```
 > tln say-hi
-Hi from first shell command
-Hi from second shell command
+Hi from first shell command, component home: /root/test-tln
+Hi from second shell command, component id: /
 ```
 
 ### Components section
