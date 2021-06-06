@@ -228,3 +228,44 @@ Default locale: en, platform encoding: UTF-8
 OS name: "linux", version: "4.15.0-143-generic", arch: "amd64", family: "unix"
 go version go1.14.4 linux/amd64
 ```
+
+### Steps section
+Steps section is a list of isolated steps. Every steps is peace of shell/cmd code is dynamically generated during tln command execution.
+```
+module.exports = {
+  options: async (tln, args) => {},
+  env: async (tln, env) => {
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  steps: async (tln) => [
+    {
+      id: 'say-hi', desc: 'Say Hi',
+      builder: async (tln, script) => {
+        script.set([`
+echo Hi from first shell command
+echo Hi from second shell command
+        `]);
+      }
+    }
+  ],
+  components: async (tln) => []
+}
+```
+
+```
+> tln say-hi
+Hi from first shell command
+Hi from second shell command
+```
+
+### Components section
+
+```
+
+```
+
+```
+
+```
