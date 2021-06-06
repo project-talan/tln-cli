@@ -113,7 +113,7 @@ Env section allows you to initialize environment variables during tln command ex
 module.exports = {
   options: async (tln, args) => {},
   env: async (tln, env) => {
-    env.TLN_PROJECT_DATE = (new Date()).toDateString("YYYY-MM-DD");
+    env.TLN_PROJECT_DATE = (new Date()).toISOString();
   },
   dotenvs: async (tln) => [],
   inherits: async (tln) => [],
@@ -134,5 +134,5 @@ echo Current date: ${script.env.TLN_PROJECT_DATE}
 
 ```
 > tln test
-Current date: Sun Jun 06 2021
+Current date: 2021-06-06T19:19:52.190Z
 ```
