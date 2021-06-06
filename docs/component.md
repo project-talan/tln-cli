@@ -260,11 +260,41 @@ Hi from second shell command, component id: /
 ```
 
 ### Components section
+Components section is used to define list of nested "virtual" components
 
+```
+module.exports = {
+  options: async (tln, args) => {},
+  env: async (tln, env) => {
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  steps: async (tln) => [],
+  components: async (tln) => [
+    {
+      id: 'component1',
+      components: async (tln) => [
+        { id: 'component11' },
+        { id: 'component12',
+          components: async (tln) => [
+            { id: 'component121' },
+            { id: 'component122' }
+          ]
+        },
+        { id: 'component13' }
+      ]
+    }
+  ]
+}
 ```
 
 ```
-
-```
-
+> tln ls component1 -d 2
+ component1 *
+ ├ component11 *
+ ├ component12 *
+ │ ├ component121 *
+ │ └ component122 *
+ └ component13 *
 ```
