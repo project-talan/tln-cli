@@ -1,6 +1,6 @@
 # What is Component?
 
-**Components is an element of hierarchical structure which stores information involved in software development.**
+**Components is an element of hierarchical structure which provides configuration information for SDLC.**
 
 * Is Company a Component? - Yes. It explicitly defines username and email for all employees.
 * Is Department a Component? - Yes. It holds all nested projects.
@@ -71,4 +71,39 @@ module.exports = {
   steps: async (tln) => [],
   components: async (tln) => []
 }
+```
+
+### Options section
+Options section gives you an access to the command line parameters. Any parameter after **double dash --** will be parsed and sent to the component's steps to process.
+```
+module.exports = {
+  options: async (tln, args) => {
+    args
+      .prefix('TLN_PROJECT')
+      .option('environment', { describe: 'Environment to use', default: 'ci', type: 'string' });
+  },
+  env: async (tln, env) => {
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  steps: async (tln) => [
+    {
+      id: 'test', desc: 'Test tln-cli options feature',
+      builder: async (tln, script) => {
+        script.set([`
+echo Environment ${script.env.TLN_PROJECT_ENVIRONMENT} will be used
+        `]);
+      }
+    }
+  ],
+  components: async (tln) => []
+}
+```
+
+```
+> tln test
+Environment ci will be used
+> tln test -- --environment dev01
+Environment dev01 will be used
 ```
