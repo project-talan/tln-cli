@@ -144,17 +144,16 @@ Dotenvs section is an array of dontenv files. tln-cli will add parse mechanism b
 module.exports = {
   options: async (tln, args) => {},
   env: async (tln, env) => {
-    env.TLN_PROJECT_DATE = (new Date()).toISOString();
   },
-  dotenvs: async (tln) => [],
+  dotenvs: async (tln) => ['.env'],
   inherits: async (tln) => [],
   depends: async (tln) => [],
   steps: async (tln) => [
     {
-      id: 'test', desc: 'Test tln-cli env feature',
+      id: 'test', desc: 'Test tln-cli dotenvs feature',
       builder: async (tln, script) => {
         script.set([`
-echo Current date: ${script.env.TLN_PROJECT_DATE}
+echo Variable from donenv file: \${MY_VAR}
         `]);
       }
     }
@@ -164,7 +163,14 @@ echo Current date: ${script.env.TLN_PROJECT_DATE}
 ```
 
 ```
-root@devbox:~/test-tln# echo MY_VAR=MY_VAL > .env
-root@devbox:~/test-tln# tln test 
+> tln test --dry-run
+[/root/test-tln]
+#!/bin/bash -e
+if [ -f ".env" ]; then export $(envsubst < ".env" | grep -v ^# | xargs); fi
+
+echo Variable from donenv file: ${MY_VAR}
+
+> echo MY_VAR=MY_VAL > .env
+> tln test 
 Variable from donenv file: MY_VAL
 ```
