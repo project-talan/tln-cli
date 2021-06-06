@@ -203,9 +203,28 @@ docker build -t io.project.service.auth:21.6.0 .
 ### Depends section
 Depends section defines list of components which should be "visible" during tln command execution via environment variables.
 ```
-
+module.exports = {
+  options: async (tln, args) => {},
+  env: async (tln, env) => {
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => ['mvn-3.6.3', 'openjdk-11.0.2', 'go-1.14.4'],
+  steps: async (tln) => [],
+  components: async (tln) => []
+}
 ```
 
 ```
-
+> tln install --depends --detach
+> tln exec -c "java -version && mvn -v && go version" --detach
+openjdk version "11.0.2" 2019-01-15
+OpenJDK Runtime Environment 18.9 (build 11.0.2+9)
+OpenJDK 64-Bit Server VM 18.9 (build 11.0.2+9, mixed mode)
+Apache Maven 3.6.3 (cecedd343002696d0abb50b32b541b8a6ba2883f)
+Maven home: /tmp/tln/maven/mvn-3.6.3
+Java version: 11.0.2, vendor: Oracle Corporation, runtime: /tmp/tln/java/openjdk-11.0.2
+Default locale: en, platform encoding: UTF-8
+OS name: "linux", version: "4.15.0-143-generic", arch: "amd64", family: "unix"
+go version go1.14.4 linux/amd64
 ```
