@@ -199,3 +199,13 @@ module.exports = {
 
 docker build -t io.project.service.auth:21.6.0 .
 ```
+
+### Depends section
+Depends section defines list of components which should be "visible" during tln command execution via environment variables.
+```
+
+```
+
+```
+
+```
