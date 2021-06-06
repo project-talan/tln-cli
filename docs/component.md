@@ -107,6 +107,7 @@ Environment ci will be used
 > tln test -- --environment dev01
 Environment dev01 will be used
 ```
+
 ### Env section
 Env section allows you to initialize environment variables during tln command execution.
 ```
@@ -135,4 +136,35 @@ echo Current date: ${script.env.TLN_PROJECT_DATE}
 ```
 > tln test
 Current date: 2021-06-06T19:19:52.190Z
+```
+
+### Dotenvs section
+Dotenvs section is an array of dontenv files. tln-cli will add parse mechanism before shell script execution, so any variable from the file will be acessible.
+```
+module.exports = {
+  options: async (tln, args) => {},
+  env: async (tln, env) => {
+    env.TLN_PROJECT_DATE = (new Date()).toISOString();
+  },
+  dotenvs: async (tln) => [],
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  steps: async (tln) => [
+    {
+      id: 'test', desc: 'Test tln-cli env feature',
+      builder: async (tln, script) => {
+        script.set([`
+echo Current date: ${script.env.TLN_PROJECT_DATE}
+        `]);
+      }
+    }
+  ],
+  components: async (tln) => []
+}
+```
+
+```
+root@devbox:~/test-tln# echo MY_VAR=MY_VAL > .env
+root@devbox:~/test-tln# tln test 
+Variable from donenv file: MY_VAL
 ```
