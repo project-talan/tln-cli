@@ -485,6 +485,23 @@ const update = async () => {
         return data.map(v => { return { id: `cm-${v}` } });
       }
     },
+    //
+    // ------------------------------------------------------------------------
+    // amazon/aws-cli
+    {
+      url: 'https://api.github.com/repos/aws/aws-cli/tags', token, path: path.join('amazon', 'aws-cli'), fn: async (response) => {
+        const json = await response.json();
+        if (Array.isArray(json)) {
+          return json.map(v => v.name.toLowerCase()).filter(v => validateVersion(v));
+        }
+        return [];
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `aws-cli-${v}` } });
+      }
+    },
   ];
   //
   try {
