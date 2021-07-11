@@ -1,6 +1,6 @@
 {
   "name": "tln-cli",
-  "version": "1.27.0",
+  "version": "1.28.0",
   "description": "Advanced Component Management System",
   "main": "cli.js",
   "scripts": {
@@ -24,7 +24,7 @@
     "url": "git+https://github.com/project-talan/tln-cli.git"
   },
   "author": "Vladyslav Kurmaz",
-  "license": "ISC",
+  "license": "gpl-3.0",
   "bugs": {
     "url": "https://github.com/project-talan/tln-cli/issues"
   },
