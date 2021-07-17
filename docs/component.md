@@ -1,15 +1,16 @@
 # What is Component?
 
-**Components is an element of hierarchical structure which provides configuration information for SDLC.**
+**Components is an element of hierarchical structure which provides any configuration information for SDLC.**
 
 * Is Company a Component? - Yes. It explicitly defines username and email for all employees.
 * Is Department a Component? - Yes. It holds all nested projects.
-* Is Project a Component? - Yes. It may contain repository for mono-repo or list of repositories for milti-repo configuration.
+* Is Project a Component? - Yes. It contains repository for mono-repo or list of repositories for milti-repo configuration.
+* Is services/auth folder inside Git repository is Component? - Yes. It holds source code for one of your microservices.
 * etc.
 
 
 ## Local dev environment
-At file system level, any folder which contains tln configuration file (.tln.conf) will be recognized as a Component and processed by any tln command.
+At file system level, any folder which contains tln configuration file (**.tln.conf**) will be recognized as a **Component** and processed by any tln command.
 You can turn any folder into Component by running next command
 ```
 > mkdir test-tln && cd test-tln
@@ -54,7 +55,7 @@ module.exports = {
   */]
 }
 ```
-Once you become familiar with file format you can generate lightweight **.tln.conf**
+Once you become familiar with file format you can generate lightweight version for **.tln.conf** configuration file
 ```
 > tln config --terse
 ```
