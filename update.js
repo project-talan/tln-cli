@@ -70,7 +70,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Boost
     {
-      url: 'https://dl.bintray.com/boostorg/release/', token: null, path: 'boost', fn: async (response) => {
+      url: 'https://boostorg.jfrog.io/artifactory/main/release/', token: null, path: 'boost', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -502,6 +502,7 @@ const update = async () => {
         return data.map(v => { return { id: `aws-cli-${v}` } });
       }
     },
+    //
   ];
   //
   try {
