@@ -1,0 +1,1 @@
+module.exports = [{"id":"solc-0.8.6"}];
