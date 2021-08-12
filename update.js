@@ -70,7 +70,7 @@ const update = async () => {
     // ------------------------------------------------------------------------
     // Boost
     {
-      url: 'https://dl.bintray.com/boostorg/release/', token: null, path: 'boost', fn: async (response) => {
+      url: 'https://boostorg.jfrog.io/artifactory/main/release/', token: null, path: 'boost', fn: async (response) => {
         const result = []
         const html = await response.text();
         let $ = cheerio.load(html);
@@ -443,6 +443,23 @@ const update = async () => {
     },
     //
     // ------------------------------------------------------------------------
+    // ethereum/solc
+    {
+      url: 'https://api.github.com/repos/ethereum/solidity/releases', token, path: path.join('ethereum', 'solc'), fn: async (response) => {
+        const json = await response.json();
+        if (Array.isArray(json)) {
+          return json.map(v => v.tag_name.substring(1).toLowerCase()).filter(v => validateVersion(v));
+        }
+        return [];
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `solc-${v}` } });
+      }
+    },
+    //
+    // ------------------------------------------------------------------------
     // flutter
     {
       url: 'https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json', token: null, path: 'flutter', fn: async (response) => {
@@ -502,6 +519,7 @@ const update = async () => {
         return data.map(v => { return { id: `aws-cli-${v}` } });
       }
     },
+    //
   ];
   //
   try {
