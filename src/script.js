@@ -48,7 +48,9 @@ class Script {
         fl = body;
       } else if (body instanceof Array) {
         if (save) {
-          fl = path.join(home, `${this.uuid.replace('/', '_')}.${this.ext}`);
+          console.log(this.uuid);
+          fl = path.join(home, `${this.uuid.replace(/\//g, '_')}.${this.ext}`);
+          console.log(fl);
         } else {
           const tmpobj = tmp.fileSync();
           fl = `${tmpobj.name}.${this.ext}`;
