@@ -11,46 +11,36 @@ Upcoming 2.x release will bring one new key feature: SaC - Architecture-as-Code.
 
 ## Prerequisites
 * Install `Nodejs 14.x` or higher (https://nodejs.org)
-  ```
-  > curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh
-  > sudo bash nodesource_setup.sh
-  > sudo apt-get install -y nodejs
-  ```
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
-* Make sure that `Powershell` script can be executed:
+* Make sure that `Powershell` script can be executed (Windows):
   ```
-  > set-executionpolicy remotesigned
+  set-executionpolicy remotesigned
   or
-  > set-ExecutionPolicy unrestricted
+  set-ExecutionPolicy unrestricted
   ```
 * Install tln-cli 
   ```
-  > npm i -g tln-cli
-  > tln --version
+  npm i -g tln-cli && tln --version
   ```
 
 ## Quick start <sub><sup>~3 min</sup></sub>
 * Create folder where all your projects will be located
   * Linux/MacOs
     ```
-    > cd ~
+    cd ~
     ```
   * Windows (you can use any disk, disk d: is used for demonstration purpose)
     ```
-    > d:
-    > cd /
+    d:
+    cd /
     ```
   ```
-  > mkdir projects
-  > cd projects
-  > tln config --terse
+  mkdir projects && cd projects && tln config --terse
   ```
 
 * Create folder for the `hellotalan` project (inside `projects` folder)
   ```
-  > mkdir hellotalan
-  > cd hellotalan
-  > tln config --terse
+  mkdir hellotalan && cd hellotalan && tln config --terse
   ```
 * Edit `.tln.conf` file to get next configuration (you can just copy-paste it)
   ```
@@ -73,11 +63,11 @@ Upcoming 2.x release will bring one new key feature: SaC - Architecture-as-Code.
   ```
 * Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside `projects` folder and `will not affect any other already installed software`.
   ```
-  > tln install --depends
+  tln install --depends
   ```
 * Check version of installed components
   ```
-  > tln versions
+  tln versions
   ```
   ```
   openjdk version "11.0.2" 2019-01-15
