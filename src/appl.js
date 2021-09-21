@@ -31,6 +31,7 @@ class Appl {
     await this.filter.configure();
     this.tln = Object.freeze({
       logger: this.logger,
+      call: (cmd) => this.filter.isWindows()?`call ${cmd}`:cmd,
       isWindows: () => this.filter.isWindows(),
       isLinux: () => this.filter.isLinux(),
       isDarwin: () => this.filter.isDarwin(),
