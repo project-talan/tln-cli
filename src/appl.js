@@ -47,7 +47,7 @@ class Appl {
     //
     let folders = [];
     let detached = false;
-    const tmpPath = path.join(os.tmpdir(), 'tln');
+    const tmpPath = path.join(os.tmpdir(), `tln-${process.env.USER}`);
     // find projects' root and current component
     if (this.detach || this.localRepo) {
       // we are in detached mode
