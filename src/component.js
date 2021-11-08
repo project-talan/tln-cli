@@ -496,9 +496,14 @@ class Component {
     // load from file
     const configFile = utils.getConfigFile(location);
     if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
+      try {
       const d = require(configFile);
       d.source = configFile;
       descriptions.push(d);
+      } catch (e) {
+        this.logger.error(`${configFile} has invalid structure\n`, e.stack);
+        process.exit(1);
+      }
     }
     return descriptions;
   }
