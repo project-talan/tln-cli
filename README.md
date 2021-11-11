@@ -23,7 +23,9 @@ Upcoming 2.x release will bring new key feature: AaC - Architecture-as-Code.
 * Make sure that `Powershell` script can be executed (Windows):
   ```
   set-executionpolicy remotesigned
+  ```
   or
+  ```
   set-ExecutionPolicy unrestricted
   ```
 * Install tln-cli 
