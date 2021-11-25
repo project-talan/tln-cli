@@ -222,17 +222,17 @@ Calbro software development culture also includes recommendation to reuse wide r
   cd calbro-reporting && \
   tln init-repo && \
   tln config --terse && git add . && git commit -m"empty repo" && \
-  tln add-subtree -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && \
-  tln add-subtree -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && \
-  tln add-subtree -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
-  tln add-subtree -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && \
-  tln add-subtree -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
-  tln add-subtree -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && \
-  tln add-subtree -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && \
-  tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && \
-  tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && \
-  tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && \
-  tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && \
+  tln subtree-add -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && \
+  tln subtree-add -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && \
+  tln subtree-add -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
+  tln subtree-add -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && \
+  tln subtree-add -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
+  tln subtree-add -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && \
+  tln subtree-add -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && \
+  tln subtree-add -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && \
+  tln subtree-add -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && \
+  tln subtree-add -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && \
+  tln subtree-add -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && \
   tln config dbs:mobile:qa:services:static --terse && \
   git add . && git commit -m"Initial skeleton" && \
   cd ..
@@ -243,17 +243,17 @@ Calbro software development culture also includes recommendation to reuse wide r
   cd calbro-reporting && ^
   tln init-repo && ^
   tln config --terse && git add . && git commit -m"empty repo" && ^
-  tln add-subtree -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && ^
-  tln add-subtree -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && ^
-  tln add-subtree -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && ^
-  tln add-subtree -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && ^
-  tln add-subtree -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && ^
-  tln add-subtree -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && ^
-  tln add-subtree -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && ^
-  tln add-subtree -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && ^
-  tln add-subtree -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && ^
-  tln add-subtree -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && ^
-  tln add-subtree -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && ^
+  tln subtree-add -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && ^
+  tln subtree-add -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && ^
+  tln subtree-add -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && ^
+  tln subtree-add -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && ^
+  tln subtree-add -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && ^
+  tln subtree-add -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && ^
+  tln subtree-add -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && ^
+  tln subtree-add -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && ^
+  tln subtree-add -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && ^
+  tln subtree-add -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && ^
+  tln subtree-add -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && ^
   tln config dbs:mobile:qa:services:static --terse && ^
   git add . && git commit -m"Initial skeleton" && ^
   cd ..
