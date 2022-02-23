@@ -431,7 +431,19 @@ const update = async () => {
       url: 'https://api.github.com/repos/nomiclabs/hardhat/releases', token, path: path.join('ethereum', 'hardhat'), fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
-          return json.map(v => v.tag_name.substring(14).toLowerCase()).filter(v => validateVersion(v));
+          return json.map(v => {
+            // check new format with @
+            const parts = v.tag_name.split('@');
+            if (parts.length > 1) {
+              return parts[parts.length-1].toLowerCase();
+            }
+            // old format
+            const parts1 = v.tag_name.split('-v');
+            if (parts1.length > 1) {
+              return parts1[parts1.length-1].toLowerCase();
+            }
+            return v.tag_name.substring(1).toLowerCase()
+          }).filter(v => validateVersion(v));
         }
         return [];
       }, options: { page: 0 }, it: (url, options) => {
