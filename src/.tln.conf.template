@@ -13,13 +13,22 @@
     os
     fs
     path
+    script.
+      cmd()
+      if.
+        then.
+          cmd()
+        else.
+          cmd()
 */
 module.exports = {
+  version: '2',
+  tags: async (tln) => [],
   options: async (tln) => {/*
     return {
       prefix: 'TLN_MY_COMPONENT',
       options: [
-        ['port', 'Port to listen', '9080', 'string']
+        { option: 'port', desc: 'Port to listen', type: 'string', default: '9080' } // env.TLN_MY_COMPONENT_PORT
       ]
     };
   */},
@@ -31,39 +40,48 @@ module.exports = {
   inherits: async (tln) => [INHERITS/*'git'*/],
   depends: async (tln) => [DEPENDS/*'openjdk-11.0.2'*/],
   steps: async (tln) => [
-    {
-      id: 'serve',
-      desc: 'Serve service',
-/*
-      stopPropagation: false,
-      upstream: true,
-      downstream: false,
-      failOnStrErr: true,
-*/
-      requires: ['TLN_MY_COMPONENT_PORT'],
-      builder: async (tln) => {/*
-        // 
-        return "serve";
-        //
-        return [
-          `echo Listen on port: ${tln.utils.wrap('TLN_MY_COMPONENT_PORT')}`
-        ];
-        //
-        return tln.script
-          .command('echo Hi')
-          .if()
-            eq(tln.utils.wrap('TLN_MY_COMPONENT_PORT'), '9080')
-          .then()
-            .command()
-            .command()
-          else()
-            .command()
-          .command()
+    'demo': {
+      desc: 'Show service status',
+      propagation: 'no',      // no(default) | up | down
+      failOnStrErr: true,     // true(default) | false
+      builder: async (tln) => ['params', 'filter', 'script']
+    },
+    'params': {
+      require: ['TLN_MY_COMPONENT_PORT'],
+      builder: async (tln) => [
+        `echo Port to listen: ${tln.utils.wrap('TLN_MY_COMPONENT_PORT')}`
+      ]}
+    },
+    'show-status:win32': {
+      builder: async (tln) => [
+        'echo Win32'
+      ]}
+    },
+    'show-status:darwin': {
+      builder: async (tln) => [
+        'echo Darwin'
+      ]}
+    },
+    'show-status:linux': {
+      builder: async (tln) => [
+        'echo Linux'
+      ]}
+    },
+    'script': {
+      builder: async (tln) => 
+        tln.script
+          .cmd('echo Network status')
+          .if.eq(tln.os.platform(), 'win32')
+          .then
+            .cmd('ipconfig')
+          .else
+            .cmd('ifconfig')
+          .cmd('---')
         ;
-    */}
-    }
+      }
+    },
   ],
   components: async (tln) => [/*
-    { id: 'sub-component', tags: async (tln) => [], ... }
+    { id: 'sub-component',  ... }
   */]
 }
