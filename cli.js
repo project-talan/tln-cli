@@ -102,20 +102,6 @@ const argv = require('yargs')
   )
   /**************************************************************************/
   .command(
-    'dotenv [--upstream=<uint>] [--downstream=<uint>] [--input=<string>] [--output=<string>] [--prefix=<string>]', "Generate dotenv file from templates",
-    (yargs) => {
-      yargs
-      .option('i',                { describe: 'Input template name', alias: 'input', default: '.env.template', type: 'string' })
-      .option('o',                { describe: 'Output template name', alias: 'output', default: '.env', type: 'string' })
-      .option('prefix',           { describe: 'Prefix for every environment variable name', default: null, type: 'string' })
-      .option('upstream',         { describe: 'Number of upper layers', default: 0, type: 'number' })
-      .option('downstream',       { describe: 'Number of upper layers', default: 0, type: 'number' });
-    },
-    async (argv) => {
-    }
-  )
-  /**************************************************************************/
-  .command(
     'inspect [components] [-j]', 'Display component(s) internal structure',
     (yargs) => {
       yargs
@@ -191,9 +177,28 @@ const argv = require('yargs')
       console.log();
       console.log(String.raw`  version : ${require('./package.json').version}             `);
       console.log(String.raw`   author : vladislav.kurmaz@gmail.com                       `);
-      console.log(String.raw`     site : http://tln.sh                                    `);
+      console.log(String.raw`     site : https://tln.sh                                    `);
       console.log(String.raw`   github : https://github.com/project-talan/tln-cli.git     `);
       console.log();
     }
   )
   .argv;
+
+
+
+
+/*
+  .command(
+    'dotenv [--upstream=<uint>] [--downstream=<uint>] [--input=<string>] [--output=<string>] [--prefix=<string>]', "Generate dotenv file from templates",
+    (yargs) => {
+      yargs
+      .option('i',                { describe: 'Input template name', alias: 'input', default: '.env.template', type: 'string' })
+      .option('o',                { describe: 'Output template name', alias: 'output', default: '.env', type: 'string' })
+      .option('prefix',           { describe: 'Prefix for every environment variable name', default: null, type: 'string' })
+      .option('upstream',         { describe: 'Number of upper layers', default: 0, type: 'number' })
+      .option('downstream',       { describe: 'Number of upper layers', default: 0, type: 'number' });
+    },
+    async (argv) => {
+    }
+  )
+*/

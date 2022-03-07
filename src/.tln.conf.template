@@ -37,8 +37,9 @@ module.exports = {
     env.PATH = [tln.path.join(env.TLN_COMPONENT_HOME, 'bin'), env.PATH].join(tln.path.delimiter);
   */},
   dotenvs: async (tln) => [/*'.env'*/],
+  files: async (tln) => [/*'version:TLN_VERSION'*/],
   inherits: async (tln) => [INHERITS/*'git'*/],
-  depends: async (tln) => [DEPENDS/*'openjdk-11.0.2'*/],
+  depends: async (tln) => [DEPENDS/*'openjdk-11.0.2:linux'*/],
   steps: async (tln) => [
     'demo': {
       desc: 'Show service status',
