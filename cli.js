@@ -52,52 +52,34 @@ const argv = require('yargs')
   .option('u',                    { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e',                    { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-  .option('d',                    { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
+  .option('a',                    { describe: 'Apply command to all available items', alias: 'all', default: false, type: 'boolean' })
+  .option('depend',               { describe: 'Component to insert into depends list', default: [], type: 'array' })
+  .option('inherit',              { describe: 'Component to insert into inherits list', default: [], type: 'array' })
   .option('fail-on-stderr',       { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
   .option('catalog',              { describe: 'URL to the external repository with components\' description', default: [], type: 'array' })
-  .option('local-repo',           { describe: 'Path where external components will be installed ["tmp" value will instruct to use temp directory]', default: null })
+  .option('detached',             { describe: 'In detached mode current component will be root of hierarchy', default: false, type: 'boolean' })
+  .option('dest-path',            { describe: 'Absolute path where external components will be installed', default: null })
   .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   /**************************************************************************/
   .command(
-    'catalog <command> [name] [src]', 'Manage catalog for components',
+    'catalog <command> [name] [src]', 'Manage catalogs',
     (yargs) => {
       yargs
-      .positional('command',      { describe: 'Command to execute', choices: ['ls', 'add', 'remove', 'update'], default: null, type: 'string' })
+      .positional('command',      { describe: 'Command to execute', choices: ['generate', 'ls', 'add', 'remove', 'update'], default: null, type: 'string' })
       .positional('name',         { describe: 'Catalog name', default: null, type: 'string' })
       .positional('src',          { describe: 'Catalog repository URL', default: null, type: 'string' })
+      .option('terse',            { describe: 'Remove help information from .tln file', default: false, type: 'boolean' })
     },
     async (argv) => {
       const {verbose, localRepo, command, name, src} = argv;
       const appl = await createAppl(verbose, localRepo);
       switch (command) {
-        case "ls": await appl.lsCatalogs(); break;
-        case "add": await appl.addCatalog(name, src); break;
-        case "remove": await appl.removeCatalog(name); break;
-        case "update": await appl.updateCatalog(name); break;
+        case "generate":  await appl.generateCatalog(); break;
+        case "ls":        await appl.lsCatalogs(); break;
+        case "add":       await appl.addCatalog(name, src); break;
+        case "remove":    await appl.removeCatalog(name); break;
+        case "update":    await appl.updateCatalog(name); break;
       }
-    }
-  )
-  /**************************************************************************/
-  .command(
-    'config [components]', 'Manage component configuration',
-    (yargs) => {
-      yargs
-        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('update',         { describe: 'Update catalog inside .tln folder', default: false, type: 'boolean' })
-        .option('terse',          { describe: 'Remove help information from the config', default: false, type: 'boolean' })
-        .option('depend',         { describe: 'Component to insert into depends list', default: [], type: 'array' })
-        .option('inherit',        { describe: 'Component to insert into inherits list', default: [], type: 'array' })
-        .check(({ catalog, update }) => {
-          if ( catalog && update) {
-            throw new Error('catalog and update parameters are conflicting. Please use only one: catalog or update');
-          }
-          return true;
-        })
-    },
-    async (argv) => {
-      const {verbose, localRepo, components, env, update, terse, depend, inherit} = argv;
-      const appl = await createAppl(verbose, localRepo);
-      await appl.config(splitComponents(components), {env: parseEnv(env), update, terse, depend, inherit});
     }
   )
   /**************************************************************************/
@@ -117,7 +99,7 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('a',              { describe: 'Show all components', alias: 'all', default: false, type: 'boolean' })
+        .option('d',              { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
         .option('l',              { describe: 'Limit of children to show', alias: 'limit', default: 5, type: 'number' })
         .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
@@ -183,10 +165,6 @@ const argv = require('yargs')
     }
   )
   .argv;
-
-
-
-
 /*
   .command(
     'dotenv [--upstream=<uint>] [--downstream=<uint>] [--input=<string>] [--output=<string>] [--prefix=<string>]', "Generate dotenv file from templates",
