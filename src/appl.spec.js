@@ -10,9 +10,6 @@ const sinon = require('sinon');
 const mockfs = require('mock-fs');
 
 describe('Application', function() {
-    
-
-  const context = require('./context').create({logger: require('./logger').create(0), os, path, fs, cwd: process.cwd(), home: __dirname});
 
   before(function() {
   });
@@ -28,13 +25,9 @@ describe('Application', function() {
   })
 
   it('can be created', async () => {
-    expect(require('./appl').create(context)).to.be.an('object');
+    expect(require('./appl').create()).to.be.an('object');
   });
 
   it('can be initialized', async () => {
-    const appl = require('./appl').create(context);
-    await appl.init();
-    console.log(appl.cwd);
-    console.log(appl.home);
   });
 });

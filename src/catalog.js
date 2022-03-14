@@ -1,19 +1,16 @@
 'use strict';
 
-const entity = require('./entity');
-
-class catalog extends entity {
+class catalog {
 
   /*
   *
   * params:
   */
-  constructor(context) {
-    super(context);
+  constructor() {
   }
 
 }
 
-module.exports.create = (context) => {
-  return new catalog(context);
+module.exports.create = () => {
+  return new catalog();
 }

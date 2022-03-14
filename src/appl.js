@@ -1,29 +1,54 @@
 'use strict';
 
-const entity = require('./entity');
-const catalog = require('./catalog');
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 
-class appl extends entity {
+const utils = require('./utils');
 
-  constructor(context) {
-    super(context);
+
+class appl {
+
+  constructor(options) {
+
+    this.options = {...options, stdCatalog: path.join(options.home, 'components')};
+    this.logger = require('./logger').create(this.options.verbose);
+    this.tln = Object.freeze({
+      logger: this.logger,
+      os,
+      path,
+      fs,
+      utils,
+    });
+
+    this.env = {...process.env};
+    // workaround for windows Path definition
+    if (this.env['Path']) {
+      const p = this.env['Path'];
+      delete this.env['Path'];
+      this.env['PATH'] = p;
+    }
     //
-    this.path2Catalogs = this.path.join(this.os.homedir(), '.talan', 'cli');
-    this.listOfCatalogs = this.path.join(this.path2Catalogs, 'catalogs.json');
-    this.catalogs = [];
-    //
-    this.logger.info('operating system: ', os.type(), os.platform(), os.release());
-    this.logger.info(`cwd: ${this.cwd}`);
-    this.logger.info('home:', this.home);
-    this.logger.info(`cli home: ${this.cliHome}`);
-    this.logger.info(`local repo: ${this.localRepo}`);
-    this.logger.info('folders:', folders);
-    this.logger.info('mode:', detached ? 'detached' : 'normal');
-
+    this.logger.info('operating system: ', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
+    this.logger.info(`cwd: ${this.options.cwd}`);
+    this.logger.info('home:', this.options.home);
+    this.logger.info(`stdCatalog: ${this.options.stdCatalog}`);
+    this.logger.info('mode:', this.options.detached ? 'detached' : 'normal');
+    this.logger.info(`destPath: ${this.options.destPath}`);
   }
 
-  async init() {
-    //
+  splitComponents(components) {
+    return components?components.split(':'):[];
+  }
+
+  parseEnv(env) {
+    const obj = {};
+      env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
+    return obj;
+  }
+
+  async init(params) {
+    /*/
     // load catalogs or create new one with default item
     const context = this.getContext('logger', 'os', 'path', 'fs');
     if (!this.fs.existsSync(this.listOfCatalogs)) {
@@ -44,29 +69,27 @@ class appl extends entity {
     }
     //
     // find root component
-    //
+    /*/
     return this;
   }
 
-  async saveCatalogs() {
-    const catalogs = [];
-    this.fs.mkdirSync(this.path2Catalogs, {recursive: true});
-    for (let catalog of this.catalogs) {
-      catalogs.push(catalog.getContext('name', 'src', 'home'));
-    }
-    this.fs.writeFileSync(this.listOfCatalogs, JSON.stringify(catalogs));
+  async generateCatalog(terse) {
   }
 
   async lsCatalogs() {
+    /*
     const padC1 = 18;const padC2 = 48;
     this.logger.con('Name'.padEnd(padC1), 'Source'.padEnd(padC2), 'Home');
     this.catalogs.forEach(catalog => this.logger.con(catalog.name.padEnd(padC1), ((catalog.src)?catalog.src:'-').padEnd(padC2), catalog.home));
+    */
   }
 
-  async addCatalog(name, src, home) {
+  async addCatalog(name, src) {
+    /*
     const context = this.getContext('logger', 'os', 'path', 'fs');
     this.catalogs.push(catalog.create(context.duplicate().add({name, src, home: this.path.join(this.path2Catalogs, name)})));
     await this.saveCatalogs();
+    */
   }
 
   async removeCatalog(name) {
@@ -75,12 +98,11 @@ class appl extends entity {
   async updateCatalog(name) {
   }
 
-  async config(components, options) {
-    console.log(options);
+  async inspect(steps, environment, graph, json) {
   }
 
 }
 
-module.exports.create = (context) => {
-  return new appl(context);
+module.exports.create = (options) => {
+  return new appl(options);
 }

@@ -7,35 +7,9 @@ const path = require('path');
 const fs = require('fs');
 const findUp = require('find-up')
 
-// workaround for windows Path definition
-if (process.env['Path']) {
-  const p = process.env['Path'];
-  delete process.env['Path'];
-  process.env['PATH'] = p;
+const createAppl = async(options, params) => {
+  return await (require('./src/appl').create({...options, cwd: process.cwd(), home: __dirname }).init(params));
 }
-
-let logger = null;
-const createAppl = async(verbose, localRepo) => {
-  logger = require('./src/logger').create(verbose);
-  return await (require('./src/appl').create(require('./src/context').create(
-    { logger,
-      os,
-      path,
-      fs,
-      cwd: process.cwd(),
-      home: __dirname,
-      localRepo
-    }))).init();
-}
-const splitComponents = (components) => {
-  return components?components.split(':'):[];
-}
-const parseEnv = (env) => {
-  const obj = {};
-  env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
-  return obj;
-}
-
 
 // use local config file
 const configPath = findUp.sync(['.tlnrc'])
@@ -53,13 +27,13 @@ const argv = require('yargs')
   .option('e',                    { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('a',                    { describe: 'Apply command to all available items', alias: 'all', default: false, type: 'boolean' })
+  .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   .option('depend',               { describe: 'Component to insert into depends list', default: [], type: 'array' })
   .option('inherit',              { describe: 'Component to insert into inherits list', default: [], type: 'array' })
   .option('fail-on-stderr',       { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
-  .option('catalog',              { describe: 'URL to the external repository with components\' description', default: [], type: 'array' })
+  .option('catalog',              { describe: 'Path to the catalog of components', default: [], type: 'array' })
   .option('detached',             { describe: 'In detached mode current component will be root of hierarchy', default: false, type: 'boolean' })
   .option('dest-path',            { describe: 'Absolute path where external components will be installed', default: null })
-  .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   /**************************************************************************/
   .command(
     'catalog <command> [name] [src]', 'Manage catalogs',
@@ -71,10 +45,11 @@ const argv = require('yargs')
       .option('terse',            { describe: 'Remove help information from .tln file', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, localRepo, command, name, src} = argv;
-      const appl = await createAppl(verbose, localRepo);
+      const {verbose, detached, destPath} = argv;
+      const {command, name, src, terse} = argv;
+      const appl = await createAppl({verbose, detached, destPath});
       switch (command) {
-        case "generate":  await appl.generateCatalog(); break;
+        case "generate":  await appl.generateCatalog(terse); break;
         case "ls":        await appl.lsCatalogs(); break;
         case "add":       await appl.addCatalog(name, src); break;
         case "remove":    await appl.removeCatalog(name); break;
@@ -88,9 +63,16 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .option('steps',          { describe: 'Show available steps for component', default: true, type: 'boolean' })
+        .option('environment',    { describe: 'Show execution environment for component', default: false, type: 'boolean' })
+        .option('graph',          { describe: 'Show hierarchy graphs for component', default: false, type: 'boolean' })
         .option('j',              { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
+      const {verbose, detached, destPath} = argv;
+      const {steps, environment, graph, json} = argv;
+      const appl = await createAppl({verbose, detached, destPath});
+      await appl.inspect(steps, environment, graph, json);
     }
   )
   /**************************************************************************/
@@ -135,7 +117,7 @@ const argv = require('yargs')
         .positional('steps',      { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
         .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
         .option('parent-first',   { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
-        .option('s',              { describe: 'generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
+        .option('s',              { describe: 'Generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
         .option('depends',        { describe: 'Execute steps for all components from depends list too', default: false, type: 'boolean' })
         .demandOption(['steps'], 'Please provide steps(s) to run')
     },

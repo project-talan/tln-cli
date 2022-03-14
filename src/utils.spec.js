@@ -4,9 +4,7 @@ const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
 
-describe('Catalog', function() {
-
-  const logger = require('./logger').create(0);
+describe('Utils', function() {
 
   before(function() {
   });
@@ -20,7 +18,4 @@ describe('Catalog', function() {
   afterEach(function () {
   })
 
-  it('can be created', function() {
-    expect(require('./catalog').create()).to.be.an('object');
-  });
 });
