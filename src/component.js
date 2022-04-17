@@ -65,7 +65,7 @@ class Component {
       if (fs.existsSync(f)) {
         if (update) {
           try {
-            this.logger.con(execSync(`cd ${f} && git pull origin master`).toString());
+            this.logger.con(execSync(`cd ${f} && git pull origin`).toString());
           } catch (err) {
             // this.logger.error(err.message);
           }
