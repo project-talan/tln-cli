@@ -580,6 +580,25 @@ const update = async () => {
       }                                      
     },
     //
+    // ------------------------------------------------------------------------
+    // gcloud SDK
+    {
+      url: 'https://cloud.google.com/sdk/docs/release-notes', token: null, path: path.join('google', 'gcloud'), fn: async (response) => {
+        const result = []
+        const html = await response.text();
+        let $ = cheerio.load(html);
+        const items = [];
+        $("div.devsite-article-body > h2").each(function (i, e) {
+          let version = $(this).attr('data-text').split(' ')[0];
+          
+          if (validateVersion(version)) {
+            result.push({ id: `${version}` });
+          }
+        });
+        return result.sort((l, r) => l.id.attr > r.id.attr ? 1 : -1).reverse().map(v => { return { id: `gcloud-${v.id}` } });
+      }
+    },
+    //
   ];
   //
   try {
