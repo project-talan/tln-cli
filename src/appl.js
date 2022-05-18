@@ -12,6 +12,7 @@ class appl {
   constructor(options) {
 
     this.options = {...options, stdCatalog: path.join(options.home, 'components')};
+    console.log(this.options.verbose);
     this.logger = require('./logger').create(this.options.verbose);
     this.tln = Object.freeze({
       logger: this.logger,
@@ -35,6 +36,8 @@ class appl {
     this.logger.info(`stdCatalog: ${this.options.stdCatalog}`);
     this.logger.info('mode:', this.options.detached ? 'detached' : 'normal');
     this.logger.info(`destPath: ${this.options.destPath}`);
+    this.logger.debug('debug');
+    this.logger.trace('trace');
   }
 
   splitComponents(components) {
@@ -73,7 +76,7 @@ class appl {
     return this;
   }
 
-  async generateCatalog(terse) {
+  async createCatalog(brief) {
   }
 
   async lsCatalogs() {
@@ -90,9 +93,6 @@ class appl {
     this.catalogs.push(catalog.create(context.duplicate().add({name, src, home: this.path.join(this.path2Catalogs, name)})));
     await this.saveCatalogs();
     */
-  }
-
-  async removeCatalog(name) {
   }
 
   async updateCatalog(name) {

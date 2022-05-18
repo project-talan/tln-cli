@@ -40,39 +40,42 @@ module.exports = {
   files: async (tln) => [/*'version:TLN_VERSION'*/],
   inherits: async (tln) => [INHERITS/*'git'*/],
   depends: async (tln) => [DEPENDS/*'openjdk-11.0.2:linux'*/],
-  steps: async (tln) => [
+  commands: async (tln) => [
     'demo': {
       desc: 'Show service status',
       propagation: 'no',      // no(default) | up | down
-      failOnStrErr: true,     // true(default) | false
-      builder: async (tln) => ['params', 'filter', 'script']
+      continueOnStderr: true, // false(default) | true
+      builder: async (tln, env) => ['params', 'filter', 'script']
     },
     'params': {
       require: ['TLN_MY_COMPONENT_PORT'],
-      builder: async (tln) => [
+      builder: async (tln, env) => [
         `echo Port to listen: ${tln.utils.wrap('TLN_MY_COMPONENT_PORT')}`
       ]}
     },
-    'show-status:win32': {
-      builder: async (tln) => [
+    'show-status': {
+      filter: 'win32',
+      builder: async (tln, env) => [
         'echo Win32'
       ]}
     },
-    'show-status:darwin': {
-      builder: async (tln) => [
+    'show-status': {
+      filter: 'darwin',
+      builder: async (tln, env) => [
         'echo Darwin'
       ]}
     },
-    'show-status:linux': {
-      builder: async (tln) => [
+    'show-status': {
+      filter: 'linux',
+      builder: async (tln, env) => [
         'echo Linux'
       ]}
     },
     'script': {
-      builder: async (tln) => 
+      builder: async (tln, env) =>
         tln.script
           .cmd('echo Network status')
-          .if.eq(tln.os.platform(), 'win32')
+          .if.eq(tln.os.isWindows(), 'true')
           .then
             .cmd('ipconfig')
           .else

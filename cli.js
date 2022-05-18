@@ -18,11 +18,14 @@ const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 const argv = require('yargs')
   .version()
   .config(config)
-  .usage('Component management system\nUsage:\n $0 <step[:step[...]]> [component[:component[:...]]] [options] -- [options]')
+  .usage('Component management system\nUsage:\n $0 <command[:command[...]]> [component[:component[:...]]] [options] -- [command-specific-options]')
   .help('help').alias('help', 'h')
   .option('verbose',              { describe: 'Output details mode', alias: 'v', count: true, default: 0 })
+  .option('detached',             { describe: 'In detached mode current component will be a root components of hierarchy', default: false, type: 'boolean' })
+  .option('dest-path',            { describe: 'Absolute path where components from catalogs will be installed', default: null })
   .option('p',                    { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
   .option('r',                    { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
+  .option('parent-first',         { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
   .option('u',                    { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
   .option('e',                    { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
   .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
@@ -30,47 +33,21 @@ const argv = require('yargs')
   .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   .option('depend',               { describe: 'Component to insert into depends list', default: [], type: 'array' })
   .option('inherit',              { describe: 'Component to insert into inherits list', default: [], type: 'array' })
-  .option('fail-on-stderr',       { describe: 'Stop execution when script returns an error', default: true, type: 'boolean' })
-  .option('catalog',              { describe: 'Path to the catalog of components', default: [], type: 'array' })
-  .option('detached',             { describe: 'In detached mode current component will be root of hierarchy', default: false, type: 'boolean' })
-  .option('dest-path',            { describe: 'Absolute path where external components will be installed', default: null })
-  /**************************************************************************/
-  .command(
-    'catalog <command> [name] [src]', 'Manage catalogs',
-    (yargs) => {
-      yargs
-      .positional('command',      { describe: 'Command to execute', choices: ['generate', 'ls', 'add', 'remove', 'update'], default: null, type: 'string' })
-      .positional('name',         { describe: 'Catalog name', default: null, type: 'string' })
-      .positional('src',          { describe: 'Catalog repository URL', default: null, type: 'string' })
-      .option('terse',            { describe: 'Remove help information from .tln file', default: false, type: 'boolean' })
-    },
-    async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const {command, name, src, terse} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
-      switch (command) {
-        case "generate":  await appl.generateCatalog(terse); break;
-        case "ls":        await appl.lsCatalogs(); break;
-        case "add":       await appl.addCatalog(name, src); break;
-        case "remove":    await appl.removeCatalog(name); break;
-        case "update":    await appl.updateCatalog(name); break;
-      }
-    }
-  )
+  .option('continue-on-stderr',   { describe: 'Continue execution even when script returns an error', default: false, type: 'boolean' })
   /**************************************************************************/
   .command(
     'inspect [components] [-j]', 'Display component(s) internal structure',
     (yargs) => {
       yargs
         .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('steps',          { describe: 'Show available steps for component', default: true, type: 'boolean' })
+        .option('commands',       { describe: 'Show available commands for component', default: true, type: 'boolean' })
         .option('environment',    { describe: 'Show execution environment for component', default: false, type: 'boolean' })
         .option('graph',          { describe: 'Show hierarchy graphs for component', default: false, type: 'boolean' })
         .option('j',              { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
       const {verbose, detached, destPath} = argv;
-      const {steps, environment, graph, json} = argv;
+      const {commands, environment, graph, json} = argv;
       const appl = await createAppl({verbose, detached, destPath});
       await appl.inspect(steps, environment, graph, json);
     }
@@ -95,7 +72,6 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('parent-first',   { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
         .option('c',              { describe: 'Shell command to execute', alias: 'command', type: 'string' })
         .option('i',              { describe: 'Script name to execute', alias: 'input', type: 'string' })
         .conflicts('c', 'i')
@@ -111,17 +87,47 @@ const argv = require('yargs')
   )
   /**************************************************************************/
   .command(
-    ['$0 <steps> [components] [-r] [-p] [-s] [-u] [--depends]'], 'Execute set of steps over a set of components',
+    ['$0 <commands> [components] [-r] [-p] [-s] [-u] [--depends]'], 'Execute set of commands over a set of components',
     (yargs) => {
       yargs
-        .positional('steps',      { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
-        .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .positional('commands',   { describe: 'delimited by colon commands, i.e build:test', type: 'string' })
+        .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
         .option('parent-first',   { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
-        .option('s',              { describe: 'Generate and save scripts inside component folder, otherwise temp folder will be used', alias: 'save', default: false, type: 'boolean' })
-        .option('depends',        { describe: 'Execute steps for all components from depends list too', default: false, type: 'boolean' })
-        .demandOption(['steps'], 'Please provide steps(s) to run')
+        .option('save',           { describe: 'Generate and save scripts inside component folder, otherwise temp folder will be used', default: false, type: 'boolean' })
+        .option('catalog',        { describe: 'Execute catalog related commands: create | add | update | ls', default: false, type: 'boolean' })
+        .option('name',           { describe: 'Catalog name', default: null, type: 'string' })
+        .option('src',            { describe: 'Catalog repository URL', default: null, type: 'string' })
+        .option('brief',          { describe: 'Remove help information from .tln catalog file', default: false, type: 'boolean' })
+        .option('depends',        { describe: 'Execute commands for all components from depends list too', default: false, type: 'boolean' })
+        .check(({ catalog, depends }) => {
+          if (depends && catalog) {
+            throw new Error('Arguments depends and catalog are mutually exclusive');
+          }
+          return true;
+        })
+        .demandOption(['commands'], 'Please provide command(s) to execute')
     },
     async (argv) => {
+      const {verbose, detached, destPath} = argv;
+      const {commands} = argv;
+      const appl = await createAppl({verbose, detached, destPath});
+      //
+      const {depends, catalog} = argv;
+      if (catalog) {
+        const {name, src, brief} = argv;
+        switch (commands) {
+          case "create":    await appl.createCatalog(brief); break;
+          case "ls":        await appl.lsCatalogs(); break;
+          case "add":       await appl.addCatalog(name, src); break;
+          case "update":    await appl.updateCatalog(name); break;
+          default: appl.logger.error(`'${commands}' was not recognised, available commands are: 'create | add | update | ls'`); break;
+        }
+      } else {
+        const {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr} = argv;
+
+      }
+
+      console.log('execute');
     }
   )
   /**************************************************************************/
