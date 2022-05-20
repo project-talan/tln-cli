@@ -22,7 +22,6 @@ const argv = require('yargs')
   .help('help').alias('help', 'h')
   .option('verbose',              { describe: 'Output details mode', alias: 'v', count: true, default: 0 })
   .option('detached',             { describe: 'In detached mode current component will be a root components of hierarchy', default: false, type: 'boolean' })
-  .option('dest-path',            { describe: 'Absolute path where components from catalogs will be installed', default: null })
   .option('p',                    { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
   .option('r',                    { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('parent-first',         { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
@@ -39,7 +38,7 @@ const argv = require('yargs')
     'inspect [components] [-j]', 'Display component(s) internal structure',
     (yargs) => {
       yargs
-        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
         .option('commands',       { describe: 'Show available commands for component', default: true, type: 'boolean' })
         .option('environment',    { describe: 'Show execution environment for component', default: false, type: 'boolean' })
         .option('graph',          { describe: 'Show hierarchy graphs for component', default: false, type: 'boolean' })
@@ -47,9 +46,10 @@ const argv = require('yargs')
     },
     async (argv) => {
       const {verbose, detached, destPath} = argv;
-      const {commands, environment, graph, json} = argv;
       const appl = await createAppl({verbose, detached, destPath});
-      await appl.inspect(steps, environment, graph, json);
+      //
+      const {components, commands, environment, graph, json} = argv;
+      await appl.inspect(components, {commands, environment, graph, json});
     }
   )
   /**************************************************************************/
@@ -57,32 +57,36 @@ const argv = require('yargs')
     'ls [components] [-d depth] [-l] [--parents] [--installed-only]', 'Display components hierarchy',
     (yargs) => {
       yargs
-        .positional('components', { describe: 'Delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
+        .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
         .option('d',              { describe: 'Max depth level', alias: 'depth', default: 1, type: 'number' })
         .option('l',              { describe: 'Limit of children to show', alias: 'limit', default: 5, type: 'number' })
         .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
     },
     async (argv) => {
+      const {verbose, detached, destPath} = argv;
+      const appl = await createAppl({verbose, detached, destPath});
+      //
+      const {components, depth, limit, parents, installedOnly} = argv;
+      await appl.ls(components, {depth, limit, parents, installedOnly});
     }
   )
   /**************************************************************************/
+  // #233
   .command(
-    'exec [components] [-r] [-p] [-c] [-i]', 'Execute specified command or script',
+    'get-hierarchy [components] [-d depth] [--parents]', 'Generate onboarding script to configure local dev environment',
     (yargs) => {
       yargs
-        .positional('components', { describe: 'delimited by colon components, i.e. maven:boost:bootstrap', default: '', type: 'string' })
-        .option('c',              { describe: 'Shell command to execute', alias: 'command', type: 'string' })
-        .option('i',              { describe: 'Script name to execute', alias: 'input', type: 'string' })
-        .conflicts('c', 'i')
-        .check(({ command, input }) => {
-          if (!(command || input)) {
-            throw new Error('Command or input option is required');
-          }
-          return true;
-        })
+        .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
+        .option('d',              { describe: 'Max depth level (-1 scan whole hierarchy)', alias: 'depth', default: 1, type: 'number' })
+        .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
     },
     async (argv) => {
+      const {verbose, detached, destPath} = argv;
+      const appl = await createAppl({verbose, detached, destPath});
+      //
+      const {components, depth, parents} = argv;
+      await appl.getHierarchy(components, {depth, parents});
     }
   )
   /**************************************************************************/
@@ -105,14 +109,21 @@ const argv = require('yargs')
           }
           return true;
         })
+        .option('c',              { describe: 'Input will be interpreted as explicit shell command', alias: 'command', default: false, type: 'boolean' })
+        .option('f',              { describe: 'Script name to execute', alias: 'file', default: false, type: 'boolean' })
+        .check(({ command, file }) => {
+          if (command && file) {
+            throw new Error('Arguments command and file are mutually exclusive');
+          }
+          return true;
+        })
         .demandOption(['commands'], 'Please provide command(s) to execute')
     },
     async (argv) => {
       const {verbose, detached, destPath} = argv;
-      const {commands} = argv;
       const appl = await createAppl({verbose, detached, destPath});
       //
-      const {depends, catalog} = argv;
+      const {commands, depends, catalog} = argv;
       if (catalog) {
         const {name, src, brief} = argv;
         switch (commands) {
@@ -123,11 +134,10 @@ const argv = require('yargs')
           default: appl.logger.error(`'${commands}' was not recognised, available commands are: 'create | add | update | ls'`); break;
         }
       } else {
-        const {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr} = argv;
-
+        const {components, parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr} = argv;
+        const {command, file} = argv;
+        await appl.run(commands, components, {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file);
       }
-
-      console.log('execute');
     }
   )
   /**************************************************************************/

@@ -25,7 +25,7 @@ describe('Application', function() {
   })
 
   it('can be created', async () => {
-    expect(require('./appl').create()).to.be.an('object');
+    expect(require('./appl').create({verbose: 0, home: __dirname})).to.be.an('object');
   });
 
   it('can be initialized', async () => {

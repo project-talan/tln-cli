@@ -23,6 +23,7 @@
 */
 module.exports = {
   version: '2',
+  /*detached: true, // false(defaut)*/
   tags: async (tln) => [],
   options: async (tln) => {/*
     return {
@@ -39,7 +40,7 @@ module.exports = {
   dotenvs: async (tln) => [/*'.env'*/],
   files: async (tln) => [/*'version:TLN_VERSION'*/],
   inherits: async (tln) => [INHERITS/*'git'*/],
-  depends: async (tln) => [DEPENDS/*'openjdk-11.0.2:linux'*/],
+  depends: async (tln) => [DEPENDS/*'openjdk-11.0.2', {id:'dotnet-sdk-3.1.410', filter:'win32'}*/],
   commands: async (tln) => [
     'demo': {
       desc: 'Show service status',
@@ -53,29 +54,25 @@ module.exports = {
         `echo Port to listen: ${tln.utils.wrap('TLN_MY_COMPONENT_PORT')}`
       ]}
     },
-    'show-status': {
-      filter: 'win32',
-      builder: async (tln, env) => [
-        'echo Win32'
-      ]}
-    },
-    'show-status': {
-      filter: 'darwin',
-      builder: async (tln, env) => [
-        'echo Darwin'
-      ]}
-    },
-    'show-status': {
-      filter: 'linux',
-      builder: async (tln, env) => [
-        'echo Linux'
-      ]}
-    },
+    'show-status': [
+      { filter: 'win32',
+        builder: async (tln, env) => [
+          'echo Win32'
+        ]}},
+      { filter: 'darwin',
+        builder: async (tln, env) => [
+          'echo Darwin'
+        ]}},
+      { filter: 'linux',
+        builder: async (tln, env) => [
+          'echo Linux'
+        ]}}
+    ],
     'script': {
       builder: async (tln, env) =>
         tln.script
           .cmd('echo Network status')
-          .if.eq(tln.os.isWindows(), 'true')
+          .if(tln.os.isWindows())
           .then
             .cmd('ipconfig')
           .else

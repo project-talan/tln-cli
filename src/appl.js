@@ -10,9 +10,7 @@ const utils = require('./utils');
 class appl {
 
   constructor(options) {
-
     this.options = {...options, stdCatalog: path.join(options.home, 'components')};
-    console.log(this.options.verbose);
     this.logger = require('./logger').create(this.options.verbose);
     this.tln = Object.freeze({
       logger: this.logger,
@@ -76,6 +74,12 @@ class appl {
     return this;
   }
 
+  async inspect(components, {commands, environment, graph, json}) {
+  }
+
+  async ls(components, {depth, limit, parents, installedOnly}) {
+  }
+
   async createCatalog(brief) {
   }
 
@@ -98,7 +102,18 @@ class appl {
   async updateCatalog(name) {
   }
 
-  async inspect(steps, environment, graph, json) {
+  async getHierarchy(components, {depth, parents}) {
+  }
+
+  async run(commands, components, {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file){
+    if (command) {
+      // interpret commands as explicit shell script
+    } else if (file) {
+      // interpred commands as script file name
+    } else {
+      // file commands inside component's descriptions
+    }
+    // run commands
   }
 
 }
