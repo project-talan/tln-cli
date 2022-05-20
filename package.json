@@ -1,10 +1,10 @@
 {
   "name": "tln-cli",
-  "version": "1.14.2",
+  "version": "2.0.0",
   "description": "Advanced Component Management System",
   "main": "cli.js",
   "scripts": {
-    "test": "nyc --reporter=text --reporter=lcov mocha **/*spec.js",
+    "test": "nyc --reporter=text --reporter=lcov mocha src/*spec.js",
     "update": "node update.js"
   },
   "nyc": {
@@ -13,7 +13,8 @@
       "src/**/*.js"
     ],
     "exclude": [
-      "**/*.spec.js"
+      "**/*.spec.js",
+      "src/logger.js"
     ]
   },
   "bin": {
@@ -30,14 +31,14 @@
   },
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.3",
+    "cheerio": "^1.0.0-rc.10",
     "compare-versions": "^3.6.0",
     "dotenv": "^8.2.0",
     "empty-dir": "^2.0.0",
     "find-up": "^4.1.0",
     "getos": "^3.2.0",
-    "log4js": "^6.1.2",
-    "node-fetch": "^2.6.0",
+    "log4js": "^6.4.2",
+    "node-fetch": "^2.6.7",
     "tmp": "^0.2.1",
     "yaml": "^1.8.3",
     "yargs": "^15.3.1"
@@ -45,8 +46,8 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "json-fn": "^1.1.1",
-    "mocha": "^8.1.1",
-    "mock-fs": "^4.12.0",
+    "mocha": "^9.2.1",
+    "mock-fs": "^4.13.0",
     "nyc": "^15.0.0",
     "sinon": "^9.0.0"
   }

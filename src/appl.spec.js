@@ -1,10 +1,15 @@
 'use strict';
 
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+
 const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
+const mockfs = require('mock-fs');
 
-describe('application', function() {
+describe('Application', function() {
 
   before(function() {
   });
@@ -16,9 +21,13 @@ describe('application', function() {
   })
 
   afterEach(function () {
+    mockfs.restore();
   })
 
-  it.skip('Application can be created', function() {
-//    expect(require('./appl').create(logger.create(0), process.cwd(), process.cwd(), null)).to.be.an('object');
+  it('can be created', async () => {
+    expect(require('./appl').create({verbose: 0, home: __dirname})).to.be.an('object');
+  });
+
+  it('can be initialized', async () => {
   });
 });

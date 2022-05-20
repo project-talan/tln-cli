@@ -1,168 +1,123 @@
 'use strict';
 
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 
-const logger = require('./logger');
-const filterFactory = require('./filter');
 const utils = require('./utils');
 
-class Appl {
 
-  /*
-  *
-  * params:
-  */
-  constructor(verbose, cwd, cliHome, detach, localRepo) {
-    this.logger = logger.create(verbose);
-    this.cwd = cwd;
-    this.cliHome = cliHome;
-    this.detach = detach;
-    this.localRepo = localRepo;
-    this.home = this.cwd;
-    this.filter = filterFactory.create(this.logger);
-    this.tln = {};
+class appl {
 
-  }
-
-  //
-  async init() {
-    await this.filter.configure();
+  constructor(options) {
+    this.options = {...options, stdCatalog: path.join(options.home, 'components')};
+    this.logger = require('./logger').create(this.options.verbose);
     this.tln = Object.freeze({
       logger: this.logger,
-      isWindows: () => this.filter.isWindows(),
-      isLinux: () => this.filter.isLinux(),
-      isDarwin: () => this.filter.isDarwin(),
-      getOsInfo: () => this.filter.getOsInfo(),
-      unpackId: (id) => utils.unpackId(id),
-      copyTemplate: (tln, script, src, dest, tail = []) => utils.copyTemplate(tln, script, src, dest, tail),
-      canInstallComponent: (tln, id, home) => utils.canInstallComponent(tln, id, home),
-      getDownloadScriptById: (tln, id, distrs) => utils.getDownloadScriptById(tln, id, distrs),
-      getDownloadScript: (tln, dist) => utils.getDownloadScript(tln, dist)
-    })
+      os,
+      path,
+      fs,
+      utils,
+    });
 
+    this.env = {...process.env};
+    // workaround for windows Path definition
+    if (this.env['Path']) {
+      const p = this.env['Path'];
+      delete this.env['Path'];
+      this.env['PATH'] = p;
+    }
     //
-    let folders = [];
-    let detached = false;
-    const tmpPath = path.join(os.tmpdir(), 'tln');
-    // find projects' root and current component
-    if (this.detach || this.localRepo) {
-      // we are in detached mode
-      this.localRepo = this.localRepo || tmpPath;
-      detached = true;
+    this.logger.info('operating system: ', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
+    this.logger.info(`cwd: ${this.options.cwd}`);
+    this.logger.info('home:', this.options.home);
+    this.logger.info(`stdCatalog: ${this.options.stdCatalog}`);
+    this.logger.info('mode:', this.options.detached ? 'detached' : 'normal');
+    this.logger.info(`destPath: ${this.options.destPath}`);
+    this.logger.debug('debug');
+    this.logger.trace('trace');
+  }
+
+  splitComponents(components) {
+    return components?components.split(':'):[];
+  }
+
+  parseEnv(env) {
+    const obj = {};
+      env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
+    return obj;
+  }
+
+  async init(params) {
+    /*/
+    // load catalogs or create new one with default item
+    const context = this.getContext('logger', 'os', 'path', 'fs');
+    if (!this.fs.existsSync(this.listOfCatalogs)) {
+      // create file with default catalog
+      this.catalogs.push(catalog.create(context.duplicate().add({name: 'default', src: null, home: this.path.join(this.home, 'components')})));
+      await this.saveCatalogs();
     } else {
-      // find topmost level folder with with tln descs
-      let p = this.home;
-      let noConfig = !utils.isConfigPresent(p);
-      while (!this.isRootPath(p)) {
-        p = path.dirname(p);
-        if (utils.isConfigPresent(p)) {
-          this.home = p;
-          noConfig = false;
+      //
+      try {
+        const catalogs = JSON.parse(this.fs.readFileSync(this.listOfCatalogs));
+        for(const c of catalogs) {
+          this.catalogs.push(catalog.create(context.duplicate().add(c)));
         }
-      }
-      //
-      // build chain of components from projects home to the current folder
-      const rel = path.relative(this.home, this.cwd);
-      if (rel) {
-        folders = rel.split(path.sep);
-      }
-      //
-      // shared components location
-      if (this.isRootPath(this.cwd) || noConfig) {
-        this.localRepo = tmpPath;
-        detached = true;
-      } else {
-        // at project's root level
-        this.localRepo = this.home;
-      }
-    }
-    fs.mkdirSync(this.localRepo, { recursive: true });
-    this.rootComponent = require('./component').createRoot(this.logger, this.tln, this.localRepo, this.cliHome);
-    this.currentComponent = this.rootComponent;
-    if (detached) {
-      this.currentComponent = await this.rootComponent.createChild(this.cwd);
-    } else {
-      for(const folder of folders) {
-        this.currentComponent = await this.currentComponent.buildChild(folder, true);
+      } catch (e) {
+        this.logger.error(`Description of catalogs can not be loaded [${this.listOfCatalogs}] ${e.message}`);
+        process.exit(1);
       }
     }
     //
-    this.logger.info('operating system: ', os.type(), os.platform(), os.release());
-    this.logger.info(`cwd: ${this.cwd}`);
-    this.logger.info('home:', this.home);
-    this.logger.info(`cli home: ${this.cliHome}`);
-    this.logger.info(`local repo: ${this.localRepo}`);
-    this.logger.info('folders:', folders);
-    this.logger.info('mode:', detached ? 'detached' : 'normal');
+    // find root component
+    /*/
+    return this;
   }
 
-  //
-  async config(components, options) {
-    for(const component of await this.resolve(components, true, false, true)) {
-      await component.config(options);
+  async inspect(components, {commands, environment, graph, json}) {
+  }
+
+  async ls(components, {depth, limit, parents, installedOnly}) {
+  }
+
+  async createCatalog(brief) {
+  }
+
+  async lsCatalogs() {
+    /*
+    const padC1 = 18;const padC2 = 48;
+    this.logger.con('Name'.padEnd(padC1), 'Source'.padEnd(padC2), 'Home');
+    this.catalogs.forEach(catalog => this.logger.con(catalog.name.padEnd(padC1), ((catalog.src)?catalog.src:'-').padEnd(padC2), catalog.home));
+    */
+  }
+
+  async addCatalog(name, src) {
+    /*
+    const context = this.getContext('logger', 'os', 'path', 'fs');
+    this.catalogs.push(catalog.create(context.duplicate().add({name, src, home: this.path.join(this.path2Catalogs, name)})));
+    await this.saveCatalogs();
+    */
+  }
+
+  async updateCatalog(name) {
+  }
+
+  async getHierarchy(components, {depth, parents}) {
+  }
+
+  async run(commands, components, {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file){
+    if (command) {
+      // interpret commands as explicit shell script
+    } else if (file) {
+      // interpred commands as script file name
+    } else {
+      // file commands inside component's descriptions
     }
+    // run commands
   }
-
-  //
-  async dotenv(components, options) {
-    for(const component of await this.resolve(components)) {
-      await component.dotenv(options);
-    }
-  }
-
-  //
-  async inspect(components, options) {
-    for(const component of await this.resolve(components)) {
-      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, options);
-    }
-  }
-
-  //
-  async ls(components, options) {
-    for(const component of await this.resolve(components)) {
-      await component.ls((...args) => { this.logger.con.apply(this.logger, args); }, options);
-    }
-  }
-
-  //
-  async exec(components, parallel, recursive, depth, options) {
-    for(const component of await this.resolve(components)) {
-      if (parallel) {
-        component.exec(recursive, depth, this.filter, options);
-      } else {
-        await component.exec(recursive, depth, this.filter, options);
-      }
-    }
-  }
-
-  //
-  async run(components, parallel, steps, recursive, depth, options) {
-    for(const component of await this.resolve(components)) {
-      if (parallel) {
-        component.run(steps, recursive, depth, this.filter, options);
-      } else {
-        await component.run(steps, recursive, depth, this.filter, options);
-      }
-    }
-  }
-
-  //
-  async resolve(components, resolveEmptyToThis = true, popup = true, force = false) {
-    return this.currentComponent.resolve(components, resolveEmptyToThis, popup, force);
-  }
-
-  //
-  isRootPath(p) {
-    // TODO validate expression at windows box
-    const root = (os.platform == "win32") ? `${this.cwd.split(path.sep)[0]}${path.sep}` : path.sep;
-    return (p === root);
-  }
-
 
 }
 
-module.exports.create = (verbose, cwd, cliHome, detach, localRepo) => {
-  return new Appl(verbose, cwd, cliHome, detach, localRepo);
+module.exports.create = (options) => {
+  return new appl(options);
 }

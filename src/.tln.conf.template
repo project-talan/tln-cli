@@ -1,34 +1,88 @@
 /*
-  tln.logger[.con() | .trace() | etc]
-  tln.getOsInfo(): 
-    { type: 'Linux', platform: 'linux', kernel: '4.4.0-159-generic', os: 'linux', dist: 'Ubuntu Linux', codename: 'xenial', release: '16.04' }
-    { type: 'Windows_NT', platform: 'win32', kernel: '10.0.17763', os: 'win32' }
-  const path = require('path');
+  tln.
+    logger.
+      trace()
+      debug()
+      info()
+      warn()
+      error()
+      fatal()
+      con()
+    utils.
+      wrap()
+    os
+    fs
+    path
+    script.
+      cmd()
+      if.
+        then.
+          cmd()
+        else.
+          cmd()
 */
 module.exports = {
-  options: async (tln, args) => {/*
-    args
-      .prefix('TLN_MY_COMPONENT')
-      .option('configuration', { describe: 'Configuration to build' default: null, type: 'string' });
+  version: '2',
+  /*detached: true, // false(defaut)*/
+  tags: async (tln) => [],
+  options: async (tln) => {/*
+    return {
+      prefix: 'TLN_MY_COMPONENT',
+      options: [
+        { option: 'port', desc: 'Port to listen', type: 'string', default: '9080' } // env.TLN_MY_COMPONENT_PORT
+      ]
+    };
   */},
   env: async (tln, env) => {ENVS/*
     env.TLN_GIT_USER = 'john.doe';
-    env.PATH = [path.join(env.TLN_COMPONENT_HOME, 'bin'), env.PATH].join(path.delimiter);
+    env.PATH = [tln.path.join(env.TLN_COMPONENT_HOME, 'bin'), env.PATH].join(tln.path.delimiter);
   */},
   dotenvs: async (tln) => [/*'.env'*/],
+  files: async (tln) => [/*'version:TLN_VERSION'*/],
   inherits: async (tln) => [INHERITS/*'git'*/],
-  depends: async (tln) => [DEPENDS/*'java/openjdk-11.0.2'*/],
-  steps: async (tln) => [/*
-    {
-      id: 'hi',
-      desc: 'Say Hi from component home',
-      builder: async (tln, script) => {
-        script.set(['echo Hi, home: ${TLN_COMPONENT_HOME}']);
-        // return true; // to prevent chain execution
+  depends: async (tln) => [DEPENDS/*'openjdk-11.0.2', {id:'dotnet-sdk-3.1.410', filter:'win32'}*/],
+  commands: async (tln) => [
+    'demo': {
+      desc: 'Show service status',
+      propagation: 'no',      // no(default) | up | down
+      continueOnStderr: true, // false(default) | true
+      builder: async (tln, env) => ['params', 'filter', 'script']
+    },
+    'params': {
+      require: ['TLN_MY_COMPONENT_PORT'],
+      builder: async (tln, env) => [
+        `echo Port to listen: ${tln.utils.wrap('TLN_MY_COMPONENT_PORT')}`
+      ]}
+    },
+    'show-status': [
+      { filter: 'win32',
+        builder: async (tln, env) => [
+          'echo Win32'
+        ]}},
+      { filter: 'darwin',
+        builder: async (tln, env) => [
+          'echo Darwin'
+        ]}},
+      { filter: 'linux',
+        builder: async (tln, env) => [
+          'echo Linux'
+        ]}}
+    ],
+    'script': {
+      builder: async (tln, env) =>
+        tln.script
+          .cmd('echo Network status')
+          .if(tln.os.isWindows())
+          .then
+            .cmd('ipconfig')
+          .else
+            .cmd('ifconfig')
+          .cmd('---')
+        ;
       }
-    }
-  */],
+    },
+  ],
   components: async (tln) => [/*
-    { id: 'sub-component', tags: async (tln) => [], ... }
+    { id: 'sub-component',  ... }
   */]
 }
