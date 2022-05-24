@@ -11,6 +11,7 @@ const mockfs = require('mock-fs');
 
 describe('Application', function() {
 
+  let options;
   before(function() {
   });
 
@@ -18,6 +19,7 @@ describe('Application', function() {
   });
 
   beforeEach(function () {
+    options = {verbose: 0, detahed: null, destPath: null, env: process.env, cwd: process.cwd(), home: __dirname};
   })
 
   afterEach(function () {
@@ -25,7 +27,7 @@ describe('Application', function() {
   })
 
   it('can be created', async () => {
-    expect(require('./appl').create({verbose: 0, home: __dirname})).to.be.an('object');
+    expect(require('./appl').create(options)).to.be.an('object');
   });
 
   it('can be initialized', async () => {

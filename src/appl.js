@@ -19,23 +19,15 @@ class appl {
       fs,
       utils,
     });
-
-    this.env = {...process.env};
-    // workaround for windows Path definition
-    if (this.env['Path']) {
-      const p = this.env['Path'];
-      delete this.env['Path'];
-      this.env['PATH'] = p;
-    }
     //
-    this.logger.info('operating system: ', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
+    this.logger.info('operating system:', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
     this.logger.info(`cwd: ${this.options.cwd}`);
     this.logger.info('home:', this.options.home);
     this.logger.info(`stdCatalog: ${this.options.stdCatalog}`);
     this.logger.info('mode:', this.options.detached ? 'detached' : 'normal');
     this.logger.info(`destPath: ${this.options.destPath}`);
-    this.logger.debug('debug');
-    this.logger.trace('trace');
+    this.logger.debug('env:');
+    Object.keys(this.options.env).sort().forEach(k => this.logger.debug(`\t${k}=${this.options.env[k]}`));
   }
 
   splitComponents(components) {

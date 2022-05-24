@@ -6,9 +6,22 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const findUp = require('find-up')
+const utils = require('./src/utils');
 
-const createAppl = async(options, params) => {
-  return await (require('./src/appl').create({...options, cwd: process.cwd(), home: __dirname }).init(params));
+const createAppl = async(argv, params) => {
+  const {verbose, detached, destPath, envFile, env} = argv;
+  let envVars = {...process.env};
+  // workaround for windows Path definition
+  if (envVars['Path']) {
+    const p = envVars['Path'];
+    delete envVars['Path'];
+    envVars['PATH'] = p;
+  }
+  // parse files with environment variables
+  // parse command line arguments with environment variables
+  console.log(env.map(v => utils.parseEnvRecord(v)).filter(v => !!v).forEach(v => envVars = {...envVars, ...v}));
+
+  return await (require('./src/appl').create({verbose, detached, destPath, env: envVars, cwd: process.cwd(), home: __dirname }).init(params));
 }
 
 // use local config file
@@ -45,8 +58,7 @@ const argv = require('yargs')
         .option('j',              { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {components, commands, environment, graph, json} = argv;
       await appl.inspect(components, {commands, environment, graph, json});
@@ -64,8 +76,7 @@ const argv = require('yargs')
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {components, depth, limit, parents, installedOnly} = argv;
       await appl.ls(components, {depth, limit, parents, installedOnly});
@@ -82,8 +93,7 @@ const argv = require('yargs')
         .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {components, depth, parents} = argv;
       await appl.getHierarchy(components, {depth, parents});
@@ -120,8 +130,7 @@ const argv = require('yargs')
         .demandOption(['commands'], 'Please provide command(s) to execute')
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {commands, depends, catalog} = argv;
       if (catalog) {

@@ -82,6 +82,15 @@ module.exports = {
       }
     },
   ],
+  diagrams: async (tln) => [/*
+    tln.diagram.sequence().
+      actor('Alice').
+      actor('Bob').
+      message('Alice', 'Bob', params, result),
+    tln.diagram.components().
+      component('Car').
+        aggregates('GPS')
+  */]
   components: async (tln) => [/*
     { id: 'sub-component',  ... }
   */]
