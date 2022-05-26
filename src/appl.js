@@ -6,12 +6,32 @@ const fs = require('fs');
 
 const utils = require('./utils');
 
-
 class appl {
 
   constructor(options) {
-    this.options = {...options, stdCatalog: path.join(options.home, 'components')};
-    this.logger = require('./logger').create(this.options.verbose);
+    const {verbose, detached, destPath, env, envVars, envFiles, cwd, home} = options;
+    //
+    this.logger = require('./logger').create(verbose);
+    this.detached = detached;
+    this.destPath = destPath;
+    //
+    this.env = {...env};
+    this.cmdLineEnv = {};
+    // parse files with environment variables
+    if (envFiles) {
+      envFiles.map(v => utils.parseEnvFile(v, this.logger)).filter(v => !!v).forEach(v => this.cmdLineEnv = {...this.cmdLineEnv, ...v});
+    }
+    // parse command line arguments with environment variables
+    if (envVars) {
+      envVars.map(v => utils.parseEnvRecord(v, this.logger)).filter(v => !!v).forEach(v => this.cmdLineEnv = {...this.cmdLineEnv, ...v});
+    }
+    // TODO for test only
+    this.env = {...this.env, ...this.cmdLineEnv};
+    //
+    this.cwd = cwd;
+    this.home = home;
+    this.stdCatalog = path.join(this.home, 'components');
+    //
     this.tln = Object.freeze({
       logger: this.logger,
       os,
@@ -19,25 +39,20 @@ class appl {
       fs,
       utils,
     });
+
     //
     this.logger.info('operating system:', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
-    this.logger.info(`cwd: ${this.options.cwd}`);
-    this.logger.info('home:', this.options.home);
-    this.logger.info(`stdCatalog: ${this.options.stdCatalog}`);
-    this.logger.info('mode:', this.options.detached ? 'detached' : 'normal');
-    this.logger.info(`destPath: ${this.options.destPath}`);
+    this.logger.info(`cwd: ${this.cwd}`);
+    this.logger.info(`home: ${this.home}`);
+    this.logger.info(`stdCatalog: ${this.stdCatalog}`);
+    this.logger.info(`mode: ${this.detached ? 'detached' : 'normal'}`);
+    this.logger.info(`destPath: ${this.destPath}`);
     this.logger.debug('env:');
-    Object.keys(this.options.env).sort().forEach(k => this.logger.debug(`\t${k}=${this.options.env[k]}`));
+    Object.keys(this.env).sort().forEach(k => this.logger.debug(`\t${k}=${this.env[k]}`));
   }
 
   splitComponents(components) {
     return components?components.split(':'):[];
-  }
-
-  parseEnv(env) {
-    const obj = {};
-      env.map(e => {const kv = e.split('='); obj[kv[0]] = kv[1];});
-    return obj;
   }
 
   async init(params) {

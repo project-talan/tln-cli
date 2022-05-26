@@ -6,22 +6,17 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const findUp = require('find-up')
-const utils = require('./src/utils');
 
 const createAppl = async(argv, params) => {
-  const {verbose, detached, destPath, envFile, env} = argv;
-  let envVars = {...process.env};
+  const {verbose, detached, destPath, env, envFile} = argv;
   // workaround for windows Path definition
-  if (envVars['Path']) {
-    const p = envVars['Path'];
-    delete envVars['Path'];
-    envVars['PATH'] = p;
+  const pEnv = {...process.env};
+  if (pEnv['Path']) {
+    const p = pEnv['Path'];
+    delete pEnv['Path'];
+    pEnv['PATH'] = p;
   }
-  // parse files with environment variables
-  // parse command line arguments with environment variables
-  console.log(env.map(v => utils.parseEnvRecord(v)).filter(v => !!v).forEach(v => envVars = {...envVars, ...v}));
-
-  return await (require('./src/appl').create({verbose, detached, destPath, env: envVars, cwd: process.cwd(), home: __dirname }).init(params));
+  return await (require('./src/appl').create({verbose, detached, destPath, env: pEnv, envVars: env, envFiles: envFile, cwd: process.cwd(), home: __dirname }).init(params));
 }
 
 // use local config file
