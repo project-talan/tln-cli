@@ -599,6 +599,30 @@ const update = async () => {
       }
     },
     //
+    // ------------------------------------------------------------------------
+    // firebase cli
+    {     
+      url: 'https://api.github.com/repos/firebase/firebase-tools/releases', token, path: path.join('google', 'firebase'), fn: async (response) => {
+        const json = await response.json();      
+        if (Array.isArray(json)) {
+          return json.map(v => {         
+            let r = v.tag_name;
+            if (r[0] === 'v') {
+              r = r.substring(1);          
+            }
+            r = r.replace(' ', '-')
+            return r.toLowerCase();                                                                                              
+          });
+        }
+        return []; 
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `firebase-${v}` } });
+      }                                      
+    },
+    //
   ];
   //
   try {
