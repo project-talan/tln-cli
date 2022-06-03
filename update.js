@@ -315,7 +315,7 @@ const update = async () => {
                 opts: { src: folder, flt: '*', dest: '.', rmv: folder },
                 url
               };
-            } else if (id === 'Mac') {
+            } else if (id === 'Mac' || id === 'Mac/x64') {
               dist.darwin = {
                 name: file,
                 opts: { src: `${folder}.jdk/Contents/Home`, flt: '*', dest: '.', rmv: folder },
