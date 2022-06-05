@@ -623,6 +623,24 @@ const update = async () => {
       }                                      
     },
     //
+    // ------------------------------------------------------------------------
+    // Ruby
+    {
+      url: 'https://www.ruby-lang.org/en/downloads/releases/', token: null, path: path.join('ruby'), fn: async (response) => {
+        const result = []
+        const html = await response.text();
+        let $ = cheerio.load(html);
+        const items = [];
+        $("table.release-list > tbody > tr").each(function (i, e) {
+          let version = $(this).find('td').first().text().split(' ')[1];
+          if (validateVersion(version)) {
+            result.push({ id: `${version}` });
+          }
+        });
+        return result.sort((l, r) => l.id.attr > r.id.attr ? 1 : -1).reverse().map(v => { return { id: `ruby-${v.id}` } });
+      }
+    },
+    //
   ];
   //
   try {
