@@ -58,19 +58,19 @@ Upcoming 2.x release will bring new key feature: AaC - Architecture-as-Code.
     env: async (tln, env) => {},
     dotenvs: async (tln) => [],
     inherits: async (tln) => [],
-    depends: async (tln) => ['mvn-3.6.3', 'openjdk-11.0.2', 'go-1.14.4', 'node-14.4.0', 'angular-9.1.8', 'cordova-9.0.0'],
+    depends: async (tln) => ['openjdk-18', 'mvn-3.8.5', 'go-1.18.3', 'node-16.15.1', 'kubectl-1.23.7', 'firebase-11.0.1'],
     steps: async (tln) => [
       {
         id: "versions",
         builder: async (tln, script) => script.set([
-          'java -version && mvn -v && go version && node -v && cordova -v && ng version'
+          'java -version && echo && mvn -v && echo && go version && echo && node -v && echo && kubectl version --client && echo && firebase --version'
         ])
       }
     ],
     components: async (tln) => []
   }
   ```
-* Install dependencies. mvn-3.6.3, openjdk-11.0.2, go-1.14.4, node-14.4.0, angular-9.1.8, cordova-9.0.0 components will be installed inside `projects` folder and `will not affect any other already installed software`.
+* Next command will install all components were listed inside `depends` section from `.tln.conf`. Components will be installed inside `projects` folder and `will not affect any other already installed software`.
   ```
   tln install --depends
   ```
@@ -79,23 +79,23 @@ Upcoming 2.x release will bring new key feature: AaC - Architecture-as-Code.
   tln versions
   ```
   ```
-  openjdk version "11.0.2" 2019-01-15
-  OpenJDK Runtime Environment 18.9 (build 11.0.2+9)
-  OpenJDK 64-Bit Server VM 18.9 (build 11.0.2+9, mixed mode)
-    
-  Apache Maven 3.6.3 (cecedd343002696d0abb50b32b541b8a6ba2883f)
-  Maven home: D:\projects2\maven\mvn-3.6.3\bin\..
-  Java version: 11.0.2, vendor: Oracle Corporation, runtime: D:\projects2\java\openjdk-11.0.2
-  Default locale: en_US, platform encoding: Cp1251
-  OS name: "windows 10", version: "10.0", arch: "amd64", family: "windows"
-    
-  go version go1.14.4 windows/amd64
-    
-  v14.4.0
-    
-  9.0.0 (cordova-lib@9.0.1)
-    
-  Angular CLI: 9.1.8    
+  openjdk version "18" 2022-03-22
+  OpenJDK Runtime Environment (build 18+36-2087)
+  OpenJDK 64-Bit Server VM (build 18+36-2087, mixed mode, sharing)
+
+  Apache Maven 3.8.5 (3599d3414f046de2324203b78ddcf9b5e4388aa0)
+  Maven home: /root/projects/maven/mvn-3.8.5
+  Java version: 18, vendor: Oracle Corporation, runtime: /root/projects/java/openjdk-18
+  Default locale: en, platform encoding: UTF-8
+  OS name: "linux", version: "4.15.0-180-generic", arch: "amd64", family: "unix"
+
+  go version go1.18.3 linux/amd64
+
+  v16.15.1
+
+  Client Version: version.Info{Major:"1", Minor:"23", GitVersion:"v1.23.7", GitCommit:"42c05a547468804b2053ecf60a3bd15560362fc2", GitTreeState:"clean", BuildDate:"2022-05-24T12:30:55Z", GoVersion:"go1.17.10", Compiler:"gc", Platform:"linux/amd64"}
+
+  11.0.1
   ```
 
 ## tln architecture & in-depth details

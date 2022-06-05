@@ -315,7 +315,7 @@ const update = async () => {
                 opts: { src: folder, flt: '*', dest: '.', rmv: folder },
                 url
               };
-            } else if (id === 'Mac') {
+            } else if (id === 'Mac' || id === 'Mac/x64') {
               dist.darwin = {
                 name: file,
                 opts: { src: `${folder}.jdk/Contents/Home`, flt: '*', dest: '.', rmv: folder },
@@ -596,6 +596,48 @@ const update = async () => {
           }
         });
         return result.sort((l, r) => l.id.attr > r.id.attr ? 1 : -1).reverse().map(v => { return { id: `gcloud-${v.id}` } });
+      }
+    },
+    //
+    // ------------------------------------------------------------------------
+    // firebase cli
+    {     
+      url: 'https://api.github.com/repos/firebase/firebase-tools/releases', token, path: path.join('google', 'firebase'), fn: async (response) => {
+        const json = await response.json();      
+        if (Array.isArray(json)) {
+          return json.map(v => {         
+            let r = v.tag_name;
+            if (r[0] === 'v') {
+              r = r.substring(1);          
+            }
+            r = r.replace(' ', '-')
+            return r.toLowerCase();                                                                                              
+          });
+        }
+        return []; 
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `firebase-${v}` } });
+      }                                      
+    },
+    //
+    // ------------------------------------------------------------------------
+    // Ruby
+    {
+      url: 'https://www.ruby-lang.org/en/downloads/releases/', token: null, path: path.join('ruby'), fn: async (response) => {
+        const result = []
+        const html = await response.text();
+        let $ = cheerio.load(html);
+        const items = [];
+        $("table.release-list > tbody > tr").each(function (i, e) {
+          let version = $(this).find('td').first().text().split(' ')[1];
+          if (validateVersion(version)) {
+            result.push({ id: `${version}` });
+          }
+        });
+        return result.sort((l, r) => l.id.attr > r.id.attr ? 1 : -1).reverse().map(v => { return { id: `ruby-${v.id}` } });
       }
     },
     //
