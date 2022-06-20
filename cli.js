@@ -11,8 +11,8 @@ if (process.env['Path']) {
   process.env['PATH'] = p;
 }
 
-const appl = async (verbose, cwd, cliHome, detach, localRepo, fn) => {
-  const a = require('./src/appl').create(verbose, cwd, cliHome, detach, localRepo);
+const appl = async (cfgPath, verbose, cwd, cliHome, detach, localRepo, fn) => {
+  const a = require('./src/appl').create(cfgPath, verbose, cwd, cliHome, detach, localRepo);
   await a.init();
   await fn(a);
 }
@@ -70,7 +70,7 @@ const argv = require('yargs')
         })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+      await appl(configPath, argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.config(splitComponents(argv.components), {
           envFromCli: parseEnv(argv.env),
           repository: argv.repo,
@@ -96,7 +96,7 @@ const argv = require('yargs')
       .option('downstream', { describe: 'Number of upper layers', default: 0, type: 'number' });
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+      await appl(configPath, argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.dotenv(splitComponents(argv.components), {
           envFromCli: parseEnv(argv.env),
           prefixes: (argv.prefix)?([argv.prefix]):([]),
@@ -118,7 +118,7 @@ const argv = require('yargs')
         .option('j', { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+      await appl(configPath, argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.inspect(splitComponents(argv.components), {
           envFromCli: parseEnv(argv.env),
           outputAsJson: argv.json,
@@ -139,7 +139,7 @@ const argv = require('yargs')
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
     },
     async (argv) => {
-      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+      await appl(configPath, argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.ls(splitComponents(argv.components), {
           parents: argv.parents,
           depth: argv.depth,
@@ -168,7 +168,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       const {failOnStderr} = argv;
-      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+      await appl(configPath, argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.exec(splitComponents(argv.components), argv.parallel, argv.recursive, argv.depth, {
           envFromCli: parseEnv(argv.env),
           dryRun: argv.dryRun,
@@ -195,7 +195,7 @@ const argv = require('yargs')
     },
     async (argv) => {
       const {failOnStderr} = argv;
-      await appl(argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
+      await appl(configPath, argv.verbose, process.cwd(), __dirname, argv.detach, argv.localRepo, async (a) => {
         await a.run(splitComponents(argv.components), argv.parallel, argv.steps.split(':'), argv.recursive, argv.depth, {
           envFromCli: parseEnv(argv.env),
           save: argv.save,

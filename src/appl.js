@@ -14,7 +14,8 @@ class Appl {
   *
   * params:
   */
-  constructor(verbose, cwd, cliHome, detach, localRepo) {
+  constructor(cfgPath, verbose, cwd, cliHome, detach, localRepo) {
+    this.cfgPath = cfgPath;
     this.logger = logger.create(verbose);
     this.cwd = cwd;
     this.cliHome = cliHome;
@@ -91,6 +92,7 @@ class Appl {
       }
     }
     //
+    this.logger.info(`local config: ${this.cfgPath}`);
     this.logger.info('operating system: ', os.type(), os.platform(), os.release());
     this.logger.info(`cwd: ${this.cwd}`);
     this.logger.info('home:', this.home);
@@ -165,6 +167,6 @@ class Appl {
 
 }
 
-module.exports.create = (verbose, cwd, cliHome, detach, localRepo) => {
-  return new Appl(verbose, cwd, cliHome, detach, localRepo);
+module.exports.create = (cfgPath, verbose, cwd, cliHome, detach, localRepo) => {
+  return new Appl(cfgPath, verbose, cwd, cliHome, detach, localRepo);
 }
