@@ -9,11 +9,18 @@ const utils = require('./utils');
 class appl {
 
   constructor(options) {
-    const {verbose, detached, destPath, env, envVars, envFiles, cwd, home} = options;
     //
+    const {configPath, verbose, detached, destPath, env, envVars, envFiles, cwd, tlnHome} = options;
+    //
+    this.configPath = configPath;
     this.logger = require('./logger').create(verbose);
-    this.detached = detached;
-    this.destPath = destPath;
+    /*/
+      * if TLN_DETACHED environment variable is defined, than this is nested call
+        and should be executed in detahced mode too
+      * if destPath is not defined, all components will be installed in user's tmp folder
+    /*/
+    this.detached = detached || !!env.TLN_DETACHED;
+    this.destPath = destPath || env.TLN_DETACHED;
     //
     this.env = {...env};
     this.cmdLineEnv = {};
@@ -25,13 +32,26 @@ class appl {
     if (envVars) {
       envVars.map(v => utils.parseEnvRecord(v, this.logger)).filter(v => !!v).forEach(v => this.cmdLineEnv = {...this.cmdLineEnv, ...v});
     }
-    // TODO for test only
-    this.env = {...this.env, ...this.cmdLineEnv};
     //
     this.cwd = cwd;
-    this.home = home;
-    this.stdCatalog = path.join(this.home, 'components');
+    this.tlnHome = tlnHome;
+    this.stdCatalog = path.join(this.tlnHome, 'components');
     //
+    // find root component
+    const {root, current} = this.constructInitialHierarchy();
+    this.rootComponent = root;
+    this.currentComponent = current;
+    //
+    //
+    if (this.detached) {
+      // Set TLN_DETACHED to turn on detached mode for nested calls
+      this.destPath = this.destPath || path.join(os.tmpdir(), `tln-${this.env.USER}`);
+      this.env.TLN_DETACHED = this.destPath;
+    } else {
+      // set default value for third-parties - root component
+    }
+    //
+    // Prepare tln shared object 
     this.tln = Object.freeze({
       logger: this.logger,
       os,
@@ -39,49 +59,32 @@ class appl {
       fs,
       utils,
     });
-
     //
+    this.logger.info(`path to config: ${this.configPath}`);
     this.logger.info('operating system:', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
     this.logger.info(`cwd: ${this.cwd}`);
-    this.logger.info(`home: ${this.home}`);
+    this.logger.info(`tlnHome: ${this.tlnHome}`);
     this.logger.info(`stdCatalog: ${this.stdCatalog}`);
     this.logger.info(`mode: ${this.detached ? 'detached' : 'normal'}`);
     this.logger.info(`destPath: ${this.destPath}`);
+//    this.logger.info(`root component: ${this.rootComponent.getHome()}`);
+//    this.logger.info(`current component: ${this.currentComponent.getHome()}`);
     this.logger.debug('env:');
-    Object.keys(this.env).sort().forEach(k => this.logger.debug(`\t${k}=${this.env[k]}`));
+    Object.keys({...this.env, ...this.cmdLineEnv}).sort().forEach(k => this.logger.debug(`\t${k}=${this.env[k]}`));
+    //
+  }
+
+  constructInitialHierarchy() {
+    let root = null;
+    let current = null;
+    return {root, current};
   }
 
   splitComponents(components) {
     return components?components.split(':'):[];
   }
 
-  async init(params) {
-    /*/
-    // load catalogs or create new one with default item
-    const context = this.getContext('logger', 'os', 'path', 'fs');
-    if (!this.fs.existsSync(this.listOfCatalogs)) {
-      // create file with default catalog
-      this.catalogs.push(catalog.create(context.duplicate().add({name: 'default', src: null, home: this.path.join(this.home, 'components')})));
-      await this.saveCatalogs();
-    } else {
-      //
-      try {
-        const catalogs = JSON.parse(this.fs.readFileSync(this.listOfCatalogs));
-        for(const c of catalogs) {
-          this.catalogs.push(catalog.create(context.duplicate().add(c)));
-        }
-      } catch (e) {
-        this.logger.error(`Description of catalogs can not be loaded [${this.listOfCatalogs}] ${e.message}`);
-        process.exit(1);
-      }
-    }
-    //
-    // find root component
-    /*/
-    return this;
-  }
-
-  async inspect(components, {commands, environment, graph, json}) {
+  async inspect(components, {cmds, env, graph, json}) {
   }
 
   async ls(components, {depth, limit, parents, installedOnly}) {

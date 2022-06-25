@@ -19,7 +19,7 @@ describe('Application', function() {
   });
 
   beforeEach(function () {
-    options = {verbose: 0, detahed: null, destPath: null, env: process.env, cwd: process.cwd(), home: __dirname};
+    options = {confipath: '', verbose: 0, detached: false, destPath: null, env: process.env, cwd: process.cwd(), tlnHome: __dirname};
   })
 
   afterEach(function () {
