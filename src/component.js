@@ -29,6 +29,10 @@ class component {
     return this.uuid;
   }
 
+  getHome() {
+    return this.home;
+  }
+
   getParent() {
     return this.parent;
   }
