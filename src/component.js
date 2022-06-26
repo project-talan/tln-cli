@@ -50,7 +50,7 @@ class component {
 
   // child component will have home path different from parent
   async createChildFromHome(home) {
-    return await this.buildChildFromId(path.basename(home), true, home);
+    return await this.createChildFromId(path.basename(home), true, home);
   }
 
   // child component will inherit home hierarchy from parent

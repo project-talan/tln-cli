@@ -8,12 +8,13 @@ const utils = require('./utils');
 
 class appl {
 
-  constructor(options) {
+  constructor(logger, componentsFactory, options) {
     //
-    const {configPath, verbose, detached, destPath, env, envVars, envFiles, cwd, tlnHome} = options;
+    const {configPath, detached, destPath, env, envVars, envFiles, cwd, tlnHome} = options;
     //
+    this.logger = logger;
+    this.componentsFactory = componentsFactory;
     this.configPath = configPath;
-    this.logger = require('./logger').create(verbose);
     /*/
       * if TLN_DETACHED environment variable is defined, than this is nested call
         and should be executed in detahced mode too
@@ -33,7 +34,7 @@ class appl {
       envVars.map(v => utils.parseEnvRecord(v, this.logger)).filter(v => !!v).forEach(v => this.cmdLineEnv = {...this.cmdLineEnv, ...v});
     }
     //
-    this.cwd = cwd;
+    this.home = this.cwd = cwd;
     this.tlnHome = tlnHome;
     this.stdCatalog = path.join(this.tlnHome, 'components');
     // Prepare tln shared object 
@@ -44,15 +45,17 @@ class appl {
       fs,
       utils,
     });
-    //
+  }
+
+  async init() {
     // find root & current components
     this.rootComponent = this.currentComponent = null;
+    let folders = [];
     if (!this.detached) {
-/*
       // find topmost level folder with with tln descs
-      let p = this.cwd;
+      let p = this.home;
       let noConfig = !utils.isConfigPresent(p);
-      while (!this.isRootPath(p)) {
+      while (!this.isRootPath(p) && p !== '.') { // !== '.' is workaround for unit tests mockfs
         p = path.dirname(p);
         if (utils.isConfigPresent(p)) {
           this.home = p;
@@ -68,14 +71,8 @@ class appl {
       //
       // shared components location
       if (this.isRootPath(this.cwd) || noConfig) {
-        this.localRepo = tmpPath;
-        detached = true;
-      } else {
-        // at project's root level
-        this.localRepo = this.home;
+        this.detached = true;
       }
-*/
-
     }
     //
     if (this.detached) {
@@ -84,14 +81,27 @@ class appl {
       this.env.TLN_DETACHED = this.destPath;
     } else {
       // set default value for third-parties - root component
-      this.destPath = this.destPath || 'projects root';
+      this.destPath = this.destPath || this.home;
     }
-    this.rootComponent = this.currentComponent = this.rootComponent = require('./component').createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
+    this.rootComponent = this.currentComponent = this.rootComponent = this.componentsFactory.createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
+    if (this.detached) {
+        this.currentComponent = await this.rootComponent.createChildFromHome(this.cwd);
+    } else {
+      if (folders.length) {
+        let id = folders.shift();
+        this.currentComponent = await this.rootComponent.createChildFromHome(path.join(this.home, id));
+        while(folders.length) {
+          id = folders.shift();
+          this.currentComponent = await this.currentComponent.createChildFromId(id, true);
+        }
+      }
+    }
     //
     //
     this.logger.info(`path to config: ${this.configPath}`);
     this.logger.info('operating system:', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
     this.logger.info(`cwd: ${this.cwd}`);
+    this.logger.info(`home: ${this.home}`);
     this.logger.info(`tlnHome: ${this.tlnHome}`);
     this.logger.info(`stdCatalog: ${this.stdCatalog}`);
     this.logger.info(`mode: ${this.detached ? 'detached' : 'normal'}`);
@@ -100,11 +110,20 @@ class appl {
     this.logger.info(`current component: ${this.currentComponent.getHome()}`);
     this.logger.debug('env:');
     Object.keys({...this.env, ...this.cmdLineEnv}).sort().forEach(k => this.logger.debug(`\t${k}=${this.env[k]}`));
+    //
+    return this;
   }
 
   splitComponents(components) {
     return components?components.split(':'):[];
   }
+
+  isRootPath(p) {
+    // TODO validate expression at windows box
+    const root = (os.platform == "win32") ? `${this.cwd.split(path.sep)[0]}${path.sep}` : path.sep;
+    return (p === root);
+  }
+
 
   async inspect(components, {cmds, env, graph, json}) {
   }
@@ -150,6 +169,6 @@ class appl {
 
 }
 
-module.exports.create = (options) => {
-  return new appl(options);
+module.exports.create = (logger, componentsFactory, options) => {
+  return new appl(logger, componentsFactory, options);
 }

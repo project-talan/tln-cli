@@ -13,6 +13,7 @@ const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 //
 const createAppl = async(argv) => {
   const {verbose, detached, destPath, env, envFile} = argv;
+  const logger = require('./src/logger').create(verbose);
   // workaround for windows Path definition
   const pEnv = {...process.env};
   if (pEnv['Path']) {
@@ -20,10 +21,9 @@ const createAppl = async(argv) => {
     delete pEnv['Path'];
     pEnv['PATH'] = p;
   }
-  return await (require('./src/appl').create(
+  return await (require('./src/appl').create(logger, require('./src/component'),
     {
       configPath,
-      verbose,
       detached,
       destPath,
       env: pEnv, 
@@ -32,7 +32,7 @@ const createAppl = async(argv) => {
       cwd: process.cwd(),
       tlnHome: __dirname
     }
-  ));
+  ).init());
 }
 
 const argv = require('yargs')

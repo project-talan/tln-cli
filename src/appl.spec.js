@@ -11,7 +11,10 @@ const mockfs = require('mock-fs');
 
 describe('Application', function() {
 
-  let options;
+  const options = {confipath: '', detached: false, destPath: null, env: process.env, cwd: process.cwd(), tlnHome: 'tln'};
+  let logger;
+  let factory;
+  let componentsFactory;
   before(function() {
   });
 
@@ -19,7 +22,19 @@ describe('Application', function() {
   });
 
   beforeEach(function () {
-    options = {confipath: '', verbose: 0, detached: false, destPath: null, env: process.env, cwd: process.cwd(), tlnHome: __dirname};
+    logger = require('./logger').create(1);
+    factory = require('./appl');
+    componentsFactory = require('./component');
+    mockfs({
+      'home': {
+        'user': {
+          'projects': {
+          }
+        }
+      },
+      'tln': mockfs.load(path.resolve(__dirname, '..')),
+    });
+
   })
 
   afterEach(function () {
@@ -27,9 +42,12 @@ describe('Application', function() {
   })
 
   it('can be created', async () => {
-    expect(require('./appl').create(options)).to.be.an('object');
+    const appl = factory.create(logger, componentsFactory, options);
+    expect(appl).to.be.an('object');
   });
 
-  it('can be initialized', async () => {
+  it('default run', async () => {
+    const appl = factory.create(logger, componentsFactory, {...options, cwd: 'home/user/projects'});
+    await appl.init();
   });
 });
