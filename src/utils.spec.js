@@ -67,19 +67,6 @@ describe('Utils', function() {
     expect(utils.isConfigPresent(path.join(projectsHome, 'both'))).to.be.true;
   });
 
-/*
-
-  getConfigFile(p) {
-    return path.join(p, '.tln.conf');
-  },
-  //
-  getConfigFolder(p, folder = '.tln') {
-    return path.join(p, folder);
-  },
-  //
-  isConfigPresent(p) {
-*/
-
   it('env var record skip empty/null string', async () => {
     expect(utils.parseEnvRecord(null)).to.be.undefined;
     expect(utils.parseEnvRecord('')).to.be.undefined;

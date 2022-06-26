@@ -72,13 +72,13 @@ describe('Component', function() {
     expect(child2).to.deep.equal(child);
   });
 
-  it('chile object inherits parent home path', async () => {
+  it('child object inherits parent home path', async () => {
     const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, true);
     expect(child.getHome()).to.equal(path.join(projectsHome, childId));
   });
 
-  it('chile object id & uuid are correct', async () => {
+  it('child object id & uuid are correct', async () => {
     const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, true);
     expect(child.getId()).to.equal(childId);

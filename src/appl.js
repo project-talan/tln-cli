@@ -27,7 +27,7 @@ class appl {
     this.cmdLineEnv = {};
     // parse files with environment variables
     if (envFiles) {
-      envFiles.map(v => utils.parseEnvFile(v, this.logger)).filter(v => !!v).forEach(v => this.cmdLineEnv = {...this.cmdLineEnv, ...v});
+      envFiles.map(v => utils.parseEnvFile(v, this.logger)).filter(v => !!v).forEach(v =>  this.cmdLineEnv = {...this.cmdLineEnv, ...v});
     }
     // parse command line arguments with environment variables
     if (envVars) {
@@ -109,7 +109,8 @@ class appl {
     this.logger.info(`root component: ${this.rootComponent.getHome()}`);
     this.logger.info(`current component: ${this.currentComponent.getHome()}`);
     this.logger.debug('env:');
-    Object.keys({...this.env, ...this.cmdLineEnv}).sort().forEach(k => this.logger.debug(`\t${k}=${this.env[k]}`));
+    const cmbn = {...this.env, ...this.cmdLineEnv};
+    Object.keys(cmbn).sort().forEach(k => this.logger.debug(`\t${k}=${cmbn[k]}`));
     //
     return this;
   }
