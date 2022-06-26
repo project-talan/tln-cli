@@ -89,7 +89,7 @@ class component {
 
 }
 
-module.exports.createRoot = (logger, tln, home, source) => {
+module.exports.createRoot = (logger, tln, home, stdCatalog) => {
   const root = new component(logger, tln, '', home, null, []);
   return root;
 }

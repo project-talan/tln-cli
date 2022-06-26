@@ -1,5 +1,9 @@
 'use strict';
 
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+
 const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
@@ -9,6 +13,8 @@ const utils = require('./utils');
 
 describe('Utils', function() {
 
+  const projectsHome = 'home/user/projects';
+
   before(function() {
   });
 
@@ -17,7 +23,27 @@ describe('Utils', function() {
 
   beforeEach(function () {
     mockfs({
-      '.env': 'VAR1=VAL1\n\nVAR2=VAL2\n\n\n\n\n'
+      '.env': 'VAR1=VAL1\n\nVAR2=VAL2\n\n\n\n\n',
+      'home': {
+        'user': {
+          'projects': {
+            'noconfig': {
+            },
+            'local-config': {
+              '.tln.conf': '{}'
+            },
+            'remote-config': {
+              '.tln': {
+              }
+            },
+            'both': {
+              '.tln.conf': '{}',
+              '.tln': {
+              }
+            },
+          }
+        }
+      }
     });
 
   })
@@ -25,6 +51,34 @@ describe('Utils', function() {
   afterEach(function () {
     mockfs.restore();
   })
+
+  it('get path to config file', async () => {
+    expect(utils.getConfigFile(projectsHome)).to.equal(path.join(projectsHome, utils.configFileName));
+  });
+
+  it('get path to config folder', async () => {
+    expect(utils.getConfigFolder(projectsHome)).to.equal(path.join(projectsHome, utils.configFolderName));
+  });
+
+  it('is folder a component', async () => {
+    expect(utils.isConfigPresent(path.join(projectsHome, 'noconfig'))).to.be.false;
+    expect(utils.isConfigPresent(path.join(projectsHome, 'local-config'))).to.be.true;
+    expect(utils.isConfigPresent(path.join(projectsHome, 'remote-config'))).to.be.true;
+    expect(utils.isConfigPresent(path.join(projectsHome, 'both'))).to.be.true;
+  });
+
+/*
+
+  getConfigFile(p) {
+    return path.join(p, '.tln.conf');
+  },
+  //
+  getConfigFolder(p, folder = '.tln') {
+    return path.join(p, folder);
+  },
+  //
+  isConfigPresent(p) {
+*/
 
   it('env var record skip empty/null string', async () => {
     expect(utils.parseEnvRecord(null)).to.be.undefined;

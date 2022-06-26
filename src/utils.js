@@ -4,7 +4,22 @@ const path = require('path');
 const fs = require('fs');
 const lineReader = require('line-reader');
 
+
+const configFileName = '.tln.conf';
+const configFolderName = '.tln';
+
 module.exports = {
+  getConfigFile(p) {
+    return path.join(p, configFileName);
+  },
+  //
+  getConfigFolder(p, folder = configFolderName) {
+    return path.join(p, folder);
+  },
+  //
+  isConfigPresent(p) {
+    return (fs.existsSync(module.exports.getConfigFile(p)) || fs.existsSync(module.exports.getConfigFolder(p)));
+  },
   parseEnvRecord(line, logger, errMsg = 'Command line argument (-e | --env) is incorrect') {
     if (line && line.length) {
       const record = line.trim();
@@ -48,6 +63,8 @@ module.exports = {
     if (logger) {
       logger.error(`${errMsg}: '${fileName}'`);
     }
-  },
-
+  }
 }
+
+module.exports.configFileName = configFileName;
+module.exports.configFolderName = configFolderName;
