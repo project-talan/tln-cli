@@ -7,14 +7,34 @@ const path = require('path');
 const fs = require('fs');
 const findUp = require('find-up')
 
-const createAppl = async(options, params) => {
-  return await (require('./src/appl').create({...options, cwd: process.cwd(), home: __dirname }).init(params));
-}
-
 // use local config file
 const configPath = findUp.sync(['.tlnrc'])
 const config = configPath ? JSON.parse(fs.readFileSync(configPath)) : {}
 //
+const createAppl = async(argv) => {
+  const {verbose, detached, destPath, env, envFile} = argv;
+  const logger = require('./src/logger').create(verbose);
+  // workaround for windows Path definition
+  const pEnv = {...process.env};
+  if (pEnv['Path']) {
+    const p = pEnv['Path'];
+    delete pEnv['Path'];
+    pEnv['PATH'] = p;
+  }
+  return await (require('./src/appl').create(logger, require('./src/component'),
+    {
+      configPath,
+      detached,
+      destPath,
+      env: pEnv, 
+      envVars: env,
+      envFiles: envFile,
+      cwd: process.cwd(),
+      tlnHome: __dirname
+    }
+  ).init());
+}
+
 const argv = require('yargs')
   .version()
   .config(config)
@@ -22,6 +42,7 @@ const argv = require('yargs')
   .help('help').alias('help', 'h')
   .option('verbose',              { describe: 'Output details mode', alias: 'v', count: true, default: 0 })
   .option('detached',             { describe: 'In detached mode current component will be a root components of hierarchy', default: false, type: 'boolean' })
+  .option('dest-path',            { describe: 'In detached mode, pth where all third parties components will be installed', default: null, type: 'string' })
   .option('p',                    { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
   .option('r',                    { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
   .option('parent-first',         { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
@@ -39,17 +60,16 @@ const argv = require('yargs')
     (yargs) => {
       yargs
         .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
-        .option('commands',       { describe: 'Show available commands for component', default: true, type: 'boolean' })
-        .option('environment',    { describe: 'Show execution environment for component', default: false, type: 'boolean' })
+        .option('cmds',           { describe: 'Show available commands for component', default: true, type: 'boolean' })
+        .option('env',            { describe: 'Show execution environment for component', default: false, type: 'boolean' })
         .option('graph',          { describe: 'Show hierarchy graphs for component', default: false, type: 'boolean' })
         .option('j',              { describe: 'Output using json format instead of yaml', alias: 'json', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
-      const {components, commands, environment, graph, json} = argv;
-      await appl.inspect(components, {commands, environment, graph, json});
+      const {components, cmds, env, graph, json} = argv;
+      await appl.inspect(components, {cmds, env, graph, json});
     }
   )
   /**************************************************************************/
@@ -64,8 +84,7 @@ const argv = require('yargs')
         .option('installed-only', { describe: 'Show installed components only', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {components, depth, limit, parents, installedOnly} = argv;
       await appl.ls(components, {depth, limit, parents, installedOnly});
@@ -82,8 +101,7 @@ const argv = require('yargs')
         .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {components, depth, parents} = argv;
       await appl.getHierarchy(components, {depth, parents});
@@ -120,8 +138,7 @@ const argv = require('yargs')
         .demandOption(['commands'], 'Please provide command(s) to execute')
     },
     async (argv) => {
-      const {verbose, detached, destPath} = argv;
-      const appl = await createAppl({verbose, detached, destPath});
+      const appl = await createAppl(argv);
       //
       const {commands, depends, catalog} = argv;
       if (catalog) {
