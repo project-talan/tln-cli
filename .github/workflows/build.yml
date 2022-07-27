@@ -19,7 +19,7 @@ jobs:
       - run: |
           npm i
           npm test
-    sonarcloud:
+  sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
     steps:
