@@ -8,7 +8,18 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:    
 jobs:
-  sonarcloud:
+  buildandtest:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: |
+          npm i
+          npm test
+    sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
     steps:
