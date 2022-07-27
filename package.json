@@ -14,7 +14,8 @@
     ],
     "exclude": [
       "**/*.spec.js",
-      "src/logger.js"
+      "src/logger.js",
+      "cli.js"
     ]
   },
   "bin": {
