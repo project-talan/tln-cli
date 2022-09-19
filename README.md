@@ -16,7 +16,7 @@ Upcoming 2.x release will bring a new key feature: AaC - Architecture-as-Code.
   ```
   curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh
   sudo bash nodesource_setup.sh
-  sudo apt-get install -y nodejs && && node -v
+  sudo apt-get install -y nodejs && node -v
   
   ```
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
