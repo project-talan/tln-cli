@@ -6,6 +6,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const tmp = require('tmp');
 
+const utils = require('./utils');
+
 class Script {
   constructor(logger, id, componentUuid, failOnStderr, builder) {
     this.logger = logger;
@@ -33,10 +35,16 @@ class Script {
     if (!fs.existsSync(home)) {
       fs.mkdirSync(home, { recursive: true });
     }
+    // load environment variables from donenv files
+    let dotEnv = {};
+    for (const e of dotenvs) {
+      const pe = utils.parseEnvFile(e, this.logger);
+      dotEnv = {...dotEnv, ...pe};
+    }
     // TODO: pass proxy object instead of script itself
     const result = await this.builder(tln, Object.freeze({
         logger: this.logger,
-        env: {...env},
+        env: {...dotEnv, ...env},
         set: (body) => this.set(body)
       })
     );
@@ -54,6 +62,7 @@ class Script {
           fl = `${tmpobj.name}.${this.ext}`;
         }
         let includes = [];
+        /*
         // TODO create variant for windows environment
         for (const e of dotenvs) {
           if (os.platform() === 'win32') {
@@ -63,6 +72,7 @@ class Script {
             includes.push(`if [ -f "${e}" ]; then export \$(envsubst < "${e}" | grep -v ^# | xargs); fi`);
           }
         }
+        */
         //
         fs.writeFileSync(fl, this.prefix.concat(includes).concat(body).concat(this.suffix).join('\n'));
         fs.chmodSync(fl, fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR);
@@ -74,7 +84,7 @@ class Script {
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
           // run script from file
-          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env};
+          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: {...dotEnv, ...env}};
           if (fs.existsSync(home)) {
             opt.cwd = home;
           }
