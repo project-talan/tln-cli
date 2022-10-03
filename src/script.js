@@ -38,7 +38,7 @@ class Script {
     // load environment variables from donenv files
     let dotEnv = {};
     for (const e of dotenvs) {
-      const pe = utils.parseEnvFile(e, this.logger);
+      const pe = utils.parseEnvFile(path.join(home, e), this.logger);
       dotEnv = {...dotEnv, ...pe};
     }
     // TODO: pass proxy object instead of script itself
