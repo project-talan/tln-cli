@@ -190,7 +190,7 @@ module.exports = {
       logger.error(`${errMsg}: '${line}'`);
     }
   },
-  parseEnvFile(fileName, logger, errMsg = 'Specified file (--env-file) is not found') {
+  parseEnvFile(fileName, logger, errMsg = 'Specified file dotenv is not found') {
     if (fileName) {
       if (fs.existsSync(fileName)) {
         let env = {};
