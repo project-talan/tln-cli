@@ -24,10 +24,12 @@ module.exports = {
     if (line && line.length) {
       let record = line.trim();
       // remove comments
-      const commentdelim = record.indexOf('#');
-      if  (commentdelim >= 0) {
-        record = record.substring(0, commentdelim).trim();
-      }
+      ['#', 'REM', 'rem', '//'].forEach(d => {
+        const commentdelim = record.indexOf(d);
+        if  (commentdelim >= 0) {
+          record = record.substring(0, commentdelim).trim();
+        }
+      });
       //
       if (record.length) {
         const delim = record.indexOf('=');

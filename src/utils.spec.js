@@ -32,6 +32,13 @@ VAR2=VAL2
 
 VAR3=VAL3 #inline comment
 
+REM windows comment
+rem windows commwnt
+
+VAR3=VAL3
+
+// prog language comment
+VAR4=VAL4 // another comment
 
 `,
       'home': {
@@ -120,7 +127,7 @@ VAR3=VAL3 #inline comment
 
   it('dot env file should skip comments', async () => {
 
-    const res = {VAR1: 'VAL1', VAR2: 'VAL2', VAR3: 'VAL3'};
+    const res = {VAR1: 'VAL1', VAR2: 'VAL2', VAR3: 'VAL3', VAR4: 'VAL4'};
     expect(utils.parseEnvFile('.env.comments')).to.be.an('object').to.eql(res);
   });
 
