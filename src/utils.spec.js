@@ -24,6 +24,23 @@ describe('Utils', function() {
   beforeEach(function () {
     mockfs({
       '.env': 'VAR1=VAL1\n\nVAR2=VAL2\n\n\n\n\n',
+      '.env.comments': `
+# linux comment
+VAR1=VAL1
+
+VAR2=VAL2
+
+VAR3=VAL3 #inline comment
+
+REM windows comment
+rem windows commwnt
+
+VAR3=VAL3
+
+// prog language comment
+VAR4=VAL4 // another comment
+
+`,
       'home': {
         'user': {
           'projects': {
@@ -106,6 +123,12 @@ describe('Utils', function() {
 
     const res = {VAR1: 'VAL1', VAR2: 'VAL2'};
     expect(utils.parseEnvFile('.env')).to.be.an('object').to.eql(res);
+  });
+
+  it('dot env file should skip comments', async () => {
+
+    const res = {VAR1: 'VAL1', VAR2: 'VAL2', VAR3: 'VAL3', VAR4: 'VAL4'};
+    expect(utils.parseEnvFile('.env.comments')).to.be.an('object').to.eql(res);
   });
 
 });

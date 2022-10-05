@@ -22,7 +22,15 @@ module.exports = {
   },
   parseEnvRecord(line, logger, errMsg = 'Command line argument (-e | --env) is incorrect') {
     if (line && line.length) {
-      const record = line.trim();
+      let record = line.trim();
+      // remove comments
+      ['#', 'REM', 'rem', '//'].forEach(d => {
+        const commentdelim = record.indexOf(d);
+        if  (commentdelim >= 0) {
+          record = record.substring(0, commentdelim).trim();
+        }
+      });
+      //
       if (record.length) {
         const delim = record.indexOf('=');
         let key = record;
@@ -40,7 +48,7 @@ module.exports = {
       logger.error(`${errMsg}: '${line}'`);
     }
   },
-  parseEnvFile(fileName, logger, errMsg = 'Specified file (--env-file) is not found') {
+  parseEnvFile(fileName, logger, errMsg = 'Specified file (--env-file) was not found') {
     if (fileName) {
       if (fs.existsSync(fileName)) {
         let env = {};
