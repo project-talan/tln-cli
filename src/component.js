@@ -48,14 +48,17 @@ class component {
     return this.parent === null;
   }
 
+
+
+  async createChildFromId(id, force) {
   // child component will have home path different from parent
-  async createChildFromHome(home) {
-    return await this.createChildFromId(path.basename(home), true, home);
+    return await this.createChildFromHome(path.join(home, id), force);
   }
 
   // child component will inherit home hierarchy from parent
-  async createChildFromId(id, force, home = null) {
+  async createChildFromHome(home, force) {
     // check if entity was already created
+    const id = path.basename(home);
     let c = this.components.find(e => e.getId() === id);
     //
     if (!c) {

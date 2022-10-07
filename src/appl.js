@@ -83,7 +83,7 @@ class appl {
       // set default value for third-parties - root component
       this.destPath = this.destPath || this.home;
     }
-    this.rootComponent = this.currentComponent = this.rootComponent = this.componentsFactory.createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
+    this.currentComponent = this.rootComponent = this.componentsFactory.createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
     if (this.detached) {
         this.currentComponent = await this.rootComponent.createChildFromHome(this.cwd);
     } else {

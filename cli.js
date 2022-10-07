@@ -43,11 +43,8 @@ const argv = require('yargs')
   .option('verbose',              { describe: 'Output details mode', alias: 'v', count: true, default: 0 })
   .option('detached',             { describe: 'In detached mode current component will be a root components of hierarchy', default: false, type: 'boolean' })
   .option('dest-path',            { describe: 'In detached mode, pth where all third parties components will be installed', default: null, type: 'string' })
-  .option('p',                    { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
-  .option('r',                    { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
-  .option('parent-first',         { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
   .option('u',                    { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
-  .option('e',                    { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+  .option('e',                    { describe: 'Set environment variable', alias: 'env', default: [], type: 'array' })
   .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('a',                    { describe: 'Apply command to all available items', alias: 'all', default: false, type: 'boolean' })
   .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
@@ -68,8 +65,8 @@ const argv = require('yargs')
     async (argv) => {
       const appl = await createAppl(argv);
       //
-      const {components, cmds, env, graph, json} = argv;
-      await appl.inspect(components, {cmds, env, graph, json});
+      const {components, all, mds, env, graph, json} = argv;
+      await appl.inspect(components, {cmds | all, env | all, graph | all, json});
     }
   )
   /**************************************************************************/
@@ -98,7 +95,7 @@ const argv = require('yargs')
       yargs
         .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
         .option('d',              { describe: 'Max depth level (-1 scan whole hierarchy)', alias: 'depth', default: 1, type: 'number' })
-        .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
+        .option('parents',        { describe: 'Include hierarchy of parent components', default: false, type: 'boolean' })
     },
     async (argv) => {
       const appl = await createAppl(argv);
@@ -114,6 +111,8 @@ const argv = require('yargs')
       yargs
         .positional('commands',   { describe: 'delimited by colon commands, i.e build:test', type: 'string' })
         .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
+        .option('p',              { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
+        .option('r',              { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
         .option('parent-first',   { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
         .option('save',           { describe: 'Generate and save scripts inside component folder, otherwise temp folder will be used', default: false, type: 'boolean' })
         .option('catalog',        { describe: 'Execute catalog related commands: create | add | update | ls', default: false, type: 'boolean' })
@@ -141,6 +140,7 @@ const argv = require('yargs')
       const appl = await createAppl(argv);
       //
       const {commands, depends, catalog} = argv;
+      // execute catalogs specfic commads
       if (catalog) {
         const {name, src, brief} = argv;
         switch (commands) {
