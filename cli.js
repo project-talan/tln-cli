@@ -65,8 +65,8 @@ const argv = require('yargs')
     async (argv) => {
       const appl = await createAppl(argv);
       //
-      const {components, all, mds, env, graph, json} = argv;
-      await appl.inspect(components, {cmds | all, env | all, graph | all, json});
+      const {components, all, cmds, env, graph, json} = argv;
+      await appl.inspect(components, {cmds: cmds || all, env: env || all, graph: graph || all, json});
     }
   )
   /**************************************************************************/
