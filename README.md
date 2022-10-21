@@ -10,13 +10,11 @@ Upcoming 2.x release will bring a new key feature: AaC - Architecture-as-Code.
 [Brew](https://brew.sh/), [Conan](https://conan.io/), [Meta](https://github.com/mateodelnorte/meta), [Lerna](https://github.com/lerna/lerna), [SDKMAN](https://sdkman.io), [jEnv](https://www.jenv.be/), [Chocolatey](https://chocolatey.org/)
 
 ## Prerequisites
-* Install `Nodejs 14.x` or higher (https://nodejs.org)
+* Install `Nodejs 16.x` or higher (https://nodejs.org)
 
   Linux
   ```
-  curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh
-  sudo bash nodesource_setup.sh
-  sudo apt-get install -y nodejs && node -v
+  curl -sL https://deb.nodesource.com/setup_16.x -o nodesource_setup.sh && sudo bash nodesource_setup.sh && sudo apt-get install -y nodejs && node -v
   
   ```
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
@@ -59,15 +57,8 @@ Upcoming 2.x release will bring a new key feature: AaC - Architecture-as-Code.
     env: async (tln, env) => {},
     dotenvs: async (tln) => [],
     inherits: async (tln) => [],
-    depends: async (tln) => ['openjdk-18', 'mvn-3.8.5', 'go-1.18.3', 'node-16.15.1', 'kubectl-1.23.7', 'firebase-11.0.1'],
-    steps: async (tln) => [
-      {
-        id: "versions",
-        builder: async (tln, script) => script.set([
-          'java -version && echo && mvn -v && echo && go version && echo && node -v && echo && kubectl version --client && echo && firebase --version'
-        ])
-      }
-    ],
+    depends: async (tln) => ['openjdk-18', 'mvn-3.8.6', 'go-1.19.2', 'node-16.18.0', 'kubectl-1.23.13', 'firebase-11.15.0'],
+    steps: async (tln) => [],
     components: async (tln) => []
   }
   ```
@@ -77,26 +68,29 @@ Upcoming 2.x release will bring a new key feature: AaC - Architecture-as-Code.
   ```
 * Check version of installed components
   ```
-  tln versions
+  tln versions --depends
   ```
   ```
+  [java]
   openjdk version "18" 2022-03-22
   OpenJDK Runtime Environment (build 18+36-2087)
   OpenJDK 64-Bit Server VM (build 18+36-2087, mixed mode, sharing)
-
-  Apache Maven 3.8.5 (3599d3414f046de2324203b78ddcf9b5e4388aa0)
-  Maven home: /root/projects/maven/mvn-3.8.5
-  Java version: 18, vendor: Oracle Corporation, runtime: /root/projects/java/openjdk-18
+  [maven]
+  Apache Maven 3.8.6 (84538c9988a25aec085021c365c560670ad80f63)
+  Maven home: /root/projects/maven/mvn-3.8.6
+  Java version: 1.8.0_342, vendor: Private Build, runtime: /usr/lib/jvm/java-8-openjdk-amd64/jre
   Default locale: en, platform encoding: UTF-8
-  OS name: "linux", version: "4.15.0-180-generic", arch: "amd64", family: "unix"
-
-  go version go1.18.3 linux/amd64
-
-  v16.15.1
-
-  Client Version: version.Info{Major:"1", Minor:"23", GitVersion:"v1.23.7", GitCommit:"42c05a547468804b2053ecf60a3bd15560362fc2", GitTreeState:"clean", BuildDate:"2022-05-24T12:30:55Z", GoVersion:"go1.17.10", Compiler:"gc", Platform:"linux/amd64"}
-
-  11.0.1
+  OS name: "linux", version: "4.15.0-194-generic", arch: "amd64", family: "unix"
+  [golang]
+  go version go1.19.2 linux/amd64
+  [node]
+  v16.18.0
+  [npm]
+  8.19.2
+  [kubectl]
+  Client Version: version.Info{Major:"1", Minor:"23", GitVersion:"v1.23.13", GitCommit:"592eca05be27f7d927d0b25cbb4241d75a9574bf", GitTreeState:"clean", BuildDate:"2022-10-12T10:57:16Z", GoVersion:"go1.17.13", Compiler:"gc", Platform:"linux/amd64"}
+  [firebase]
+  11.15.0
   ```
 
 ## tln architecture & in-depth details
