@@ -4,6 +4,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 
+const requireFromString = require('require-from-string');
 const utils = require('./utils');
 
 class component {
@@ -77,11 +78,12 @@ class component {
 
   // load description from one file
   loadDescriptionFromFile(srcPath, fileName = utils.configFileName) {
-    let d = {};
     const configFile = path.join(srcPath, fileName);
     if (fs.existsSync(configFile) && fs.lstatSync(configFile).isFile()) {
       try {
-        const d = require(configFile);
+        ///
+        //const d = require(configFile);
+        const d = requireFromString(fs.readFileSync( configFile, 'utf8' ), configFile);
         if (d.version && d.version === utils.configVersion) {
           d.source = configFile;
           return d;

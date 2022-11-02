@@ -29,7 +29,7 @@ describe('Application', function() {
       'home': {
         'user': {
           'projects': {
-            '.tln.conf': '{}',
+            '.tln.conf': 'module.exports = {version: "2"}',
             'pepsico': {
               'it': {
                 '.env1': 'VAR3=VAL3\n',
@@ -56,7 +56,8 @@ describe('Application', function() {
   });
 
   it('default detached mode run', async () => {
-    const appl = factory.create(logger, componentsFactory, {...options, cwd: 'home/user'});
+    const home = 'home/user';
+    const appl = factory.create(logger, componentsFactory, {...options, cwd: home});
     await appl.init();
     expect(appl.detached).to.be.true;
     expect(appl.rootComponent).to.be.an('object');
