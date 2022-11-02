@@ -36,7 +36,7 @@ class appl {
     //
     this.home = this.cwd = cwd;
     this.tlnHome = tlnHome;
-    this.stdCatalog = path.join(this.tlnHome, 'components');
+    this.stdCatalog = path.join(this.tlnHome, 'catalog');
     // Prepare tln shared object 
     this.tln = Object.freeze({
       logger: this.logger,

@@ -16,7 +16,7 @@ describe('Component', function() {
   let root = null;
   const projectsHome = 'home/user/projects'
   const childId = 'pepsico';
-  const stdCatalog = 'tln';
+  const stdCatalog = 'tln/catalog';
 
   before(function() {
   });
@@ -31,6 +31,10 @@ describe('Component', function() {
       'home': {
         'user': {
           'projects': {
+            '.tln.conf': 'module.exports = {version: "2"}',
+            'oldconfig': {
+              '.tln.conf': 'module.exports = {}',
+            }
           }
         }
       },
@@ -45,7 +49,7 @@ describe('Component', function() {
     factory = null;
     logger = null;
   })
-
+//*
   it('can be created', async () => {
     expect(root).to.be.an('object');
     expect(root.getId()).to.equal('');
@@ -83,5 +87,21 @@ describe('Component', function() {
     expect(child.getId()).to.equal(childId);
     expect(child.getUuid()).to.equal([child.getParent().getUuid()].concat([child.getId()]).join('/'));
   });
+
+  it('child object id & uuid are correct', async () => {
+    const child = await root.createChildFromId(childId, true);
+    expect(child.getId()).to.equal(childId);
+    expect(child.getUuid()).to.equal([child.getParent().getUuid()].concat([child.getId()]).join('/'));
+  });
+
+  it('root component should load description from standard catalog, projects\'s home and .tln folder', async () => {
+    expect(root.descriptions.length).to.equal(2);
+  });
+//*/
+  it('component should skip old config file', async () => {
+    const child = await root.createChildFromId('oldconfig', true);
+    expect(child.descriptions.length).to.equal(0);
+  });
+
 
 });

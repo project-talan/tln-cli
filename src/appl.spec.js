@@ -22,7 +22,7 @@ describe('Application', function() {
   });
 
   beforeEach(function () {
-    logger = require('./logger').create(1);
+    logger = require('./logger').create(0);
     factory = require('./appl');
     componentsFactory = require('./component');
     mockfs({
@@ -49,7 +49,7 @@ describe('Application', function() {
   afterEach(function () {
     mockfs.restore();
   })
-
+//*
   it('can be created', async () => {
     const appl = factory.create(logger, componentsFactory, options);
     expect(appl).to.be.an('object');
@@ -120,4 +120,5 @@ describe('Application', function() {
     expect(appl.cmdLineEnv.VAR3).to.equal('VAL3');
     expect(appl.cmdLineEnv.VAR4).to.equal('VAL4');
   });
+//  */
 });
