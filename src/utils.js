@@ -5,8 +5,10 @@ const fs = require('fs');
 const lineReader = require('line-reader');
 
 
+const configVersion = '2';
 const configFileName = '.tln.conf';
 const configFolderName = '.tln';
+const excluseFolders = ['.git', '.tln', '.svn'];
 
 module.exports = {
   getConfigFile(p) {
@@ -74,5 +76,7 @@ module.exports = {
   }
 }
 
+module.exports.configVersion = configVersion;
 module.exports.configFileName = configFileName;
 module.exports.configFolderName = configFolderName;
+module.exports.excluseFolders = excluseFolders;

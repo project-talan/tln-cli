@@ -78,6 +78,9 @@ class appl {
     if (this.detached) {
       // Set TLN_DETACHED to turn on detached mode for nested calls
       this.destPath = this.destPath || path.join(os.tmpdir(), `tln2-${this.env.USER}`);
+      if (!fs.existsSync(this.destPath)) {
+        fs.mkdirSync(this.destPath, { recursive: true });
+      }
       this.env.TLN_DETACHED = this.destPath;
     } else {
       // set default value for third-parties - root component
@@ -85,11 +88,11 @@ class appl {
     }
     this.currentComponent = this.rootComponent = this.componentsFactory.createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
     if (this.detached) {
-        this.currentComponent = await this.rootComponent.createChildFromHome(this.cwd);
+        this.currentComponent = await this.rootComponent.createChildFromHome(this.cwd, true);
     } else {
       if (folders.length) {
         let id = folders.shift();
-        this.currentComponent = await this.rootComponent.createChildFromHome(path.join(this.home, id));
+        this.currentComponent = await this.rootComponent.createChildFromHome(path.join(this.home, id), true);
         while(folders.length) {
           id = folders.shift();
           this.currentComponent = await this.currentComponent.createChildFromId(id, true);
@@ -115,8 +118,8 @@ class appl {
     return this;
   }
 
-  splitComponents(components) {
-    return components?components.split(':'):[];
+  splitItems(items) {
+    return items?items.split(':'):[];
   }
 
   isRootPath(p) {
