@@ -49,7 +49,9 @@ class component {
     return this.parent === null;
   }
 
-
+  //---------------------------------------------------------------------------
+  // utils
+  //---------------------------------------------------------------------------
   enumFolders(srcPath, exclude = utils.excluseFolders) {
     let folders = [];
     if (fs.existsSync(srcPath)) {
@@ -68,6 +70,20 @@ class component {
     return folders.sort((l, r) => l.name.localeCompare(r.name));
   }
 
+  async resolveComponentsFromDesc(desc) {
+    if (!desc.resolved) {
+      desc.resolved = {};
+      if (desc.components) {
+        desc.resolved = await desc.components(this.tln);
+      }
+    }
+    return desc.resolved;
+  }
+
+
+  //---------------------------------------------------------------------------
+  // work with descriptions
+  //---------------------------------------------------------------------------
   // check if descriptions are not empty and save them inside object
   storeDescriptions(ds) {
     for (const d of ds) {
@@ -100,11 +116,19 @@ class component {
 
   // load & merge dscription from config file and all sub-folders
   // should save descriptions
-  loadDescriptionsFromPath(srcPath) {
+  mergeDescriptionsFromPath(srcPath) {
     const d = this.loadDescriptionFromFile(srcPath);
-    //
-    //
-    this.storeDescriptions([d]);
+    // scan folders
+    const descs = [];
+    for (const folder of this.enumFolders(srcPath)) {
+      const desc = this.mergeDescriptionsFromPath(path.join(srcPath, folder.name));
+      descs.push({id: folder.name, ...desc});
+    }
+    d.components = async (tln) => descs;
+    return d;
+  }
+  loadDescriptionsFromPath(srcPath) {
+    this.storeDescriptions([this.mergeDescriptionsFromPath(srcPath)]);
   }
 
   // load descriptions from config folder
@@ -127,6 +151,9 @@ class component {
     this.storeDescriptions([this.loadDescriptionFromFile(this.getHome())]);
   }
   
+  //---------------------------------------------------------------------------
+  // work with child components
+  //---------------------------------------------------------------------------
   async createChildFromId(id, force = false) {
   // child component will have home path different from parent
     return await this.createChildFromHome(path.join(this.getHome(), id), force);
@@ -140,24 +167,21 @@ class component {
     //
     if (!c) {
       // collect description from already loaded sources
-      const descriptions = [];
-/*
+      const ds = [];
       for (const desc of this.descriptions) {
-        const components = await this.getComponentsFromDesc(desc);
+        const cs = await this.resolveComponentsFromDesc(desc);
         //
-        if (components) {
-          for (const component of components) {
-            if (component.id === id) {
-              component.source = desc.source;
-              descriptions.push(component);
+        if (cs) {
+          for (const cId of Object.keys(cs)) {
+            if (cId === id) {
+              ds.push({ ...cs[cId], source: desc.source });
             }
           }
         }
       }
-*/
       // create child entity
-      if (utils.isConfigPresent(home) || descriptions.length || force) {
-        c = new component(this.logger, this.tln, id, home, this, descriptions);
+      if (utils.isConfigPresent(home) || ds.length || force) {
+        c = new component(this.logger, this.tln, id, home, this, ds);
         c.loadDescriptions();
         this.components.push(c);
       }

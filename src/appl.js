@@ -40,9 +40,6 @@ class appl {
     // Prepare tln shared object 
     this.tln = Object.freeze({
       logger: this.logger,
-      os,
-      path,
-      fs,
       utils,
     });
   }
@@ -102,7 +99,7 @@ class appl {
     //
     //
     this.logger.info(`path to config: ${this.configPath}`);
-    this.logger.info('operating system:', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
+    this.logger.info('operating system:', os.type(), os.platform(), os.release());
     this.logger.info(`cwd: ${this.cwd}`);
     this.logger.info(`home: ${this.home}`);
     this.logger.info(`tlnHome: ${this.tlnHome}`);
