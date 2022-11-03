@@ -31,6 +31,14 @@ describe('Component', function() {
       'home': {
         'user': {
           'projects': {
+            '.tln': {
+              'config1': {
+                '.tln.conf': 'module.exports = {version: "2"}',
+              },
+              'config2': {
+                '.tln.conf': 'module.exports = {version: "2"}',
+              },
+            },
             '.tln.conf': 'module.exports = {version: "2"}',
             'oldconfig': {
               '.tln.conf': 'module.exports = {}',
@@ -94,8 +102,12 @@ describe('Component', function() {
     expect(child.getUuid()).to.equal([child.getParent().getUuid()].concat([child.getId()]).join('/'));
   });
 
-  it('root component should load description from standard catalog, projects\'s home and .tln folder', async () => {
-    expect(root.descriptions.length).to.equal(2);
+  it('root component should load description from standard catalog, projects\'s home and .tln folder in orrect order', async () => {
+    expect(root.descriptions.length).to.equal(4);
+    expect(root.descriptions[0].source).to.equal('tln/catalog/.tln.conf');
+    expect(root.descriptions[1].source).to.equal('home/user/projects/.tln/config1/.tln.conf');
+    expect(root.descriptions[2].source).to.equal('home/user/projects/.tln/config2/.tln.conf');
+    expect(root.descriptions[3].source).to.equal('home/user/projects/.tln.conf');
   });
 //*/
   it('component should skip old config file', async () => {

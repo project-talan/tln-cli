@@ -64,7 +64,8 @@ class component {
         }
       });
     }
-    return folders;
+    // sort result A->Z
+    return folders.sort((l, r) => l.name.localeCompare(r.name));
   }
 
   // check if descriptions are not empty and save them inside object
@@ -88,7 +89,7 @@ class component {
           d.source = configFile;
           return d;
         }
-        this.logger.warn(`${configFile} was skipped due to incompatible config version`);
+        this.logger.warn(`${configFile} was skipped due to incompatible config version (required: ${utils.configVersion})`);
       } catch (e) {
         this.logger.error(`${configFile} has invalid structure\n`, e.stack);
         process.exit(1);
