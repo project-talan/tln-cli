@@ -35,21 +35,22 @@ const createAppl = async(argv) => {
   ).init());
 }
 
+const splitItems = (items) => {
+  return items?items.split(':'):[];
+}
+
 const argv = require('yargs')
   .version()
   .config(config)
   .usage('Component management system\nUsage:\n $0 <command[:command[...]]> [component[:component[:...]]] [options] -- [command-specific-options]')
   .help('help').alias('help', 'h')
   .option('verbose',              { describe: 'Output details mode', alias: 'v', count: true, default: 0 })
-  .option('detached',             { describe: 'In detached mode current component will be a root components of hierarchy', default: false, type: 'boolean' })
-  .option('dest-path',            { describe: 'In detached mode, pth where all third parties components will be installed', default: null, type: 'string' })
-  .option('p',                    { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
-  .option('r',                    { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
-  .option('parent-first',         { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
-  .option('u',                    { describe: 'Don\'t do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
-  .option('e',                    { describe: 'Set environment variables', alias: 'env', default: [], type: 'array' })
+  .option('detached',             { describe: 'In detached mode current component will be a top-level component of hierarchy', default: false, type: 'boolean' })
+  .option('dest-path',            { describe: 'In detached mode, path where all third parties components will be installed', default: null, type: 'string' })
+  .option('u',                    { describe: 'Do not do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
+  .option('e',                    { describe: 'Set environment variable', default: [], type: 'array' })
   .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
-  .option('a',                    { describe: 'Apply command to all available items', alias: 'all', default: false, type: 'boolean' })
+  .option('a',                    { describe: 'Apply command to all / show all available items', alias: 'all', default: false, type: 'boolean' })
   .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
   .option('depend',               { describe: 'Component to insert into depends list', default: [], type: 'array' })
   .option('inherit',              { describe: 'Component to insert into inherits list', default: [], type: 'array' })
@@ -68,13 +69,13 @@ const argv = require('yargs')
     async (argv) => {
       const appl = await createAppl(argv);
       //
-      const {components, cmds, env, graph, json} = argv;
-      await appl.inspect(components, {cmds, env, graph, json});
+      const {components, all, cmds, env, graph, json} = argv;
+      await appl.inspect(splitItems(components), {cmds: cmds || all, env: env || all, graph: graph || all, json});
     }
   )
   /**************************************************************************/
   .command(
-    'ls [components] [-d depth] [-l] [--parents] [--installed-only]', 'Display components hierarchy',
+    'ls [components] [-d depth] [-l number] [--parents] [--installed-only]', 'Display components hierarchy',
     (yargs) => {
       yargs
         .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
@@ -87,24 +88,25 @@ const argv = require('yargs')
       const appl = await createAppl(argv);
       //
       const {components, depth, limit, parents, installedOnly} = argv;
-      await appl.ls(components, {depth, limit, parents, installedOnly});
+      await appl.ls(splitItems(components), {depth, limit, parents, installedOnly});
     }
   )
   /**************************************************************************/
   // #233
+  // move to the ordinary commands execution with --hierarchy option
   .command(
     'get-hierarchy [components] [-d depth] [--parents]', 'Generate onboarding script to configure local dev environment',
     (yargs) => {
       yargs
         .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
         .option('d',              { describe: 'Max depth level (-1 scan whole hierarchy)', alias: 'depth', default: 1, type: 'number' })
-        .option('parents',        { describe: 'Show all component parents', default: false, type: 'boolean' })
+        .option('parents',        { describe: 'Include hierarchy of parent components', default: false, type: 'boolean' })
     },
     async (argv) => {
       const appl = await createAppl(argv);
       //
       const {components, depth, parents} = argv;
-      await appl.getHierarchy(components, {depth, parents});
+      await appl.getHierarchy(splitItems(components), {depth, parents});
     }
   )
   /**************************************************************************/
@@ -114,13 +116,18 @@ const argv = require('yargs')
       yargs
         .positional('commands',   { describe: 'delimited by colon commands, i.e build:test', type: 'string' })
         .positional('components', { describe: 'delimited by colon components, i.e. maven:kubectl:java', default: '', type: 'string' })
+        .option('p',              { describe: 'Execute commands for multiple components in parallel', alias: 'parallel', default: false, type: 'boolean' })
+        .option('r',              { describe: 'Execute commands recursively for all direct child components', alias: 'recursive', default: false, type: 'boolean' })
         .option('parent-first',   { describe: 'During recursive execution, parent will be processed first and then nested components', default: false, type: 'boolean' })
         .option('save',           { describe: 'Generate and save scripts inside component folder, otherwise temp folder will be used', default: false, type: 'boolean' })
+        .option('depends',        { describe: 'Execute commands for all components from depends list too', default: false, type: 'boolean' })
+
+        //.option('hierarchy',        { describe: 'Execute catalog related commands: create | add | update | ls', default: false, type: 'boolean' })
+
         .option('catalog',        { describe: 'Execute catalog related commands: create | add | update | ls', default: false, type: 'boolean' })
         .option('name',           { describe: 'Catalog name', default: null, type: 'string' })
         .option('src',            { describe: 'Catalog repository URL', default: null, type: 'string' })
         .option('brief',          { describe: 'Remove help information from .tln catalog file', default: false, type: 'boolean' })
-        .option('depends',        { describe: 'Execute commands for all components from depends list too', default: false, type: 'boolean' })
         .check(({ catalog, depends }) => {
           if (depends && catalog) {
             throw new Error('Arguments depends and catalog are mutually exclusive');
@@ -141,6 +148,7 @@ const argv = require('yargs')
       const appl = await createAppl(argv);
       //
       const {commands, depends, catalog} = argv;
+      // execute catalogs specfic commads
       if (catalog) {
         const {name, src, brief} = argv;
         switch (commands) {
@@ -153,7 +161,7 @@ const argv = require('yargs')
       } else {
         const {components, parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr} = argv;
         const {command, file} = argv;
-        await appl.run(commands, components, {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file);
+        await appl.run(splitItems(commands), splitItems(components), {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file);
       }
     }
   )

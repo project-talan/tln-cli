@@ -13,8 +13,10 @@ describe('Component', function() {
 
   let logger = null;
   let factory = null;
-  const projectsHome = '/home/user/projects'
+  let root = null;
+  const projectsHome = 'home/user/projects'
   const childId = 'pepsico';
+  const stdCatalog = 'tln/catalog';
 
   before(function() {
   });
@@ -29,20 +31,37 @@ describe('Component', function() {
       'home': {
         'user': {
           'projects': {
+            '.tln': {
+              'config1': {
+                '.tln.conf': 'module.exports = {version: "2"}',
+                'component1': {
+                  '.tln.conf': 'module.exports = {version: "2"}',
+                }
+              },
+              'config2': {
+                '.tln.conf': 'module.exports = {version: "2"}',
+              },
+            },
+            '.tln.conf': 'module.exports = {version: "2", components: async (tln) => ({ "petramco": { env: async (tln, env) => {}, } }) }',
+            'oldconfig': {
+              '.tln.conf': 'module.exports = {}',
+            }
           }
         }
-      }
+      },
+      'tln': mockfs.load(path.resolve(__dirname, '..')),
     });
-
+    root = factory.createRoot(logger, null, projectsHome, stdCatalog);
   })
 
   afterEach(function () {
-    logger = null;
+    root = null;
     mockfs.restore();
+    factory = null;
+    logger = null;
   })
-
+//*
   it('can be created', async () => {
-    const root = factory.createRoot(logger, null, projectsHome);
     expect(root).to.be.an('object');
     expect(root.getId()).to.equal('');
     expect(root.getUuid()).to.equal('');
@@ -53,19 +72,16 @@ describe('Component', function() {
   });
 
   it('can not create child component without description', async () => {
-    const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, false);
     expect(child).to.be.undefined;
   });
 
   it('can force child component creation without description', async () => {
-    const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, true);
     expect(child).to.be.an('object');
   });
 
   it('creation will return existing component if any', async () => {
-    const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, true);
 
     const child2 = await root.createChildFromId(childId, true);
@@ -73,16 +89,39 @@ describe('Component', function() {
   });
 
   it('child object inherits parent home path', async () => {
-    const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, true);
     expect(child.getHome()).to.equal(path.join(projectsHome, childId));
   });
 
   it('child object id & uuid are correct', async () => {
-    const root = factory.createRoot(logger, null, projectsHome);
     const child = await root.createChildFromId(childId, true);
     expect(child.getId()).to.equal(childId);
     expect(child.getUuid()).to.equal([child.getParent().getUuid()].concat([child.getId()]).join('/'));
   });
+
+  it('child object id & uuid are correct', async () => {
+    const child = await root.createChildFromId(childId, true);
+    expect(child.getId()).to.equal(childId);
+    expect(child.getUuid()).to.equal([child.getParent().getUuid()].concat([child.getId()]).join('/'));
+  });
+
+  it('root component should load description from standard catalog, projects\'s home and .tln folder in orrect order', async () => {
+    expect(root.descriptions.length).to.equal(4);
+    expect(root.descriptions[0].source).to.equal('tln/catalog/.tln.conf');
+    expect(root.descriptions[1].source).to.equal('home/user/projects/.tln/config1/.tln.conf');
+    expect(root.descriptions[2].source).to.equal('home/user/projects/.tln/config2/.tln.conf');
+    expect(root.descriptions[3].source).to.equal('home/user/projects/.tln.conf');
+  });
+//*/
+  it('component should skip old config file', async () => {
+    const child = await root.createChildFromId('oldconfig', true);
+    expect(child.descriptions.length).to.equal(0);
+  });
+
+  it('component should inherits description from parent component', async () => {
+    const child = await root.createChildFromId('petramco', true);
+    expect(child.descriptions.length).to.equal(1);
+  });
+
 
 });

@@ -36,13 +36,11 @@ class appl {
     //
     this.home = this.cwd = cwd;
     this.tlnHome = tlnHome;
-    this.stdCatalog = path.join(this.tlnHome, 'components');
+    this.stdCatalog = path.join(this.tlnHome, 'catalog');
+    this.filter = {};
     // Prepare tln shared object 
     this.tln = Object.freeze({
       logger: this.logger,
-      os,
-      path,
-      fs,
       utils,
     });
   }
@@ -78,18 +76,21 @@ class appl {
     if (this.detached) {
       // Set TLN_DETACHED to turn on detached mode for nested calls
       this.destPath = this.destPath || path.join(os.tmpdir(), `tln2-${this.env.USER}`);
+      if (!fs.existsSync(this.destPath)) {
+        fs.mkdirSync(this.destPath, { recursive: true });
+      }
       this.env.TLN_DETACHED = this.destPath;
     } else {
       // set default value for third-parties - root component
       this.destPath = this.destPath || this.home;
     }
-    this.rootComponent = this.currentComponent = this.rootComponent = this.componentsFactory.createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
+    this.currentComponent = this.rootComponent = this.componentsFactory.createRoot(this.logger, this.tln, this.destPath, this.stdCatalog);
     if (this.detached) {
-        this.currentComponent = await this.rootComponent.createChildFromHome(this.cwd);
+        this.currentComponent = await this.rootComponent.createChildFromHome(this.cwd, true);
     } else {
       if (folders.length) {
         let id = folders.shift();
-        this.currentComponent = await this.rootComponent.createChildFromHome(path.join(this.home, id));
+        this.currentComponent = await this.rootComponent.createChildFromHome(path.join(this.home, id), true);
         while(folders.length) {
           id = folders.shift();
           this.currentComponent = await this.currentComponent.createChildFromId(id, true);
@@ -99,7 +100,7 @@ class appl {
     //
     //
     this.logger.info(`path to config: ${this.configPath}`);
-    this.logger.info('operating system:', this.tln.os.type(), this.tln.os.platform(), this.tln.os.release());
+    this.logger.info('operating system:', os.type(), os.platform(), os.release());
     this.logger.info(`cwd: ${this.cwd}`);
     this.logger.info(`home: ${this.home}`);
     this.logger.info(`tlnHome: ${this.tlnHome}`);
@@ -115,18 +116,20 @@ class appl {
     return this;
   }
 
-  splitComponents(components) {
-    return components?components.split(':'):[];
-  }
-
-  isRootPath(p) {
+   isRootPath(p) {
     // TODO validate expression at windows box
     const root = (os.platform == "win32") ? `${this.cwd.split(path.sep)[0]}${path.sep}` : path.sep;
     return (p === root);
   }
 
+  async resolve(components, resolveEmptyToThis = true) {
+    return this.currentComponent.resolve(components, resolveEmptyToThis);
+  }
 
-  async inspect(components, {cmds, env, graph, json}) {
+  async inspect(components, options) {
+    for(const component of await this.resolve(components)) {
+      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, options);
+    }
   }
 
   async ls(components, {depth, limit, parents, installedOnly}) {

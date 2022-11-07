@@ -22,14 +22,14 @@ describe('Application', function() {
   });
 
   beforeEach(function () {
-    logger = require('./logger').create(1);
+    logger = require('./logger').create(0);
     factory = require('./appl');
     componentsFactory = require('./component');
     mockfs({
       'home': {
         'user': {
           'projects': {
-            '.tln.conf': '{}',
+            '.tln.conf': 'module.exports = {version: "2"}',
             'pepsico': {
               'it': {
                 '.env1': 'VAR3=VAL3\n',
@@ -49,14 +49,15 @@ describe('Application', function() {
   afterEach(function () {
     mockfs.restore();
   })
-
+//*
   it('can be created', async () => {
     const appl = factory.create(logger, componentsFactory, options);
     expect(appl).to.be.an('object');
   });
 
   it('default detached mode run', async () => {
-    const appl = factory.create(logger, componentsFactory, {...options, cwd: 'home/user'});
+    const home = 'home/user';
+    const appl = factory.create(logger, componentsFactory, {...options, cwd: home});
     await appl.init();
     expect(appl.detached).to.be.true;
     expect(appl.rootComponent).to.be.an('object');
@@ -119,4 +120,5 @@ describe('Application', function() {
     expect(appl.cmdLineEnv.VAR3).to.equal('VAL3');
     expect(appl.cmdLineEnv.VAR4).to.equal('VAL4');
   });
+//  */
 });

@@ -10,9 +10,6 @@
       con()
     utils.
       wrap()
-    os
-    fs
-    path
     script.
       cmd()
       if.
@@ -41,7 +38,7 @@ module.exports = {
   files: async (tln) => [/*'version:TLN_VERSION'*/],
   inherits: async (tln) => [INHERITS/*'git'*/],
   depends: async (tln) => [DEPENDS/*'openjdk-11.0.2', {id:'dotnet-sdk-3.1.410', filter:'win32'}*/],
-  commands: async (tln) => [
+  commands: async (tln) => ({
     'demo': {
       desc: 'Show service status',
       propagation: 'no',      // no(default) | up | down
@@ -81,7 +78,7 @@ module.exports = {
         ;
       }
     },
-  ],
+  }),
   diagrams: async (tln) => [/*
     tln.diagram.sequence().
       actor('Alice').
@@ -91,7 +88,7 @@ module.exports = {
       component('Car').
         aggregates('GPS')
   */]
-  components: async (tln) => [/*
-    { id: 'sub-component',  ... }
-  */]
+  components: async (tln) => ({/*
+    'sub-component': {}
+  */})
 }
