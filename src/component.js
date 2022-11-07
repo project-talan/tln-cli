@@ -80,6 +80,71 @@ class component {
     return desc.resolved;
   }
 
+  async resolve(components, resolveEmptyToThis = false) {
+    let r = [];
+    if (components.length) {
+    } else {
+      if (resolveEmptyToThis) {
+        r.push(this);
+      }
+    }
+    return r;
+  }  
+
+  //---------------------------------------------------------------------------
+  // ...
+  //---------------------------------------------------------------------------
+  async inspect(cout, filter, {cmds, env, graph, json}) {
+    let r = {};
+    r.id = this.getId();
+    r.uuid = this.getUuid();
+    r.home = this.getHome();
+    r.parent = (this.getParent()) ? (this.getParent().getUuid()) : (null);
+    r.descriptions = [];
+    this.descriptions.forEach(description => {
+      r.descriptions.push(description.source);
+    });
+    if (cmds) {
+
+    }
+    if (env) {
+
+    }
+    if (graph) {
+      
+    }
+    
+    // herarchy
+//    const herarchy = await this.unfoldHierarchy(this.uuid, this.id, this.home, true);
+//    const { scripts, env, dotenvs } = await this.collectScripts(herarchy, /.*/, filter, envFromCli, _);
+/*
+    r.env = {};
+
+    Object.keys(env).forEach(k => {
+      let add = true;
+      if (process.env[k]) {
+        add = process.env[k] !== env[k];
+      }
+      if (add) {
+        r.env[k] = env[k];
+      }
+    });
+    r.dotenvs = dotenvs;
+    r.steps = scripts.map(s => { return s.getUuid() });
+    r.graph = herarchy.map(c => `${c.component.id} [${c.component.getUuid()}] [${c.anchor}]`);
+    r.inherits = herarchy.filter(c => c.anchor === this.uuid).map(c => `${c.component.id} [${c.component.getUuid()}]`);
+    r.depends = Component.getDependsList(herarchy, this.uuid).map(c => `${c.component.id} [${c.component.getUuid()}]`);
+*/
+
+    /*/
+    //r.tags = [];
+    /*/
+    if (json) {
+      cout(JSON.stringify(r, null, 2));
+    } else {
+      cout((require('yaml')).stringify(r));
+    }
+  }
 
   //---------------------------------------------------------------------------
   // work with descriptions

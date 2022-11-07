@@ -37,6 +37,7 @@ class appl {
     this.home = this.cwd = cwd;
     this.tlnHome = tlnHome;
     this.stdCatalog = path.join(this.tlnHome, 'catalog');
+    this.filter = {};
     // Prepare tln shared object 
     this.tln = Object.freeze({
       logger: this.logger,
@@ -115,18 +116,20 @@ class appl {
     return this;
   }
 
-  splitItems(items) {
-    return items?items.split(':'):[];
-  }
-
-  isRootPath(p) {
+   isRootPath(p) {
     // TODO validate expression at windows box
     const root = (os.platform == "win32") ? `${this.cwd.split(path.sep)[0]}${path.sep}` : path.sep;
     return (p === root);
   }
 
+  async resolve(components, resolveEmptyToThis = true) {
+    return this.currentComponent.resolve(components, resolveEmptyToThis);
+  }
 
-  async inspect(components, {cmds, env, graph, json}) {
+  async inspect(components, options) {
+    for(const component of await this.resolve(components)) {
+      await component.inspect((...args) => { this.logger.con.apply(this.logger, args); }, this.filter, options);
+    }
   }
 
   async ls(components, {depth, limit, parents, installedOnly}) {

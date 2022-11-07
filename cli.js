@@ -35,6 +35,10 @@ const createAppl = async(argv) => {
   ).init());
 }
 
+const splitItems = (items) => {
+  return items?items.split(':'):[];
+}
+
 const argv = require('yargs')
   .version()
   .config(config)
@@ -44,7 +48,7 @@ const argv = require('yargs')
   .option('detached',             { describe: 'In detached mode current component will be a top-level component of hierarchy', default: false, type: 'boolean' })
   .option('dest-path',            { describe: 'In detached mode, path where all third parties components will be installed', default: null, type: 'string' })
   .option('u',                    { describe: 'Do not do anything, just print generated scripts', alias: 'dry-run', default: false, type: 'boolean' })
-  .option('e',                    { describe: 'Set environment variable', alias: 'env', default: [], type: 'array' })
+  .option('e',                    { describe: 'Set environment variable', default: [], type: 'array' })
   .option('env-file',             { describe: 'Read in a file of environment variables', default: [], type: 'array' })
   .option('a',                    { describe: 'Apply command to all / show all available items', alias: 'all', default: false, type: 'boolean' })
   .option('force',                { describe: 'Force override operation', default: false, type: 'boolean' })
@@ -66,7 +70,7 @@ const argv = require('yargs')
       const appl = await createAppl(argv);
       //
       const {components, all, cmds, env, graph, json} = argv;
-      await appl.inspect(components, {cmds: cmds || all, env: env || all, graph: graph || all, json});
+      await appl.inspect(splitItems(components), {cmds: cmds || all, env: env || all, graph: graph || all, json});
     }
   )
   /**************************************************************************/
@@ -84,7 +88,7 @@ const argv = require('yargs')
       const appl = await createAppl(argv);
       //
       const {components, depth, limit, parents, installedOnly} = argv;
-      await appl.ls(components, {depth, limit, parents, installedOnly});
+      await appl.ls(splitItems(components), {depth, limit, parents, installedOnly});
     }
   )
   /**************************************************************************/
@@ -102,7 +106,7 @@ const argv = require('yargs')
       const appl = await createAppl(argv);
       //
       const {components, depth, parents} = argv;
-      await appl.getHierarchy(components, {depth, parents});
+      await appl.getHierarchy(splitItems(components), {depth, parents});
     }
   )
   /**************************************************************************/
@@ -157,7 +161,7 @@ const argv = require('yargs')
       } else {
         const {components, parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr} = argv;
         const {command, file} = argv;
-        await appl.run(commands, components, {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file);
+        await appl.run(splitItems(commands), splitItems(components), {parallel, recursive, parentFirst, dryRun, env, envFile, all, force, depend, inherit, continueOnStderr}, command, file);
       }
     }
   )

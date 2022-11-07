@@ -34,12 +34,15 @@ describe('Component', function() {
             '.tln': {
               'config1': {
                 '.tln.conf': 'module.exports = {version: "2"}',
+                'component1': {
+                  '.tln.conf': 'module.exports = {version: "2"}',
+                }
               },
               'config2': {
                 '.tln.conf': 'module.exports = {version: "2"}',
               },
             },
-            '.tln.conf': 'module.exports = {version: "2"}',
+            '.tln.conf': 'module.exports = {version: "2", components: async (tln) => ({ "petramco": { env: async (tln, env) => {}, } }) }',
             'oldconfig': {
               '.tln.conf': 'module.exports = {}',
             }
@@ -113,6 +116,11 @@ describe('Component', function() {
   it('component should skip old config file', async () => {
     const child = await root.createChildFromId('oldconfig', true);
     expect(child.descriptions.length).to.equal(0);
+  });
+
+  it('component should inherits description from parent component', async () => {
+    const child = await root.createChildFromId('petramco', true);
+    expect(child.descriptions.length).to.equal(1);
   });
 
 
