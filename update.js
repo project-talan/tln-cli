@@ -641,6 +641,20 @@ const update = async () => {
       }
     },
     //
+    // ------------------------------------------------------------------------
+    // LLVM
+    {
+      url: 'https://api.github.com/repos/llvm/llvm-project/tags', token, path: 'llvm', fn: async (response) => {
+        const json = await response.json();
+        return json.map(v => { const { name, version } = unpackId(v.name); return version;}).filter(v => validateVersion(v));
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `${v}` } });
+      }
+    },
+    
   ];
   //
   try {
