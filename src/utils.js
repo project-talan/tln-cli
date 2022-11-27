@@ -98,6 +98,9 @@ module.exports = {
         if (name.match('tar.gz') || name.match('tgz')) {
           r.push(`echo Extracting files ...`);
           r.push(`tar -xzf '${name}'`);
+        } else if (name.match('tar.xz')) {
+          r.push(`echo Extracting files ...`);
+          r.push(`tar -xf '${name}'`);
         } else if (name.match('.zip')) {
           r.push(`echo Extracting files ...`);
           r.push(`unzip -q '${name}'`);
