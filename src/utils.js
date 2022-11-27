@@ -99,7 +99,7 @@ module.exports = {
           r.push(`tar -xzf '${name}'`);
         } else if (name.match('.zip')) {
           r.push(`echo Extracting files ...`);
-          r.push(`unzip '${name}'`);
+          r.push(`unzip -q '${name}'`);
         }
         // move content
         if (opts) {
