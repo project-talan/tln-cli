@@ -654,7 +654,27 @@ const update = async () => {
         return data.map(v => { return { id: `${v}` } });
       }
     },
-    
+    //
+    // ------------------------------------------------------------------------
+    // Knative
+    {
+      url: 'https://api.github.com/repos/knative/client/releases', token, path: path.join('k8s', 'knative'), fn: async (response) => {
+        const json = await response.json();
+        return json.map(e => {
+          let v = e.tag_name;
+          const a = v.split('-');
+          if (a.length > 1) {
+            v = a[1];
+          }
+          return v.substring(1);
+        }).filter(v => validateVersion(v));
+      }, options: { page: 0 }, it: (url, options) => {
+        return `${url}?page=${++options.page}`;
+      }, finalize: (data) => {
+        data.sort(compareVersions).reverse();
+        return data.map(v => { return { id: `knative-${v}` } });
+      }
+    },
   ];
   //
   try {
