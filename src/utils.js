@@ -93,7 +93,7 @@ module.exports = {
         }
         r.push(`rm -f ${name}`);
       } else if (platform === 'darwin') */ {
-        r.push(`curl -sI -L -H 'Accept-Encoding: gzip,deflate' '${url}' | grep content-length`);
+        r.push(`curl -sI -L -H 'Accept-Encoding: gzip,deflate' '${url}' | grep -i content-length`);
         r.push(`wget -q '${url}'`);
         if (name.match('tar.gz') || name.match('tgz')) {
           r.push(`echo Extracting files ...`);
