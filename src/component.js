@@ -340,7 +340,7 @@ class Component {
         }
       });
       const { env, dotenvs } = await this.collectScripts(herarchy, '', filter, envFromCli, _);
-      await script2Execute.execute(this.home, this.tln, env, dotenvs, false, dryRun, failOnStderr);
+      await script2Execute.execute(this.home, this.tln, env, false, dryRun, failOnStderr);
     }
     //
     if (parentFirst) {
@@ -394,7 +394,7 @@ class Component {
             const skipList = [];
             for (const script of scripts) {
               if (!skipList.includes(script.id)) {
-                if (await script.execute(this.home, this.tln, env, dotenvs, save, dryRun, failOnStderr)) {
+                if (await script.execute(this.home, this.tln, env, save, dryRun, failOnStderr)) {
                   skipList.push(script.id);
                 }
               }
@@ -717,14 +717,20 @@ class Component {
         if ((h.anchor === this.uuid) && (i.scripts.length)) {
           scripts.push(...i.scripts);
         }
-        envs.push({ ...i.envs, id: h.id, home: h.home, anchor: h.anchor, srcId: h.srcId });
+        envs.push({ ...i.envs, id: h.id, home: h.home, anchor: h.anchor, srcId: h.srcId, dotenvs: i.dotenvs.map(de => path.join(h.component.home, de)) });
         dotenvs = dotenvs.concat(i.dotenvs.map(de => path.join(path.relative(this.home, h.component.home), de)));
       });
     }
     // merge all env and apply options
     let env = { ...process.env };
     for (const e of envs.reverse()) {
-      env = await e.env.build(this.tln, { ...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, TLN_COMPONENT_SRC_ID: e.srcId, ...(await e.options.parse(this.tln, _)) });
+      // load environment variables from donenv files
+      let dotEnv = {};
+      for (const de of e.dotenvs) {
+        const pe = utils.parseEnvFile(de, this.logger);
+        dotEnv = { ...dotEnv, ...pe };
+      }
+      env = await e.env.build(this.tln, { ...env, TLN_COMPONENT_ID: e.id, TLN_COMPONENT_HOME: e.home, TLN_COMPONENT_SRC_ID: e.srcId, ...dotEnv, ...(await e.options.parse(this.tln, _)) });
     }
     return { scripts, env: { ...env, ...envFromCli, TLN_COMPONENT_ID: this.id, TLN_COMPONENT_HOME: this.home }, dotenvs: dotenvs.reverse() };
   }

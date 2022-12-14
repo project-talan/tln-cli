@@ -29,22 +29,16 @@ class Script {
     this.body = body;
   }
 
-  async execute(home, tln, env, dotenvs, save, dryRun, failOnStderr) {
+  async execute(home, tln, env, save, dryRun, failOnStderr) {
     this.body = null;
     // create component location if not exists
     if (!fs.existsSync(home)) {
       fs.mkdirSync(home, { recursive: true });
     }
-    // load environment variables from donenv files
-    let dotEnv = {};
-    for (const e of dotenvs) {
-      const pe = utils.parseEnvFile(path.join(home, e), this.logger);
-      dotEnv = {...dotEnv, ...pe};
-    }
     // TODO: pass proxy object instead of script itself
     const result = await this.builder(tln, Object.freeze({
         logger: this.logger,
-        env: {...dotEnv, ...env},
+        env: {...env},
         set: (body) => this.set(body)
       })
     );
@@ -84,7 +78,7 @@ class Script {
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
           // run script from file
-          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: {...dotEnv, ...env}};
+          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: {...env}};
           if (fs.existsSync(home)) {
             opt.cwd = home;
           }
