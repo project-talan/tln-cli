@@ -186,7 +186,11 @@ module.exports = {
           value = record.substring(delim+1).trim();
         }
         if (key.length) {
-          return {[key]: value};
+          if (!(key.indexOf('#')  === 0 || key.indexOf('rem')  === 0 || key.indexOf('REM')  === 0 )){
+            return {[key]: value};
+          } else {
+            return;
+          }
         }
       }
     }
