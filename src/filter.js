@@ -51,6 +51,7 @@ class Filter {
             data.push(this.osInfo[k]);
           });
           this.filter = utils.uniquea(data.map( v => v.toLowerCase())).join(';');
+          console.log(this.osInfo, this.filter);
         }
         resolve();
       });
