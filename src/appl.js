@@ -36,6 +36,8 @@ class Appl {
       isWindows: () => this.filter.isWindows(),
       isLinux: () => this.filter.isLinux(),
       isDarwin: () => this.filter.isDarwin(),
+      isWsl: () => this.filter.isWsl,
+      isDocker: () => this.filter.isDocker,
       getOsInfo: () => this.filter.getOsInfo(),
       unpackId: (id) => utils.unpackId(id),
       copyTemplate: (tln, script, src, dest, tail = []) => utils.copyTemplate(tln, script, src, dest, tail),
