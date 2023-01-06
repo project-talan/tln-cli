@@ -94,6 +94,7 @@ class Appl {
     //
     this.logger.info(`local config: ${this.cfgPath}`);
     this.logger.info('operating system: ', os.type(), os.platform(), os.release());
+    this.logger.info('filter: ', this.filter.filter);
     this.logger.info(`cwd: ${this.cwd}`);
     this.logger.info('home:', this.home);
     this.logger.info(`cli home: ${this.cliHome}`);
