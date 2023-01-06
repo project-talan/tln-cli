@@ -13,7 +13,7 @@ class Filter {
       kernel: os.release()
     };
     this.isWsl = require('is-wsl');
-    this.isDocker = require('is-docker');
+    this.isDocker = require('is-docker')();
     this.filter = '';
   }
 
