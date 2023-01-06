@@ -12,6 +12,8 @@ class Filter {
       platform: os.platform(),
       kernel: os.release()
     };
+    this.isWsl = require('is-wsl');
+    this.isDocker = require('is-docker')();
     this.filter = '';
   }
 
@@ -50,7 +52,14 @@ class Filter {
           Object.keys(this.osInfo).forEach( k => {
             data.push(this.osInfo[k]);
           });
+          if (this.isWsl) {
+            data.push('wsl');
+          }
+          if (this.isDocker) {
+            data.push('docker');
+          }
           this.filter = utils.uniquea(data.map( v => v.toLowerCase())).join(';');
+          //console.log(this.osInfo, this.filter);
         }
         resolve();
       });

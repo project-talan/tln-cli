@@ -36,6 +36,8 @@ class Appl {
       isWindows: () => this.filter.isWindows(),
       isLinux: () => this.filter.isLinux(),
       isDarwin: () => this.filter.isDarwin(),
+      isWsl: () => this.filter.isWsl,
+      isDocker: () => this.filter.isDocker,
       getOsInfo: () => this.filter.getOsInfo(),
       unpackId: (id) => utils.unpackId(id),
       copyTemplate: (tln, script, src, dest, tail = []) => utils.copyTemplate(tln, script, src, dest, tail),
@@ -94,6 +96,7 @@ class Appl {
     //
     this.logger.info(`local config: ${this.cfgPath}`);
     this.logger.info('operating system: ', os.type(), os.platform(), os.release());
+    this.logger.info('filter: ', this.filter.filter);
     this.logger.info(`cwd: ${this.cwd}`);
     this.logger.info('home:', this.home);
     this.logger.info(`cli home: ${this.cliHome}`);
