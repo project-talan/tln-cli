@@ -52,10 +52,17 @@ class Appl {
     let detached = false;
     const tmpPath = path.join(os.tmpdir(), `tln-${process.env.USER}`);
     // find projects' root and current component
-    if (this.detach || this.localRepo) {
+    if (this.detach || this.localRepo || process.env.TLN_DETACHED_MODE ) {
       // we are in detached mode
       this.localRepo = this.localRepo || tmpPath;
       detached = true;
+      if (process.env.TLN_DETACHED_MODE) {
+        this.home = process.env.TLN_DETACHED_MODE;
+        const rel = path.relative(this.home, this.cwd);
+        if (rel) {
+          folders = rel.split(path.sep);
+        }
+      }
     } else {
       // find topmost level folder with with tln descs
       let p = this.home;
@@ -87,11 +94,14 @@ class Appl {
     this.rootComponent = require('./component').createRoot(this.logger, this.tln, this.localRepo, this.cliHome);
     this.currentComponent = this.rootComponent;
     if (detached) {
-      this.currentComponent = await this.rootComponent.createChild(this.cwd);
-    } else {
-      for(const folder of folders) {
-        this.currentComponent = await this.currentComponent.buildChild(folder, true);
-      }
+      this.currentComponent = await this.rootComponent.createChild(this.home);
+    }
+    for(const folder of folders) {
+      this.currentComponent = await this.currentComponent.buildChild(folder, true);
+    }
+    // say hi to nested tln calls in detached mode
+    if (detached) {
+      process.env.TLN_DETACHED_MODE = this.home;
     }
     //
     this.logger.info(`local config: ${this.cfgPath}`);
