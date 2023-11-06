@@ -1,0 +1,8 @@
+controller:
+  service:
+    annotations:
+      service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
+      service.beta.kubernetes.io/do-loadbalancer-protocol: "https"
+      service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "false"
+    targetPorts:
+      https: http

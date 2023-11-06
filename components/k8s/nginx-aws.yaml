@@ -1,0 +1,13 @@
+controller:
+  podAnnotations:
+    fluentbit.io/parser_stdout: nginx_custom
+  service:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    targetPorts:
+      https: http
+  config:
+    use-proxy-protocol: false
+    ssl-redirect: true
