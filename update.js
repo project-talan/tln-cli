@@ -191,6 +191,7 @@ const update = async () => {
         return result.sort((l, r) => l.id.attr > r.id.attr ? 1 : -1).reverse();
       }
     },
+    //
     // ------------------------------------------------------------------------
     // Bitcoin
     {
@@ -675,6 +676,7 @@ const update = async () => {
         return data.map(v => { return { id: `knative-${v}` } });
       }
     },
+    //
   ];
   //
   try {
