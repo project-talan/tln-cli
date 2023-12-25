@@ -98,8 +98,9 @@ const update = async () => {
         return data.map(v => { return { id: `cmake-${v}` } });
       }
     },
+    /*
     // ------------------------------------------------------------------------
-    // Docker
+    // Docker compose
     {
       url: 'https://api.github.com/repos/docker/compose/releases', token, path: 'docker-compose', fn: async (response) => {
         const json = await response.json();
@@ -121,6 +122,7 @@ const update = async () => {
         return data.map(v => { return { id: `docker-compose-${v}` } });
       }
     },
+    */
     // ------------------------------------------------------------------------
     // Golang
     {
