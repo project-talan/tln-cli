@@ -19,7 +19,7 @@ const path = require('path');
 const urlHelper = require("url");
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
-const compareVersions = require('compare-versions');
+const { compareVersions, validate } = require('compare-versions');
 
 function unpackId(id) {
   const arr = id.split('-');
@@ -41,7 +41,7 @@ function unpackId(id) {
 
 
 function validateVersion(version) {
-  if (compareVersions.validate(version)) {
+  if (validate(version)) {
     return true;
   }
   console.log(`[ERROR] Version with invalid format was found: ${version}`);
@@ -98,20 +98,21 @@ const update = async () => {
         return data.map(v => { return { id: `cmake-${v}` } });
       }
     },
+    //
     // ------------------------------------------------------------------------
-    // Docker
+    // Docker compose
     {
       url: 'https://api.github.com/repos/docker/compose/releases', token, path: 'docker-compose', fn: async (response) => {
         const json = await response.json();
         if (Array.isArray(json)) {
           return json.map(v => {
-            let r = v.name;
+            let r = v.tag_name;
             if (r[0] === 'v') {
               r = r.substring(1);
             }
             r = r.replace(' ', '-')
             return r.toLowerCase();
-          });
+          }).filter(v => validateVersion(v));
         }
         return [];
       }, options: { page: 0 }, it: (url, options) => {
@@ -121,6 +122,7 @@ const update = async () => {
         return data.map(v => { return { id: `docker-compose-${v}` } });
       }
     },
+    //
     // ------------------------------------------------------------------------
     // Golang
     {
