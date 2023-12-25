@@ -31,7 +31,7 @@
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",
-    "compare-versions": "^3.6.0",
+    "compare-versions": "^6.1.0",
     "dotenv": "^8.6.0",
     "empty-dir": "^2.0.0",
     "find-up": "^4.1.0",
