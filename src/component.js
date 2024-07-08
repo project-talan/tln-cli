@@ -501,7 +501,7 @@ class Component {
       d.source = configFile;
       descriptions.push(d);
       } catch (e) {
-        this.logger.error(`${configFile} has invalid structure\n`, e.stack);
+        this.logger.error(`${configFile} has invalid structure | missing imports\n`, e.stack, module.paths);
         process.exit(1);
       }
     }
