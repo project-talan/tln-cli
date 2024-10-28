@@ -6,6 +6,9 @@ team:
   vlad.k:
     email: vladislav.kurmaz@gmail.com
 timeline:
-  v1.105.0: 2024-10-21
+  - name: v1.106.0
+    date: 2024-11-01 17:30:00 GMT+0200
+  - name: v1.105.0
+    date: 2024-10-21 17:30:00 GMT+0200
 tasks: |
   [-:001] Build v2.0.0 @vlad.k
