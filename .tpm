@@ -5,9 +5,14 @@ project:
 team:
   vlad.k:
     email: vladislav.kurmaz@gmail.com
+    name: Vlad K
+    fte: 1
+
 timeline:
+  - name: v1.107.0
+    date: 2024-11-20 17:00:00 GMT+0200
   - name: v1.106.0
-    date: 2024-11-01 17:30:00 GMT+0200
+    date: 2024-11-10 23:20:00 GMT+0200
   - name: v1.105.0
     date: 2024-10-21 17:30:00 GMT+0200
 tasks: |
