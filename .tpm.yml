@@ -1,20 +1,22 @@
 project:
   id: tln-cli
   name: Talan CLI
-  description: Advanced Component Management System
+  description: SDLC framework
 team:
   vlad.k:
     email: vladislav.kurmaz@gmail.com
     name: Vlad K
     fte: 0.01
 timeline:
-  v1.108.0:
-    deadline: 2024-12-31T20:00:00+02:00
-  v1.107.0:
+  1.109.0:
+    deadline: 2025-03-05T15:00:00+02:00
+  1.108.0:
+    deadline: 2025-02-05T15:00:00+02:00
+  1.107.0:
     deadline: 2024-12-22T20:00:00+02:00
-  v1.106.0:
+  1.106.0:
     deadline: 2024-11-10T23:20:00+02:00
-  v1.105.0:
+  1.105.0:
     deadline: 2024-10-21T17:30:00+02:00
 tasks: |
-  [-:001] Build v2.0.0 @vlad.k
+  [-:001] Build 2.0.0 @vlad.k
