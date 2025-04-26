@@ -1,11 +1,11 @@
-# SDLC Framework
+# Architecture as Code
 
 <img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
 
 Talan CLI (tln)
 * is an open-source framework designed to manage third-party components across diverse ecosystems like Java, Node.js, C++, Golang etc.
-* it enables the creation of fully isolated development environments, streamlines the management of both mono and multi-repo configurations, and facilitates a seamless onboarding experience.
-* effectively bridges gaps between local development environments and CI/CT/CD setups, maximizing the benefits of Polyglot Programming and Polyglot Persistence (4Ps) design.
+* it enables the creation of fully isolated, nested development, environments, streamlines the management of both mono and multi-repo configurations, and facilitates a seamless onboarding experience.
+* effectively bridges gaps between local development environments and CI/CD setups, maximizing the benefits of Polyglot Programming and Polyglot Persistence (4Ps) design.
 
 ## Similar or related projects
 [Brew](https://brew.sh/), [Conan](https://conan.io/), [Meta](https://github.com/mateodelnorte/meta), [Lerna](https://github.com/lerna/lerna), [SDKMAN](https://sdkman.io), [jEnv](https://www.jenv.be/), [Chocolatey](https://chocolatey.org/)
@@ -13,17 +13,10 @@ Talan CLI (tln)
 ## Prerequisites
 * Install `Nodejs 20.x` or higher (https://nodejs.org)
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
-* Make sure that `Powershell` script can be executed (Windows):
-  ```
-  set-executionpolicy remotesigned
-  ```
-  or
-  ```
-  set-ExecutionPolicy unrestricted
-  ```
+* Make sure that [`Powershell`](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) script can be executed (Windows):
 * Install tln-cli 
   ```
-  npm i -g tln-cli@1.108.0 && tln --version
+  npm i -g tln-cli@1.110.0 && tln --version
   ```
 
 ## Quick start <sub><sup>~3 min</sup></sub>
