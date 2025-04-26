@@ -47,7 +47,7 @@
   "devDependencies": {
     "chai": "^4.3.4",
     "json-fn": "^1.1.1",
-    "mocha": "^9.2.2",
+    "mocha": "^11.1.0",
     "mock-fs": "^4.14.0",
     "nyc": "^15.1.0",
     "sinon": "^9.2.4"
