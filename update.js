@@ -17,9 +17,11 @@
 const fs = require("fs");
 const path = require("path");
 const urlHelper = require("url");
-const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const { compareVersions, validate } = require("compare-versions");
+
+//const fetch = require("node-fetch");
+const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
 function unpackId(id) {
   const arr = id.split("-");

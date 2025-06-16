@@ -2,11 +2,13 @@
 
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch');
 const { execSync } = require('child_process');
 const tmp = require('tmp');
 const compareVersions = require('compare-versions');
 const dotenv = require('dotenv');
+
+//const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
 const scriptFactory = require('./script');
 const optionsFactory = require('./options');
