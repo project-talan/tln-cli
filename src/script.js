@@ -78,7 +78,7 @@ class Script {
           this.logger.con(fs.readFileSync(fl, 'utf-8'));
         } else {
           // run script from file
-          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: {...env}};
+          let opt = {stdio: [process.stdin, process.stdout, process.stderr], env: {...env}, shell: true};
           if (fs.existsSync(home)) {
             opt.cwd = home;
           }
