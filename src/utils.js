@@ -177,6 +177,14 @@ module.exports = {
   parseEnvRecord(line, logger, errMsg = 'Command line argument (-e | --env) is incorrect') {
     if (line && line.length) {
       const record = line.trim();
+      if (!record || record.startsWith('#') || record.startsWith('rem') || record.startsWith('REM')) return;
+      const match = record.match(/^\s*([\w.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^#\s]*))/);
+      if (match) {
+        const key = match[1];
+        const value = match[2] ?? match[3] ?? match[4] ?? "";
+        return {[key]: value};
+      }
+      /* Old implementstion, which does not support values with '=' character
       if (record.length) {
         const delim = record.indexOf('=');
         let key = record;
@@ -193,6 +201,7 @@ module.exports = {
           }
         }
       }
+      */
     }
     if (logger) {
       logger.error(`${errMsg}: '${line}'`);
