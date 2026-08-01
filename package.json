@@ -1,0 +1,33 @@
+{
+  "name": "tln-cli",
+  "version": "2.0.0-alpha",
+  "description": "SDLC framework",
+  "bin": {
+    "tln2": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "chmod +x dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/project-talan/tln-cli.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [],
+  "author": "vladislav.kurmaz@gmail.com",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/project-talan/tln-cli/issues"
+  },
+  "homepage": "https://github.com/project-talan/tln-cli#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2"
+  }
+}

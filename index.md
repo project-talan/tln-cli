@@ -1,26 +1,20 @@
 ---
 type: index
-title: Project Knowledge Base Root
+title: Project Talan Base Root
 description: The main entry point for our engineering and product documentation.
 tags: [root, index, project-alpha]
 last_updated: 2026-07-31
 ---
 
-# Project Alpha Knowledge Base
+# Project Talan
 
 Welcome to the central knowledge repository. This bundle is organized using the Open Knowledge Format (OKF) to ensure it is equally readable by human teammates and AI agents.
 
-## 📌 Core Architecture
+## Core Architecture
 
-* **[Data Models](models/README.md)** - Core database schemas and entity relationships.
-* **[System Metrics](metrics/KPIs.md)** - Key performance indicators and tracking logic.
-* **[Infrastructure](infra/deployment.md)** - Cloud topology and environment variables.
+* **[Component](src/component.md)** - Core element of the system.
+* **[Script](src/script.md)** - Script execution component.
+* **[Environment](src/env.md)** - Script execution environment.
 
-## 👥 Team & Governance
+## Agent Instructions
 
-* **[Glossary](definitions/glossary.md)** - Standardized business terms and acronyms.
-* **[Onboarding Guide](guides/onboarding.md)** - Setup steps for new engineers.
-
-## 🤖 Agent Instructions
-
-AI agents indexing this repository should prioritize the `models/` directory for schema verification before generating database queries. For deployment workflows, reference `infra/deployment.md`.
