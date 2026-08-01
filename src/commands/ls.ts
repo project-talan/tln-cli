@@ -1,5 +1,5 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
-import type { GlobalArgv } from '../cli/globalOptions.js';
+import type { GlobalArgv } from '../util/globalOptions.js';
 import { splitComponents } from '../component.js';
 
 export interface LsArgv extends GlobalArgv {

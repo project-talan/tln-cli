@@ -1,5 +1,5 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
-import type { GlobalArgv } from '../cli/globalOptions.js';
+import type { GlobalArgv } from '../util/globalOptions.js';
 import { splitComponents } from '../component.js';
 import { parseEnv } from '../env.js';
 
@@ -12,7 +12,7 @@ export interface RunArgv extends GlobalArgv {
 
 export const runCommand: CommandModule<GlobalArgv, RunArgv> = {
   command: '$0 <steps> [components] [-r] [-p] [-s] [-u] [--depends]',
-  describe: 'Execute set of steps over a set of components',
+  describe: 'Execute set of commands over a set of components',
   builder: (yargs) =>
     yargs
       .positional('steps', { describe: 'delimited by colon steps, i.e build:test', type: 'string' })
@@ -32,6 +32,6 @@ export const runCommand: CommandModule<GlobalArgv, RunArgv> = {
     console.log(
       `[stub] run: steps=${steps.join(':')} components=${components.join(':')} parallel=${argv.parallel} recursive=${argv.recursive} depth=${argv.depth} save=${argv.save} dryRun=${argv.dryRun} depends=${argv.depends} passthrough=${JSON.stringify(argv['--'])} env=${JSON.stringify(envFromCli)}`,
     );
-    throw new Error('Not implemented: run (default) command');
+    //throw new Error('Not implemented: run (default) command');
   },
 };

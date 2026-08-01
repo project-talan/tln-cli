@@ -1,5 +1,5 @@
 import type { Argv } from 'yargs';
-import type { GlobalArgv } from '../cli/globalOptions.js';
+import type { GlobalArgv } from '../util/globalOptions.js';
 import { configCommand } from './config.js';
 import { inspectCommand } from './inspect.js';
 import { lsCommand } from './ls.js';

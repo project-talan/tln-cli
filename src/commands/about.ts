@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import type { CommandModule } from 'yargs';
-import type { GlobalArgv } from '../cli/globalOptions.js';
+import type { GlobalArgv } from '../util/globalOptions.js';
 
 // package.json lives outside tsconfig's rootDir ("./src"), so a static import isn't
 // legal here; createRequire gives us a runtime-only require() that tsc's rootDir
