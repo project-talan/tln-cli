@@ -9,7 +9,9 @@
   "scripts": {
     "build": "tsc",
     "postbuild": "chmod +x dist/index.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "dev": "tsx watch src/index.ts",
+    "dev:debug": "node --inspect-brk -r tsx/cjs src/index.ts"
   },
   "repository": {
     "type": "git",
@@ -28,6 +30,7 @@
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "devDependencies": {
     "@types/node": "^26.1.2",
+    "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   }
 }
