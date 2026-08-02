@@ -169,7 +169,7 @@ export class Component {
     const subfolders = entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      .sort();
+      .sort((a, b) => a.localeCompare(b));
 
     const descriptions: ComponentDescription[] = [];
     for (const name of subfolders) {

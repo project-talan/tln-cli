@@ -7,8 +7,8 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:    
 jobs:
-  sonarcloud:
-    name: SonarCloud
+  build:
+    name: Talan CLI CI/CD
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
