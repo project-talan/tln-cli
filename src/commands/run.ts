@@ -1,7 +1,6 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
-import { splitComponents } from '../component.js';
-import { parseEnv } from '../env.js';
+import { create, splitComponents } from '../component.js';
 
 export interface RunArgv extends GlobalArgv {
   steps: string;
@@ -27,11 +26,19 @@ export const runCommand: CommandModule<GlobalArgv, RunArgv> = {
   handler: async (argv: ArgumentsCamelCase<RunArgv>): Promise<void> => {
     const components = splitComponents(argv.components);
     const steps = splitComponents(argv.steps).length ? argv.steps.split(':') : [];
-    const envFromCli = parseEnv(argv.env);
-    // TODO: port Appl#run / Component#run from old/src/appl.js, old/src/component.js
-    console.log(
-      `[stub] run: steps=${steps.join(':')} components=${components.join(':')} parallel=${argv.parallel} recursive=${argv.recursive} depth=${argv.depth} save=${argv.save} dryRun=${argv.dryRun} depends=${argv.depends} passthrough=${JSON.stringify(argv['--'])} env=${JSON.stringify(envFromCli)}`,
-    );
-    //throw new Error('Not implemented: run (default) command');
+
+    if (components.length) {
+      // Targeting a specific component in the tree needs the resolve()/find() logic
+      // ported from old/src/component.js, which isn't in place yet.
+      console.warn(
+        `Targeting specific components (${components.join(':')}) is not yet supported; running against the root component.`,
+      );
+    }
+
+    // TODO: port Appl#run / Component#run's recursive/parallel/depends/save traversal from old/src/appl.js, old/src/component.js
+    const root = await create(process.cwd());
+    for (const step of steps) {
+      await root.run(step, argv.dryRun);
+    }
   },
 };

@@ -1,0 +1,30 @@
+
+module.exports = {
+  dotenvs: async (tln) => [ '.env'],
+  options: async (tln, env) => ({
+    prefix: 'TPM',
+    options: [
+      { key: 'context', desc: 'Environment Id, (dev:dev01)', type: 'string', default: null }
+    ]
+  }),
+  env: async (tln, env) => {
+    env.TLN_UID = 'sh.tln.pm';
+  },
+  inherits: async (tln) => ['docker'],
+  depends: async (tln) => [],
+  commands: async (tln) => ({
+    // variant1 - return list of bash commands to execute
+    prereq: { builder: async (tln, env) => [
+      `echo Hi from prereq command !!!`,
+    ], access: 'public'},
+    // variant2 - shortcut for exisiting cpmannds batch mode
+    package: { builder: ['docker:exec', 'prereq'],
+      access: 'protected'
+    },
+  }),
+  components: async (tln) => ({
+    child1: {},
+    child2: {}
+  })
+}
+
