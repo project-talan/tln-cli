@@ -1,5 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ArgumentsCamelCase } from 'yargs';
+
+const { createAppMock } = vi.hoisted(() => ({ createAppMock: vi.fn() }));
+
+vi.mock('../app.js', () => ({ createApp: createAppMock }));
+
 import { configCommand, type ConfigArgv } from './config.js';
 import { baseArgv } from '../test-support/argv.js';
 
@@ -42,8 +47,15 @@ describe('configCommand', () => {
   });
 
   describe('handler', () => {
-    it('logs a stub summary and always rejects with Not implemented', async () => {
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    let configMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      configMock = vi.fn().mockRejectedValue(new Error('Not implemented: App#config'));
+      createAppMock.mockReset();
+      createAppMock.mockResolvedValue({ config: configMock });
+    });
+
+    it('creates an App and delegates to App#config, propagating its rejection', async () => {
       const argv: ArgumentsCamelCase<ConfigArgv> = {
         ...baseArgv(),
         components: 'maven:boost',
@@ -56,10 +68,18 @@ describe('configCommand', () => {
         inherit: ['git'],
       };
 
-      await expect(configCommand.handler!(argv)).rejects.toThrow('Not implemented: config command');
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('components=maven:boost'));
+      await expect(configCommand.handler!(argv)).rejects.toThrow('Not implemented: App#config');
 
-      logSpy.mockRestore();
+      expect(createAppMock).toHaveBeenCalledWith(argv);
+      expect(configMock).toHaveBeenCalledWith(['maven', 'boost'], {
+        repo: undefined,
+        update: false,
+        folder: undefined,
+        force: false,
+        terse: false,
+        depend: ['openjdk'],
+        inherit: ['git'],
+      });
     });
   });
 });

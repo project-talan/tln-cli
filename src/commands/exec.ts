@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
+import { createApp } from '../app.js';
 import { splitComponents } from '../component.js';
-import { parseEnv } from '../env.js';
 
 export interface ExecArgv extends GlobalArgv {
   components: string;
@@ -30,11 +30,7 @@ export const execCommand: CommandModule<GlobalArgv, ExecArgv> = {
       }),
   handler: async (argv: ArgumentsCamelCase<ExecArgv>): Promise<void> => {
     const components = splitComponents(argv.components);
-    const envFromCli = parseEnv(argv.env);
-    // TODO: port Appl#exec / Component#exec from old/src/appl.js, old/src/component.js
-    console.log(
-      `[stub] exec: components=${components.join(':')} parallel=${argv.parallel} recursive=${argv.recursive} depth=${argv.depth} dryRun=${argv.dryRun} command=${argv.command ?? '(none)'} input=${argv.input ?? '(none)'} passthrough=${JSON.stringify(argv['--'])} env=${JSON.stringify(envFromCli)}`,
-    );
-    throw new Error('Not implemented: exec command');
+    const app = await createApp(argv);
+    await app.exec(components, argv.parallel, argv.recursive, argv.depth, { command: argv.command, input: argv.input });
   },
 };

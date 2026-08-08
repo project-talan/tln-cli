@@ -1,5 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ArgumentsCamelCase } from 'yargs';
+
+const { createAppMock } = vi.hoisted(() => ({ createAppMock: vi.fn() }));
+
+vi.mock('../app.js', () => ({ createApp: createAppMock }));
+
 import { execCommand, type ExecArgv } from './exec.js';
 import { baseArgv } from '../test-support/argv.js';
 
@@ -47,19 +52,29 @@ describe('execCommand', () => {
   });
 
   describe('handler', () => {
-    it('logs a stub summary and always rejects with Not implemented', async () => {
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    let execMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      execMock = vi.fn().mockRejectedValue(new Error('Not implemented: App#exec'));
+      createAppMock.mockReset();
+      createAppMock.mockResolvedValue({ exec: execMock });
+    });
+
+    it('creates an App and delegates to App#exec, propagating its rejection', async () => {
       const argv: ArgumentsCamelCase<ExecArgv> = {
         ...baseArgv(),
         components: 'maven',
+        parallel: true,
+        recursive: true,
+        depth: 2,
         command: 'ls -la',
         input: undefined,
       };
 
-      await expect(execCommand.handler!(argv)).rejects.toThrow('Not implemented: exec command');
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('command=ls -la'));
+      await expect(execCommand.handler!(argv)).rejects.toThrow('Not implemented: App#exec');
 
-      logSpy.mockRestore();
+      expect(createAppMock).toHaveBeenCalledWith(argv);
+      expect(execMock).toHaveBeenCalledWith(['maven'], true, true, 2, { command: 'ls -la', input: undefined });
     });
   });
 });

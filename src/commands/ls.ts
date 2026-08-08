@@ -1,5 +1,6 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
+import { createApp } from '../app.js';
 import { splitComponents } from '../component.js';
 
 export interface LsArgv extends GlobalArgv {
@@ -25,10 +26,7 @@ export const lsCommand: CommandModule<GlobalArgv, LsArgv> = {
   handler: async (argv: ArgumentsCamelCase<LsArgv>): Promise<void> => {
     const components = splitComponents(argv.components);
     const limit = argv.all ? -1 : argv.limit;
-    // TODO: port Appl#ls / Component#ls from old/src/appl.js, old/src/component.js
-    console.log(
-      `[stub] ls: components=${components.join(':')} depth=${argv.depth} limit=${limit} parents=${argv.parents} installedOnly=${argv.installedOnly}`,
-    );
-    throw new Error('Not implemented: ls command');
+    const app = await createApp(argv);
+    await app.ls(components, { limit, parents: argv.parents, installedOnly: argv.installedOnly });
   },
 };

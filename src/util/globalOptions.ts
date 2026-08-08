@@ -17,6 +17,10 @@ export interface GlobalArgv {
   envFile: string[];
   failOnStderr: boolean;
   '--': string[];
+  /** Set by build()'s middleware, not a real CLI flag. */
+  cwd: string;
+  /** Root of the tln-cli package itself, i.e. `path.join(catalogHome, 'components')` is the built-in component catalog. Set by build()'s middleware, not a real CLI flag. */
+  catalogHome: string;
 }
 
 export const globalOptions = {

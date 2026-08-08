@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
+import { createApp } from '../app.js';
 import { splitComponents } from '../component.js';
-import { parseEnv } from '../env.js';
 
 export interface ConfigArgv extends GlobalArgv {
   components: string;
@@ -39,11 +39,15 @@ export const configCommand: CommandModule<GlobalArgv, ConfigArgv> = {
       }),
   handler: async (argv: ArgumentsCamelCase<ConfigArgv>): Promise<void> => {
     const components = splitComponents(argv.components);
-    const envFromCli = parseEnv(argv.env);
-    // TODO: port Appl#config / Component#config from old/src/appl.js, old/src/component.js
-    console.log(
-      `[stub] config: components=${components.join(':')} repo=${argv.repo ?? '(none)'} update=${argv.update} force=${argv.force} terse=${argv.terse} depend=${argv.depend.join(',')} inherit=${argv.inherit.join(',')} env=${JSON.stringify(envFromCli)}`,
-    );
-    throw new Error('Not implemented: config command');
+    const app = await createApp(argv);
+    await app.config(components, {
+      repo: argv.repo,
+      update: argv.update,
+      folder: argv.folder,
+      force: argv.force,
+      terse: argv.terse,
+      depend: argv.depend,
+      inherit: argv.inherit,
+    });
   },
 };

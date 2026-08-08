@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { Component, create, splitComponents, type ComponentDescription } from './component.js';
+import { Component, create, hasConfig, splitComponents, type ComponentDescription } from './component.js';
 
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
@@ -201,5 +201,86 @@ describe('create', () => {
     } finally {
       await fs.rm(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('hasConfig', () => {
+  let tempDirs: string[];
+
+  beforeEach(() => {
+    tempDirs = [];
+  });
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-component-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('is true when a .tln.tjs file is present', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.tln.tjs'), 'module.exports = {};', 'utf-8');
+
+    expect(await hasConfig(dir)).toBe(true);
+  });
+
+  it('is true when a .tln folder is present', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, '.tln'));
+
+    expect(await hasConfig(dir)).toBe(true);
+  });
+
+  it('is false when neither is present', async () => {
+    const dir = await makeTempDir();
+
+    expect(await hasConfig(dir)).toBe(false);
+  });
+});
+
+describe('Component#buildChild', () => {
+  let tempDirs: string[];
+
+  beforeEach(() => {
+    tempDirs = [];
+  });
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-component-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('builds a child at path.join(parent.home, id), inheriting parent descriptions', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'nested'));
+    const inherited: ComponentDescription = { source: 'inherited-from-parent' };
+    const parent = new Component(null, 'root', dir, [inherited]);
+
+    const child = await parent.buildChild('nested');
+
+    expect(child.id).toBe('nested');
+    expect(child.parent).toBe(parent);
+    expect(child.home).toBe(path.join(dir, 'nested'));
+    expect(child.descriptions).toEqual([inherited]);
+  });
+
+  it('caches the child on repeat calls with the same id', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'nested'));
+    const parent = new Component(null, 'root', dir);
+
+    const first = await parent.buildChild('nested');
+    const second = await parent.buildChild('nested');
+
+    expect(second).toBe(first);
   });
 });

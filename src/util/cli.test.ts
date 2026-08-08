@@ -16,6 +16,8 @@ describe('build', () => {
     await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
   });
 
+  const catalogHome = '/fake/catalog-home';
+
   async function makeTempDir(): Promise<string> {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-cli-test-'));
     tempDirs.push(dir);
@@ -25,7 +27,7 @@ describe('build', () => {
   it('exposes the tln scriptName and usage text via getHelp', async () => {
     const dir = await makeTempDir();
 
-    const help = await build([], dir).getHelp();
+    const help = await build([], dir, catalogHome).getHelp();
 
     expect(help).toContain('tln');
     expect(help).toContain('Multi-component management system');
@@ -35,7 +37,7 @@ describe('build', () => {
     const dir = await makeTempDir();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const argv = await build(['about'], dir).parseAsync();
+    const argv = await build(['about'], dir, catalogHome).parseAsync();
 
     expect(argv['--']).toEqual([]);
     logSpy.mockRestore();
@@ -45,7 +47,7 @@ describe('build', () => {
     const dir = await makeTempDir();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const argv = await build(['about', '--', 'foo', 'bar'], dir).parseAsync();
+    const argv = await build(['about', '--', 'foo', 'bar'], dir, catalogHome).parseAsync();
 
     expect(argv['--']).toEqual(['foo', 'bar']);
     logSpy.mockRestore();
@@ -58,7 +60,7 @@ describe('build', () => {
     await fs.mkdir(nested);
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const argv = await build(['about'], nested).parseAsync();
+    const argv = await build(['about'], nested, catalogHome).parseAsync();
     logSpy.mockRestore();
 
     expect(argv.verbose).toBe(3);
@@ -68,9 +70,21 @@ describe('build', () => {
     const dir = await makeTempDir();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-    const argv = await build(['about'], dir).parseAsync();
+    const argv = await build(['about'], dir, catalogHome).parseAsync();
     logSpy.mockRestore();
 
     expect(argv.verbose).toBe(0);
+  });
+
+  it('stashes cwd and catalogHome on argv without exposing them as CLI options', async () => {
+    const dir = await makeTempDir();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const argv = await build(['about'], dir, catalogHome).parseAsync();
+    logSpy.mockRestore();
+
+    expect(argv.cwd).toBe(dir);
+    expect(argv.catalogHome).toBe(catalogHome);
+    expect(await build([], dir, catalogHome).getHelp()).not.toContain('--cwd');
   });
 });

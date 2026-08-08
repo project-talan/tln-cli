@@ -13,6 +13,8 @@ export function baseArgv(): GlobalArgv & { _: (string | number)[]; $0: string } 
     envFile: [],
     failOnStderr: true,
     '--': [],
+    cwd: '/fake/cwd',
+    catalogHome: '/fake/catalog-home',
     _: [],
     $0: 'tln',
   };

@@ -59,6 +59,7 @@ export class Component {
   readonly id: string;
   readonly home: string;
   readonly descriptions: ComponentDescription[];
+  private readonly children: Component[] = [];
 
   constructor(parent: Component | null, id: string, home: string, descriptions: ComponentDescription[] = []) {
     this.parent = parent;
@@ -73,6 +74,25 @@ export class Component {
 
     const folderDescriptions = await Component.loadConfigFolder(this.home);
     this.descriptions.push(...folderDescriptions);
+  }
+
+  /**
+   * Returns the child component with the given `id`, building it (at
+   * `path.join(this.home, id)`, inheriting this component's descriptions) and
+   * caching it on first access. Simplified port of old/src/component.js's
+   * `buildChild` — it doesn't resolve dynamically-declared child components
+   * from a parent's `components` description field (`getComponentsFromDesc`
+   * in the old code); that stays unported, same as the cross-component
+   * command reference gap noted in resolveCommandLines below.
+   */
+  async buildChild(id: string): Promise<Component> {
+    const existing = this.children.find((child) => child.id === id);
+    if (existing) return existing;
+
+    const child = new Component(this, id, path.join(this.home, id), this.descriptions);
+    await child.init();
+    this.children.push(child);
+    return child;
   }
 
   /**
@@ -145,6 +165,15 @@ export class Component {
     }
   }
 
+  /** True if `dir` has a .tln.tjs file or a .tln folder. Port of old/src/utils.js's `isConfigPresent`. */
+  static async hasConfig(dir: string): Promise<boolean> {
+    const [file, folder] = await Promise.all([
+      Component.pathExists(path.join(dir, Component.CONFIG_FILE_NAME)),
+      Component.pathExists(path.join(dir, Component.CONFIG_FOLDER_NAME)),
+    ]);
+    return file || folder;
+  }
+
   private static requireDescription(filePath: string): ComponentDescription {
     let exported: RawComponentDescription;
     try {
@@ -189,4 +218,9 @@ export async function create(home: string): Promise<Component> {
   const root = new Component(null, '/', home);
   await root.init();
   return root;
+}
+
+/** True if `dir` has a .tln.tjs file or a .tln folder. Port of old/src/utils.js's `isConfigPresent`. */
+export async function hasConfig(dir: string): Promise<boolean> {
+  return Component.hasConfig(dir);
 }

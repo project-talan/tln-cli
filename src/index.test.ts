@@ -54,7 +54,7 @@ describe('index (CLI entrypoint)', () => {
     expect(process.env['PATH']).toBe('/usr/bin');
   });
 
-  it('calls build() with argv (minus node/script) and cwd, then parses', async () => {
+  it('calls build() with argv (minus node/script), cwd, and catalogHome, then parses', async () => {
     const parseAsync = vi.fn().mockResolvedValue(undefined);
     buildMock.mockReturnValue({ parseAsync });
     process.argv = ['/usr/bin/node', '/path/to/tln', 'about'];
@@ -62,7 +62,7 @@ describe('index (CLI entrypoint)', () => {
     await import('./index.js');
     await flush();
 
-    expect(buildMock).toHaveBeenCalledWith(['about'], process.cwd());
+    expect(buildMock).toHaveBeenCalledWith(['about'], process.cwd(), expect.any(String));
     expect(parseAsync).toHaveBeenCalledTimes(1);
   });
 

@@ -1,5 +1,6 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
+import { createApp } from '../app.js';
 import { splitComponents } from '../component.js';
 
 export interface InspectArgv extends GlobalArgv {
@@ -25,8 +26,7 @@ export const inspectCommand: CommandModule<GlobalArgv, InspectArgv> = {
       }),
   handler: async (argv: ArgumentsCamelCase<InspectArgv>): Promise<void> => {
     const components = splitComponents(argv.components);
-    // TODO: port Appl#inspect / Component#inspect from old/src/appl.js, old/src/component.js
-    console.log(`[stub] inspect: components=${components.join(':')} json=${argv.json}`);
-    throw new Error('Not implemented: inspect command');
+    const app = await createApp(argv);
+    await app.inspect(components, { json: argv.json });
   },
 };
