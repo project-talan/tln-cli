@@ -21,7 +21,8 @@ export interface RawComponentDescription {
   inherits?: (tln: unknown) => unknown;
   depends?: (tln: unknown) => unknown;
   commands?: (tln: unknown) => Promise<Record<string, CommandDescriptor>> | Record<string, CommandDescriptor>;
-  components?: (tln: unknown) => unknown;
+  /** Inline-declared child components, keyed by id — see Component#matchingDescriptions. */
+  components?: (tln: unknown) => Promise<Record<string, RawComponentDescription>> | Record<string, RawComponentDescription>;
 }
 
 export interface ComponentDescription extends RawComponentDescription {
@@ -30,12 +31,13 @@ export interface ComponentDescription extends RawComponentDescription {
 }
 
 /**
- * A single node in the component tree. Construction is cheap and synchronous;
- * `init()` performs the (async) work of loading this component's own .tln.tjs
- * config file and any override configs nested under a .tln folder found under
- * `sourcePath`. `descriptions` is computed on read, prepending the parent
- * chain's descriptions ahead of this component's own — there is no
- * constructor-time inheritance copy.
+ * A single node in the component tree. `descriptions` is seeded at construction
+ * time — either empty (the root, see `create`) or with whatever the parent's own
+ * descriptions declare for this child's id (see `matchingDescriptions`) — and then
+ * `init()` appends this component's own .tln.tjs config file and any override
+ * configs nested under a .tln folder found under `sourcePath`. There is no
+ * live parent-chain composition on read; each component's `descriptions` is a
+ * plain, fully-formed array once construction + `init()` have run.
  */
 export class Component {
   // package.json/.tln.tjs live outside tsconfig's rootDir ("./src"), and .tln.tjs files
@@ -49,43 +51,39 @@ export class Component {
   readonly sourcePath: string;
   /** Where this component runs commands (execSync's cwd) — its deploy/working location. */
   readonly homePath: string;
-  private readonly ownDescriptions: ComponentDescription[] = [];
+  readonly descriptions: ComponentDescription[];
   private readonly children: Component[] = [];
 
-  constructor(parent: Component | null, id: string, sourcePath: string, homePath: string) {
+  constructor(parent: Component | null, id: string, sourcePath: string, homePath: string, descriptions: ComponentDescription[] = []) {
     this.parent = parent;
     this.id = id;
     this.sourcePath = sourcePath;
     this.homePath = homePath;
-  }
-
-  /** This component's own descriptions, prefixed with its full parent chain's. */
-  get descriptions(): ComponentDescription[] {
-    return this.parent ? [...this.parent.descriptions, ...this.ownDescriptions] : [...this.ownDescriptions];
+    this.descriptions = [...descriptions];
   }
 
   async init(): Promise<void> {
-    const ownDescription = await Component.loadConfigFile(this.sourcePath);
-    if (ownDescription) this.ownDescriptions.push(ownDescription);
-
     const folderDescriptions = await Component.loadConfigFolder(this.sourcePath);
-    this.ownDescriptions.push(...folderDescriptions);
+    this.descriptions.push(...folderDescriptions);
+
+    const ownDescription = await Component.loadConfigFile(this.sourcePath);
+    if (ownDescription) this.descriptions.push(ownDescription);
   }
 
   /**
    * Returns the child component with the given `id`, building it (with
-   * `sourcePath`/`homePath` computed by joining this component's own onto `id`)
-   * and caching it on first access. Simplified port of old/src/component.js's
-   * `buildChild` — it doesn't resolve dynamically-declared child components
-   * from a parent's `components` description field (`getComponentsFromDesc`
-   * in the old code); that stays unported, same as the cross-component
-   * command reference gap noted in resolveCommandLines below.
+   * `sourcePath`/`homePath` computed by joining this component's own onto `id`,
+   * seeded with any of this component's own descriptions that declare `id` as
+   * an inline child via `matchingDescriptions`, then layered with its own real
+   * .tln.tjs/.tln config via `init()`) and caching it on first access. Port of
+   * old/src/component.js's `buildChild`.
    */
   async buildChild(id: string): Promise<Component> {
     const existing = this.children.find((child) => child.id === id);
     if (existing) return existing;
 
-    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id));
+    const seed = await this.matchingDescriptions(id);
+    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id), seed);
     await child.init();
     this.children.push(child);
     return child;
@@ -94,19 +92,41 @@ export class Component {
   /**
    * Returns the child component anchored at the real, absolute `location` —
    * `sourcePath` and `homePath` are both set to `location` directly (not
-   * joined onto this component's own paths), and `id` is `path.basename(location)`.
-   * Used to attach an unrelated real filesystem location (e.g. a project's
-   * home directory) onto the tree. Port of old/src/component.js's `createChild`.
+   * joined onto this component's own paths), `id` is `path.basename(location)`,
+   * seeded the same way as `buildChild` (matched inline declarations, then its
+   * own real config layered on top via `init()`). Used to attach an unrelated
+   * real filesystem location (e.g. a project's home directory) onto the tree.
+   * Port of old/src/component.js's `createChild`.
    */
   async createChild(location: string): Promise<Component> {
     const id = path.basename(location);
     const existing = this.children.find((child) => child.id === id);
     if (existing) return existing;
 
-    const child = new Component(this, id, location, location);
+    const seed = await this.matchingDescriptions(id);
+    const child = new Component(this, id, location, location, seed);
     await child.init();
     this.children.push(child);
     return child;
+  }
+
+  /**
+   * Scans this component's own descriptions for inline-declared child components
+   * (each description's `components` field, keyed by id — see old/src/component.js's
+   * `getComponentsFromDesc`) and collects every one that declares `childId`, tagging
+   * each with a synthetic `source` that traces back to the declaring description.
+   */
+  private async matchingDescriptions(childId: string): Promise<ComponentDescription[]> {
+    const matches: ComponentDescription[] = [];
+    for (const description of this.descriptions) {
+      if (!description.components) continue;
+      const declared = await description.components(undefined);
+      const match = declared[childId];
+      if (match) {
+        matches.push({ ...match, source: `${description.source}#components/${childId}` });
+      }
+    }
+    return matches;
   }
 
   /**
@@ -124,7 +144,8 @@ export class Component {
     }
 
     const scriptPath = await Component.writeScript(lines);
-    console.log(scriptPath);
+    console.log(this.id, scriptPath);
+
     execSync(scriptPath, { cwd: this.homePath, stdio: 'inherit', env: process.env });
   }
 

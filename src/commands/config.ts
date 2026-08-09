@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
-import { splitComponents } from '../util/misc.js';
+import { splitIds } from '../util/misc.js';
 
 export interface ConfigArgv extends GlobalArgv {
   components: string;
@@ -38,7 +38,7 @@ export const configCommand: CommandModule<GlobalArgv, ConfigArgv> = {
         return true;
       }),
   handler: async (argv: ArgumentsCamelCase<ConfigArgv>): Promise<void> => {
-    const components = splitComponents(argv.components);
+    const components = splitIds(argv.components);
     const app = await createApp(argv);
     await app.config(components, {
       repo: argv.repo,

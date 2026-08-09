@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
-import { splitComponents } from '../util/misc.js';
+import { splitIds } from '../util/misc.js';
 
 export interface InspectArgv extends GlobalArgv {
   components: string;
@@ -25,7 +25,7 @@ export const inspectCommand: CommandModule<GlobalArgv, InspectArgv> = {
         type: 'boolean',
       }),
   handler: async (argv: ArgumentsCamelCase<InspectArgv>): Promise<void> => {
-    const components = splitComponents(argv.components);
+    const components = splitIds(argv.components);
     const app = await createApp(argv);
     await app.inspect(components, { json: argv.json });
   },

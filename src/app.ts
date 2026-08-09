@@ -132,7 +132,7 @@ export class App {
    * single-commandId signature: each resolved component runs every command in order.
    * `recursive`/`depth`/`depends` traversal stays unported, same as run.ts's TODO.
    */
-  async run(components: string[], parallel: boolean, commands: string[], dryRun: boolean): Promise<void> {
+  async run(commands: string[], components: string[], parallel: boolean, dryRun: boolean): Promise<void> {
     const resolved = await this.resolve(components);
     const runComponent = async (component: Component): Promise<void> => {
       for (const command of commands) {

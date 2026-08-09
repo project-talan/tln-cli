@@ -2,15 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { hasConfig, isRootPath, splitComponents } from './misc.js';
+import { hasConfig, isRootPath, splitIds } from './misc.js';
 
-describe('splitComponents', () => {
+describe('splitIds', () => {
   it('splits a colon-delimited string into parts', () => {
-    expect(splitComponents('maven:boost:bootstrap')).toEqual(['maven', 'boost', 'bootstrap']);
+    expect(splitIds('maven:boost:bootstrap')).toEqual(['maven', 'boost', 'bootstrap']);
+  });
+
+  it('splits a commands list the same way as a components list', () => {
+    expect(splitIds('build:test')).toEqual(['build', 'test']);
   });
 
   it('returns an empty array for an empty string', () => {
-    expect(splitComponents('')).toEqual([]);
+    expect(splitIds('')).toEqual([]);
   });
 });
 

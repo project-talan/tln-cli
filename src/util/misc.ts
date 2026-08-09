@@ -7,13 +7,14 @@ export const CONFIG_FOLDER_NAME = '.tln';
 export const SCRIPT_TEMP_DIR = path.join(os.tmpdir(), 'talan', 'cli');
 
 /**
- * Splits a colon-delimited components argument, e.g. "maven:boost:bootstrap", into its parts.
+ * Splits a colon-delimited id list into its parts, e.g. "maven:boost:bootstrap" or
+ * "build:test" — used uniformly for both the `commands` and `components` CLI arguments.
  * A single segment may itself be slash-nested (e.g. "parent/child") — resolving that nesting
  * is the responsibility of the (not yet ported) component resolution logic, see
  * old/src/component.js's `resolve()`/`find()` methods and their `component.split('/')` call site.
  */
-export function splitComponents(components: string): string[] {
-  return components ? components.split(':') : [];
+export function splitIds(ids: string): string[] {
+  return ids ? ids.split(':') : [];
 }
 
 async function pathExists(target: string): Promise<boolean> {

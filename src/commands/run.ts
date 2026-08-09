@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
-import { splitComponents } from '../util/misc.js';
+import { splitIds } from '../util/misc.js';
 
 export interface RunArgv extends GlobalArgv {
   commands: string;
@@ -25,11 +25,8 @@ export const runCommand: CommandModule<GlobalArgv, RunArgv> = {
       .option('depends', { describe: 'Execute commands for all components from depends list too', default: false, type: 'boolean' })
       .demandOption(['commands'], 'Please provide command(s) you need to run'),
   handler: async (argv: ArgumentsCamelCase<RunArgv>): Promise<void> => {
-    const components = splitComponents(argv.components);
-    const commands = splitComponents(argv.commands).length ? argv.commands.split(':') : [];
-
     // TODO: port Appl#run / Component#run's recursive/depends/save traversal from old/src/appl.js, old/src/component.js
     const app = await createApp(argv);
-    await app.run(components, argv.parallel, commands, argv.dryRun);
+    await app.run(splitIds(argv.commands), splitIds(argv.components), argv.parallel, argv.dryRun);
   },
 };

@@ -177,7 +177,7 @@ describe('App', () => {
         order.push(String(command));
       });
 
-      await app.run([], false, ['build', 'test'], true);
+      await app.run(['build', 'test'], [], false, true);
 
       expect(runSpy).toHaveBeenNthCalledWith(1, 'build', true);
       expect(runSpy).toHaveBeenNthCalledWith(2, 'test', true);
@@ -193,7 +193,7 @@ describe('App', () => {
       const componentB = { run: vi.fn(async () => { order.push('b-start'); order.push('b-end'); }) } as unknown as Component;
       vi.spyOn(app, 'resolve').mockResolvedValue([componentA, componentB]);
 
-      await app.run([], false, ['cmd'], false);
+      await app.run(['cmd'], [], false, false);
 
       expect(order).toEqual(['a-start', 'a-end', 'b-start', 'b-end']);
     });
@@ -207,7 +207,7 @@ describe('App', () => {
       const componentB = { run: vi.fn(async () => { order.push('b-start'); order.push('b-end'); }) } as unknown as Component;
       vi.spyOn(app, 'resolve').mockResolvedValue([componentA, componentB]);
 
-      await app.run([], true, ['cmd'], false);
+      await app.run(['cmd'], [], true, false);
       await delay(20);
 
       expect(order.indexOf('b-start')).toBeLessThan(order.indexOf('a-end'));

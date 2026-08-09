@@ -27,7 +27,7 @@ describe('runCommand', () => {
     await runCommand.handler!(argv);
 
     expect(createAppMock).toHaveBeenCalledWith(argv);
-    expect(runMock).toHaveBeenCalledWith([], false, ['build', 'test'], true);
+    expect(runMock).toHaveBeenCalledWith(['build', 'test'], [], false, true);
   });
 
   it('passes the target components through to App#run', async () => {
@@ -35,6 +35,6 @@ describe('runCommand', () => {
 
     await runCommand.handler!(argv);
 
-    expect(runMock).toHaveBeenCalledWith(['maven', 'boost'], false, ['build'], false);
+    expect(runMock).toHaveBeenCalledWith(['build'], ['maven', 'boost'], false, false);
   });
 });

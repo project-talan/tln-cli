@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
-import { splitComponents } from '../util/misc.js';
+import { splitIds } from '../util/misc.js';
 
 export interface ExecArgv extends GlobalArgv {
   components: string;
@@ -29,7 +29,7 @@ export const execCommand: CommandModule<GlobalArgv, ExecArgv> = {
         return true;
       }),
   handler: async (argv: ArgumentsCamelCase<ExecArgv>): Promise<void> => {
-    const components = splitComponents(argv.components);
+    const components = splitIds(argv.components);
     const app = await createApp(argv);
     await app.exec(components, argv.parallel, argv.recursive, argv.depth, { command: argv.command, input: argv.input });
   },

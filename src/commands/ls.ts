@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
-import { splitComponents } from '../util/misc.js';
+import { splitIds } from '../util/misc.js';
 
 export interface LsArgv extends GlobalArgv {
   components: string;
@@ -24,7 +24,7 @@ export const lsCommand: CommandModule<GlobalArgv, LsArgv> = {
       .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
       .option('installedOnly', { alias: 'installed-only', describe: 'Show installed components only', default: false, type: 'boolean' }),
   handler: async (argv: ArgumentsCamelCase<LsArgv>): Promise<void> => {
-    const components = splitComponents(argv.components);
+    const components = splitIds(argv.components);
     const limit = argv.all ? -1 : argv.limit;
     const app = await createApp(argv);
     await app.ls(components, { limit, parents: argv.parents, installedOnly: argv.installedOnly });

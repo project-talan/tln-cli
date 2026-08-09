@@ -227,7 +227,7 @@ describe('Component#buildChild', () => {
     return dir;
   }
 
-  it('builds a child by joining sourcePath/homePath onto the parent, composing descriptions from the parent chain', async () => {
+  it('builds a child by joining sourcePath/homePath onto the parent, with no seeded descriptions when the parent declares none for this id', async () => {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.tln.tjs'), 'module.exports = {};', 'utf-8');
     await fs.mkdir(path.join(dir, 'nested'));
@@ -240,7 +240,52 @@ describe('Component#buildChild', () => {
     expect(child.parent).toBe(parent);
     expect(child.sourcePath).toBe(path.join(dir, 'nested'));
     expect(child.homePath).toBe(path.join(dir, 'nested'));
-    expect(child.descriptions).toEqual(parent.descriptions);
+    expect(child.descriptions).toEqual([]);
+  });
+
+  it("seeds the child with descriptions the parent's own descriptions inline-declare for the child's id via `components`", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        components: async () => ({
+          nested: { env: async () => {} },
+        }),
+      };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'nested'));
+    const parent = new Component(null, 'root', dir, dir);
+    await parent.init();
+
+    const child = await parent.buildChild('nested');
+
+    expect(child.descriptions).toHaveLength(1);
+    expect(typeof child.descriptions[0]!.env).toBe('function');
+    expect(child.descriptions[0]!.source).toBe(`${path.join(dir, '.tln.tjs')}#components/nested`);
+  });
+
+  it("layers the child's own real .tln.tjs (loaded via init()) on top of any parent-seeded description", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        components: async () => ({
+          nested: { env: async () => {} },
+        }),
+      };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'nested'));
+    await fs.writeFile(path.join(dir, 'nested', '.tln.tjs'), 'module.exports = { depends: async () => [] };', 'utf-8');
+    const parent = new Component(null, 'root', dir, dir);
+    await parent.init();
+
+    const child = await parent.buildChild('nested');
+
+    expect(child.descriptions).toHaveLength(2);
+    expect(typeof child.descriptions[0]!.env).toBe('function');
+    expect(child.descriptions[1]!.source).toBe(path.join(dir, 'nested', '.tln.tjs'));
   });
 
   it('caches the child on repeat calls with the same id', async () => {
@@ -294,5 +339,27 @@ describe('Component#createChild', () => {
     const second = await parent.createChild(location);
 
     expect(second).toBe(first);
+  });
+
+  it("seeds the anchor with descriptions the parent's own descriptions inline-declare for the anchor's id via `components`", async () => {
+    const catalogDir = await makeTempDir();
+    const location = await makeTempDir();
+    const id = path.basename(location);
+    await fs.writeFile(
+      path.join(catalogDir, '.tln.tjs'),
+      `module.exports = {
+        components: async () => ({
+          "${id}": { env: async () => {} },
+        }),
+      };`,
+      'utf-8',
+    );
+    const parent = new Component(null, '/', catalogDir, catalogDir);
+    await parent.init();
+
+    const child = await parent.createChild(location);
+
+    expect(child.descriptions).toHaveLength(1);
+    expect(typeof child.descriptions[0]!.env).toBe('function');
   });
 });
