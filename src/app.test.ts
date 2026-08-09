@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import { App } from './app.js';
 import type { Component } from './component.js';
 
@@ -244,17 +245,31 @@ describe('App', () => {
       logSpy.mockRestore();
     });
 
-    it('prints a readable text block when json=false', async () => {
+    it('prints each resolved component as YAML when json=false', async () => {
       const cwd = await makeTempDir();
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = {
+          inherits: async () => ['docker'],
+          depends: async () => [],
+          commands: async () => ({ hi: { builder: async () => ['echo hi'] } }),
+          env: async (tln, env) => { env.FOO = 'bar'; },
+        };`,
+        'utf-8',
+      );
       const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
       await app.inspect([], { json: false });
 
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`id: ${app.currentComponent.id}`));
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('sourcePath: '));
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('(none)'));
+      const printed = parseYaml(logSpy.mock.calls[0]![0] as string);
+      expect(printed.id).toBe(app.currentComponent.id);
+      expect(printed.sourcePath).toBe(app.currentComponent.sourcePath);
+      expect(printed.inherits).toEqual(['docker']);
+      expect(printed.depends).toEqual([]);
+      expect(printed.commands).toEqual(['hi']);
+      expect(printed.env).toEqual({ FOO: 'bar' });
 
       logSpy.mockRestore();
     });
