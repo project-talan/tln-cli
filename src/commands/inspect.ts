@@ -25,8 +25,7 @@ export const inspectCommand: CommandModule<GlobalArgv, InspectArgv> = {
         type: 'boolean',
       }),
   handler: async (argv: ArgumentsCamelCase<InspectArgv>): Promise<void> => {
-    const components = splitIds(argv.components);
     const app = await createApp(argv);
-    await app.inspect(components, { json: argv.json });
+    await app.inspect(splitIds(argv.components), { json: argv.json });
   },
 };

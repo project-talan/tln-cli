@@ -59,7 +59,7 @@ describe('Component#init', () => {
     expect(typeof component.descriptions[0]!.env).toBe('function');
   });
 
-  it('merges .tln folder subfolder configs, sorted by folder name, after the own file', async () => {
+  it('merges .tln folder subfolder configs, sorted by folder name, before the own file', async () => {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.tln.tjs'), `module.exports = {};`, 'utf-8');
     await fs.mkdir(path.join(dir, '.tln', 'zeta'), { recursive: true });
@@ -73,9 +73,9 @@ describe('Component#init', () => {
     await component.init();
 
     expect(component.descriptions.map((d) => d.source)).toEqual([
-      path.join(dir, '.tln.tjs'),
       path.join(dir, '.tln', 'alpha', '.tln.tjs'),
       path.join(dir, '.tln', 'zeta', '.tln.tjs'),
+      path.join(dir, '.tln.tjs'),
     ]);
   });
 
@@ -187,6 +187,102 @@ describe('Component#run', () => {
     expect(content).toBe(['#!/usr/bin/env bash', 'set -e', 'echo one', 'echo two', ''].join('\n'));
 
     await fs.rm(scriptPath as string, { force: true });
+  });
+});
+
+describe('Component#inspect', () => {
+  let tempDirs: string[];
+
+  beforeEach(() => {
+    tempDirs = [];
+  });
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-component-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('resolves id/sourcePath/homePath/descriptions/inherits/depends/commands/env from a single description', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        inherits: async () => ['docker'],
+        depends: async () => ['maven'],
+        commands: async () => ({ hi: { builder: async () => ['echo hi'] } }),
+        env: async (tln, env) => { env.FOO = 'bar'; },
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const inspection = await component.inspect();
+
+    expect(inspection).toEqual({
+      id: 'root',
+      sourcePath: dir,
+      homePath: dir,
+      descriptions: [path.join(dir, '.tln.tjs')],
+      inherits: ['docker'],
+      depends: ['maven'],
+      commands: ['hi'],
+      env: { FOO: 'bar' },
+    });
+  });
+
+  it('returns empty lists/object when there are no descriptions', async () => {
+    const dir = await makeTempDir();
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const inspection = await component.inspect();
+
+    expect(inspection.descriptions).toEqual([]);
+    expect(inspection.inherits).toEqual([]);
+    expect(inspection.depends).toEqual([]);
+    expect(inspection.commands).toEqual([]);
+    expect(inspection.env).toEqual({});
+  });
+
+  it('concatenates inherits/depends, unions commands, and lets later descriptions override earlier env vars', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, '.tln', 'a'), { recursive: true });
+    await fs.writeFile(
+      path.join(dir, '.tln', 'a', '.tln.tjs'),
+      `module.exports = {
+        inherits: async () => ['docker'],
+        depends: async () => ['maven'],
+        commands: async () => ({ first: { builder: async () => ['echo first'] } }),
+        env: async (tln, env) => { env.FOO = 'from-a'; env.ONLY_A = 'yes'; },
+      };`,
+      'utf-8',
+    );
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        inherits: async () => ['git'],
+        depends: async () => [],
+        commands: async () => ({ second: { builder: async () => ['echo second'] } }),
+        env: async (tln, env) => { env.FOO = 'from-own'; },
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const inspection = await component.inspect();
+
+    // .tln folder descriptions load before the own file (see Component#init), so 'own' wins the FOO override.
+    expect(inspection.inherits).toEqual(['docker', 'git']);
+    expect(inspection.depends).toEqual(['maven']);
+    expect(inspection.commands).toEqual(['first', 'second']);
+    expect(inspection.env).toEqual({ FOO: 'from-own', ONLY_A: 'yes' });
   });
 });
 

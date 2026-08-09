@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { Component, create } from './component.js';
+import { Component, create, type ComponentInspection } from './component.js';
 import type { GlobalArgv } from './util/globalOptions.js';
 import { hasConfig, isRootPath } from './util/misc.js';
 
@@ -155,9 +155,36 @@ export class App {
   }
 
   async inspect(components: string[], options: InspectOptions): Promise<void> {
-    throw new Error(
-      `Not implemented: App#inspect — needs Component#inspect (see old/src/component.js) [components=${components.join(':')}, options=${JSON.stringify(options)}]`,
-    );
+    const resolved = await this.resolve(components);
+    for (const component of resolved) {
+      const inspection = await component.inspect();
+      console.log(options.json ? JSON.stringify(inspection, null, 2) : App.formatInspection(inspection));
+    }
+  }
+
+  private static formatInspection(inspection: ComponentInspection): string {
+    const list = (items: string[]): string => (items.length ? items.map((item) => `  - ${item}`).join('\n') : '  (none)');
+    const env = Object.keys(inspection.env).length
+      ? Object.entries(inspection.env)
+          .map(([key, value]) => `  ${key}=${value}`)
+          .join('\n')
+      : '  (none)';
+
+    return [
+      `id: ${inspection.id}`,
+      `sourcePath: ${inspection.sourcePath}`,
+      `homePath: ${inspection.homePath}`,
+      'descriptions:',
+      list(inspection.descriptions),
+      'inherits:',
+      list(inspection.inherits),
+      'depends:',
+      list(inspection.depends),
+      'commands:',
+      list(inspection.commands),
+      'env:',
+      env,
+    ].join('\n');
   }
 
   async ls(components: string[], options: LsOptions): Promise<void> {

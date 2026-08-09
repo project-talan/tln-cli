@@ -8,7 +8,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "postbuild": "chmod +x dist/index.js",
+    "postbuild": "chmod +x dist/index.js && node -e \"require('fs').cpSync('src/components', 'dist/components', { recursive: true })\"",
     "prepublishOnly": "npm run build",
     "dev": "tsx watch src/index.ts",
     "dev:debug": "node --inspect-brk --import tsx src/index.ts",

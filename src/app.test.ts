@@ -214,6 +214,52 @@ describe('App', () => {
     });
   });
 
+  describe('inspect', () => {
+    it('prints each resolved component as JSON when json=true', async () => {
+      const cwd = await makeTempDir();
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = {
+          inherits: async () => ['docker'],
+          depends: async () => [],
+          commands: async () => ({ hi: { builder: async () => ['echo hi'] } }),
+          env: async (tln, env) => { env.FOO = 'bar'; },
+        };`,
+        'utf-8',
+      );
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await app.inspect([], { json: true });
+
+      const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+      expect(printed.id).toBe(app.currentComponent.id);
+      expect(printed.sourcePath).toBe(app.currentComponent.sourcePath);
+      expect(printed.inherits).toEqual(['docker']);
+      expect(printed.depends).toEqual([]);
+      expect(printed.commands).toEqual(['hi']);
+      expect(printed.env).toEqual({ FOO: 'bar' });
+
+      logSpy.mockRestore();
+    });
+
+    it('prints a readable text block when json=false', async () => {
+      const cwd = await makeTempDir();
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await app.inspect([], { json: false });
+
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(`id: ${app.currentComponent.id}`));
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('sourcePath: '));
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('(none)'));
+
+      logSpy.mockRestore();
+    });
+  });
+
   describe('unported dispatch methods', () => {
     it('config rejects naming Component#config as the missing piece', async () => {
       const cwd = await makeTempDir();
@@ -223,14 +269,6 @@ describe('App', () => {
       await expect(
         app.config([], { repo: undefined, update: false, folder: undefined, force: false, terse: false, depend: [], inherit: [] }),
       ).rejects.toThrow('Not implemented: App#config — needs Component#config');
-    });
-
-    it('inspect rejects naming Component#inspect as the missing piece', async () => {
-      const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
-      await app.init();
-
-      await expect(app.inspect([], { json: false })).rejects.toThrow('Not implemented: App#inspect — needs Component#inspect');
     });
 
     it('ls rejects naming Component#ls as the missing piece', async () => {

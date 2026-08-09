@@ -18,8 +18,10 @@ export interface RawComponentDescription {
   dotenvs?: (tln: unknown) => unknown;
   options?: (tln: unknown, env: unknown) => unknown;
   env?: (tln: unknown, env: Record<string, string>) => unknown;
-  inherits?: (tln: unknown) => unknown;
-  depends?: (tln: unknown) => unknown;
+  /** Component ids this description inherits from. Single-parent for now — will grow into multiple inheritance later. */
+  inherits?: (tln: unknown) => Promise<string[]> | string[];
+  /** Component ids this description depends on. Single-list for now — will grow into a fuller dependencies feature later. */
+  depends?: (tln: unknown) => Promise<string[]> | string[];
   commands?: (tln: unknown) => Promise<Record<string, CommandDescriptor>> | Record<string, CommandDescriptor>;
   /** Inline-declared child components, keyed by id — see Component#matchingDescriptions. */
   components?: (tln: unknown) => Promise<Record<string, RawComponentDescription>> | Record<string, RawComponentDescription>;
@@ -28,6 +30,19 @@ export interface RawComponentDescription {
 export interface ComponentDescription extends RawComponentDescription {
   /** Absolute path to the .tln.tjs file this description was loaded from. */
   source: string;
+}
+
+/** Snapshot of a component's resolved structure, for the `inspect` command. */
+export interface ComponentInspection {
+  id: string;
+  sourcePath: string;
+  homePath: string;
+  /** Sources of every description that contributed to this component, in resolution order. */
+  descriptions: string[];
+  inherits: string[];
+  depends: string[];
+  commands: string[];
+  env: Record<string, string>;
 }
 
 /**
@@ -127,6 +142,42 @@ export class Component {
       }
     }
     return matches;
+  }
+
+  /**
+   * Resolves this component's structure for the `inspect` command: identity/paths,
+   * where each contributing description came from, the declared inherits/depends
+   * lists (concatenated across descriptions, as-is — no dedup/resolution yet, see
+   * RawComponentDescription's inherits/depends docs), every available command id,
+   * and the final env var set (each description's `env(tln, env)` mutates a shared
+   * accumulator in `descriptions` order, so later descriptions can override earlier ones).
+   */
+  async inspect(): Promise<ComponentInspection> {
+    const inherits: string[] = [];
+    const depends: string[] = [];
+    const commands = new Set<string>();
+    const env: Record<string, string> = {};
+
+    for (const description of this.descriptions) {
+      if (description.inherits) inherits.push(...(await description.inherits(undefined)));
+      if (description.depends) depends.push(...(await description.depends(undefined)));
+      if (description.commands) {
+        const resolved = await description.commands(undefined);
+        for (const commandId of Object.keys(resolved)) commands.add(commandId);
+      }
+      if (description.env) await description.env(undefined, env);
+    }
+
+    return {
+      id: this.id,
+      sourcePath: this.sourcePath,
+      homePath: this.homePath,
+      descriptions: this.descriptions.map((description) => description.source),
+      inherits,
+      depends,
+      commands: [...commands],
+      env,
+    };
   }
 
   /**
