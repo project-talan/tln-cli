@@ -6,6 +6,7 @@ import { App } from './app.js';
 import type { Component } from './component.js';
 
 const CATALOG_HOME = '/fake/catalog-home';
+const VERBOSE = 0;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,6 +14,9 @@ function delay(ms: number): Promise<void> {
 
 describe('App', () => {
   let tempDirs: string[];
+  // App#init() now mkdir's userHome for real, so it must be a real (temp) path,
+  // not the fixed fake string CATALOG_HOME gets away with (catalogHome is only read from).
+  let USER_HOME: string;
 
   beforeEach(() => {
     tempDirs = [];
@@ -29,6 +33,10 @@ describe('App', () => {
     return dir;
   }
 
+  beforeEach(async () => {
+    USER_HOME = await makeTempDir();
+  });
+
   describe('init', () => {
     it('walks up from cwd to the topmost ancestor with a tln config and builds the component chain down to cwd', async () => {
       const root = await makeTempDir();
@@ -36,16 +44,24 @@ describe('App', () => {
       const cwd = path.join(root, 'a', 'b');
       await fs.mkdir(cwd, { recursive: true });
 
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       expect(app.home).toBe(root);
-      expect(app.localRepo).toBe(root);
       expect(app.rootComponent.id).toBe('/');
-      expect(app.rootComponent.home).toBe(root);
-      expect(app.currentComponent.home).toBe(cwd);
+      expect(app.rootComponent.sourcePath).toBe(CATALOG_HOME);
+      expect(app.rootComponent.homePath).toBe(USER_HOME);
+      expect(app.currentComponent.sourcePath).toBe(cwd);
+      expect(app.currentComponent.homePath).toBe(cwd);
       expect(app.currentComponent.id).toBe('b');
       expect(app.currentComponent.parent?.id).toBe('a');
+      // 'a' is anchored directly at `root` (not joined from the catalog root), then 'b' joins onto it.
+      expect(app.currentComponent.parent?.sourcePath).toBe(path.join(root, 'a'));
+      const anchor = app.currentComponent.parent?.parent;
+      expect(anchor?.id).toBe(path.basename(root));
+      expect(anchor?.sourcePath).toBe(root);
+      expect(anchor?.homePath).toBe(root);
+      expect(anchor?.parent).toBe(app.rootComponent);
     });
 
     it('prefers the topmost ancestor with a config over a nearer one', async () => {
@@ -57,7 +73,7 @@ describe('App', () => {
       const cwd = path.join(mid, 'leaf');
       await fs.mkdir(cwd);
 
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       expect(app.home).toBe(root);
@@ -66,39 +82,57 @@ describe('App', () => {
     it('falls back to cwd as home when no ancestor has a tln config', async () => {
       const cwd = await makeTempDir();
 
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       expect(app.home).toBe(cwd);
-      expect(app.localRepo).toBe(cwd);
-      expect(app.currentComponent).toBe(app.rootComponent);
-    });
-  });
-
-  describe('isRootPath', () => {
-    it('is true at the posix filesystem root', () => {
-      const app = new App('/foo/bar', CATALOG_HOME);
-      expect(app.isRootPath('/')).toBe(true);
-      expect(app.isRootPath('/foo')).toBe(false);
+      // currentComponent is still the anchor (a child of rootComponent), not rootComponent itself,
+      // even when home === cwd — rootComponent always represents the catalog root.
+      expect(app.currentComponent.parent).toBe(app.rootComponent);
+      expect(app.currentComponent.sourcePath).toBe(cwd);
+      expect(app.currentComponent.homePath).toBe(cwd);
     });
 
-    it('is true at the drive root on win32', () => {
-      // node's `path` module always uses posix separators on a posix host, even when
-      // os.platform() is mocked — so this exercises isRootPath's win32 branch logic
-      // (root = first path.sep-delimited segment of cwd) rather than real backslash paths.
-      vi.spyOn(os, 'platform').mockReturnValue('win32');
-      const cwd = ['C:', 'Users', 'x'].join(path.sep);
-      const app = new App(cwd, CATALOG_HOME);
+    it('creates userHome (recursively) if it does not exist yet', async () => {
+      const cwd = await makeTempDir();
+      const parent = await makeTempDir();
+      const userHome = path.join(parent, 'nested', 'user-home');
 
-      expect(app.isRootPath(`C:${path.sep}`)).toBe(true);
-      expect(app.isRootPath(['C:', 'Users'].join(path.sep))).toBe(false);
+      const app = new App(cwd, CATALOG_HOME, userHome, VERBOSE);
+      await app.init();
+
+      const stat = await fs.stat(userHome);
+      expect(stat.isDirectory()).toBe(true);
+    });
+
+    it('logs cwd/catalogHome/userHome/home when verbose > 0', async () => {
+      const cwd = await makeTempDir();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, 1);
+      await app.init();
+
+      expect(logSpy).toHaveBeenCalledWith('cwd:', cwd);
+      expect(logSpy).toHaveBeenCalledWith('catalogHome:', CATALOG_HOME);
+      expect(logSpy).toHaveBeenCalledWith('userHome:', USER_HOME);
+      expect(logSpy).toHaveBeenCalledWith('home:', cwd);
+    });
+
+    it('does not log when verbose is 0', async () => {
+      const cwd = await makeTempDir();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, 0);
+      await app.init();
+
+      expect(logSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('resolve', () => {
     it('resolves to [currentComponent] for an empty components list by default', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       expect(await app.resolve([])).toEqual([app.currentComponent]);
@@ -106,7 +140,7 @@ describe('App', () => {
 
     it('resolves to [] for an empty components list when resolveEmptyToThis is false', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       expect(await app.resolve([], false)).toEqual([]);
@@ -114,7 +148,7 @@ describe('App', () => {
 
     it('resolves "/" to the root component', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       expect(await app.resolve(['/'])).toEqual([app.rootComponent]);
@@ -122,7 +156,7 @@ describe('App', () => {
 
     it('warns and drops ids other than "/", since tree search is not ported yet', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
@@ -136,7 +170,7 @@ describe('App', () => {
   describe('run', () => {
     it('runs each command against every resolved component, in order', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
       const order: string[] = [];
       const runSpy = vi.spyOn(app.currentComponent, 'run').mockImplementation(async (command) => {
@@ -152,7 +186,7 @@ describe('App', () => {
 
     it('awaits each resolved component in turn when not parallel', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
       const order: string[] = [];
       const componentA = { run: vi.fn(async () => { order.push('a-start'); await delay(10); order.push('a-end'); }) } as unknown as Component;
@@ -166,7 +200,7 @@ describe('App', () => {
 
     it('fires resolved components without waiting for each other when parallel', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
       const order: string[] = [];
       const componentA = { run: vi.fn(async () => { order.push('a-start'); await delay(10); order.push('a-end'); }) } as unknown as Component;
@@ -183,7 +217,7 @@ describe('App', () => {
   describe('unported dispatch methods', () => {
     it('config rejects naming Component#config as the missing piece', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       await expect(
@@ -193,7 +227,7 @@ describe('App', () => {
 
     it('inspect rejects naming Component#inspect as the missing piece', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       await expect(app.inspect([], { json: false })).rejects.toThrow('Not implemented: App#inspect — needs Component#inspect');
@@ -201,7 +235,7 @@ describe('App', () => {
 
     it('ls rejects naming Component#ls as the missing piece', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       await expect(app.ls([], { limit: 5, parents: false, installedOnly: false })).rejects.toThrow(
@@ -211,7 +245,7 @@ describe('App', () => {
 
     it('exec rejects naming Component#exec as the missing piece', async () => {
       const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME);
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
 
       await expect(app.exec([], false, false, 1, { command: 'echo hi', input: undefined })).rejects.toThrow(

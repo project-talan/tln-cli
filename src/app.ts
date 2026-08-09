@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { Component, create, hasConfig } from './component.js';
+import { Component, create } from './component.js';
 import type { GlobalArgv } from './util/globalOptions.js';
+import { hasConfig, isRootPath } from './util/misc.js';
 
 export interface ConfigOptions {
   repo: string | undefined;
@@ -32,8 +32,10 @@ export interface ExecOptions {
 /**
  * Orchestrates a single `tln` invocation: resolves the project's `home` (walking
  * up from `cwd` to the topmost folder with a `.tln.tjs`/`.tln` config), builds the
- * component tree from `home` down to `cwd`, and dispatches every top-level command
- * onto the components resolved from CLI arguments. Port of old/src/appl.js's `Appl`.
+ * component tree — root at (catalogHome, userHome), with `home` attached beneath
+ * it as an explicit anchor and the chain descending from there down to `cwd` — and
+ * dispatches every top-level command onto the components resolved from CLI
+ * arguments. Port of old/src/appl.js's `Appl`.
  *
  * Detached mode (--detach/--local-repo/TLN_DETACHED_MODE) and the `tln` builder
  * context object (old Appl#init's filter/utils-backed helpers) are not ported yet —
@@ -42,53 +44,62 @@ export interface ExecOptions {
  */
 export class App {
   readonly cwd: string;
-  /** Root of the tln-cli package itself, i.e. `path.join(catalogHome, 'components')` is the built-in component catalog. */
+  /** The tln-cli package's built-in component catalog folder (see index.ts). */
   readonly catalogHome: string;
+  /** Per-user install root (`~/.talan/cli`) where tln installs third-party components (see index.ts). */
+  readonly userHome: string;
+  readonly verbose: number;
   home!: string;
-  localRepo!: string;
   rootComponent!: Component;
   currentComponent!: Component;
 
-  constructor(cwd: string, catalogHome: string) {
+  constructor(cwd: string, catalogHome: string, userHome: string, verbose: number) {
     this.cwd = cwd;
     this.catalogHome = catalogHome;
+    this.userHome = userHome;
+    this.verbose = verbose;
   }
 
   /**
    * Port of the non-detached branch of Appl#init (old/src/appl.js:66-92): finds the
-   * topmost ancestor of `cwd` with a tln config and uses it as `home`/`localRepo`
-   * (falling back to `cwd` itself if none is found anywhere — old code's detached-mode
-   * tmp-folder fallback isn't ported), then builds the component chain from `home`
-   * down to `cwd`.
+   * topmost ancestor of `cwd` with a tln config and uses it as `home` (falling back
+   * to `cwd` itself if none is found anywhere — old code's detached-mode tmp-folder
+   * fallback isn't ported). Builds the root component at (catalogHome, userHome),
+   * attaches `home` beneath it as an explicit anchor (Component#createChild — its
+   * sourcePath/homePath are `home` itself, not joined from the root's), then
+   * descends from that anchor down to `cwd` via Component#buildChild, which does
+   * join each step onto its parent's paths. Creates `userHome` if it doesn't
+   * exist yet, since that's where tln installs third-party components.
    */
   async init(): Promise<void> {
     let home = this.cwd;
     let p = home;
-    while (!this.isRootPath(p)) {
+    while (!isRootPath(this.cwd, p)) {
       p = path.dirname(p);
       if (await hasConfig(p)) {
         home = p;
       }
     }
     this.home = home;
-    this.localRepo = this.home;
-    await fs.mkdir(this.localRepo, { recursive: true });
 
-    this.rootComponent = await create(this.localRepo);
+    await fs.mkdir(this.userHome, { recursive: true });
+
+    this.rootComponent = await create(this.catalogHome, this.userHome);
 
     const relative = path.relative(this.home, this.cwd);
     const folders = relative ? relative.split(path.sep) : [];
-    let current = this.rootComponent;
+    let current = await this.rootComponent.createChild(this.home);
     for (const folder of folders) {
       current = await current.buildChild(folder);
     }
     this.currentComponent = current;
-  }
 
-  /** Direct port of Appl#isRootPath (old/src/appl.js:174-178). */
-  isRootPath(p: string): boolean {
-    const root = os.platform() === 'win32' ? `${this.cwd.split(path.sep)[0]}${path.sep}` : path.sep;
-    return p === root;
+    if (this.verbose > 0) {
+      console.log('cwd:', this.cwd);
+      console.log('catalogHome:', this.catalogHome);
+      console.log('userHome:', this.userHome);
+      console.log('home:', this.home);
+    }
   }
 
   /**
@@ -162,9 +173,9 @@ export class App {
   }
 }
 
-/** Builds and initializes an App from a command handler's argv (see build()'s cwd/catalogHome middleware). */
+/** Builds and initializes an App from a command handler's argv (see build()'s cwd/catalogHome/userHome middleware). */
 export async function createApp(argv: GlobalArgv): Promise<App> {
-  const app = new App(argv.cwd, argv.catalogHome);
+  const app = new App(argv.cwd, argv.catalogHome, argv.userHome, argv.verbose);
   await app.init();
   return app;
 }

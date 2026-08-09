@@ -1,7 +1,7 @@
 import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
-import { splitComponents } from '../component.js';
+import { splitComponents } from '../util/misc.js';
 
 export interface InspectArgv extends GlobalArgv {
   components: string;

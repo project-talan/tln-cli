@@ -19,8 +19,10 @@ export interface GlobalArgv {
   '--': string[];
   /** Set by build()'s middleware, not a real CLI flag. */
   cwd: string;
-  /** Root of the tln-cli package itself, i.e. `path.join(catalogHome, 'components')` is the built-in component catalog. Set by build()'s middleware, not a real CLI flag. */
+  /** The tln-cli package's built-in component catalog folder (see index.ts). Set by build()'s middleware, not a real CLI flag. */
   catalogHome: string;
+  /** Per-user install root (`~/.talan/cli`) where tln installs third-party components (see index.ts). Set by build()'s middleware, not a real CLI flag. */
+  userHome: string;
 }
 
 export const globalOptions = {

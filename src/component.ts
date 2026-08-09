@@ -2,18 +2,8 @@ import { createRequire } from 'node:module';
 import { promises as fs } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import os from 'node:os';
 import path from 'node:path';
-
-/**
- * Splits a colon-delimited components argument, e.g. "maven:boost:bootstrap", into its parts.
- * A single segment may itself be slash-nested (e.g. "parent/child") — resolving that nesting
- * is the responsibility of the (not yet ported) component resolution logic, see
- * old/src/component.js's `resolve()`/`find()` methods and their `component.split('/')` call site.
- */
-export function splitComponents(components: string): string[] {
-  return components ? components.split(':') : [];
-}
+import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR } from './util/misc.js';
 
 export interface CommandDescriptor {
   // variant1: an async builder returning bash command lines to execute.
@@ -42,14 +32,12 @@ export interface ComponentDescription extends RawComponentDescription {
 /**
  * A single node in the component tree. Construction is cheap and synchronous;
  * `init()` performs the (async) work of loading this component's own .tln.tjs
- * config file and any override configs nested under a .tln folder, merging
- * them onto the descriptions inherited from the parent.
+ * config file and any override configs nested under a .tln folder found under
+ * `sourcePath`. `descriptions` is computed on read, prepending the parent
+ * chain's descriptions ahead of this component's own — there is no
+ * constructor-time inheritance copy.
  */
 export class Component {
-  private static readonly CONFIG_FILE_NAME = '.tln.tjs';
-  private static readonly CONFIG_FOLDER_NAME = '.tln';
-  private static readonly SCRIPT_TEMP_DIR = path.join(os.tmpdir(), 'talan', 'cli');
-
   // package.json/.tln.tjs live outside tsconfig's rootDir ("./src"), and .tln.tjs files
   // are CommonJS (`module.exports = {...}`) despite this package being "type": "module" —
   // createRequire gives us a runtime require() that loads them regardless of extension.
@@ -57,29 +45,37 @@ export class Component {
 
   readonly parent: Component | null;
   readonly id: string;
-  readonly home: string;
-  readonly descriptions: ComponentDescription[];
+  /** Where this component's own .tln.tjs/.tln config is loaded from. */
+  readonly sourcePath: string;
+  /** Where this component runs commands (execSync's cwd) — its deploy/working location. */
+  readonly homePath: string;
+  private readonly ownDescriptions: ComponentDescription[] = [];
   private readonly children: Component[] = [];
 
-  constructor(parent: Component | null, id: string, home: string, descriptions: ComponentDescription[] = []) {
+  constructor(parent: Component | null, id: string, sourcePath: string, homePath: string) {
     this.parent = parent;
     this.id = id;
-    this.home = home;
-    this.descriptions = [...descriptions];
+    this.sourcePath = sourcePath;
+    this.homePath = homePath;
+  }
+
+  /** This component's own descriptions, prefixed with its full parent chain's. */
+  get descriptions(): ComponentDescription[] {
+    return this.parent ? [...this.parent.descriptions, ...this.ownDescriptions] : [...this.ownDescriptions];
   }
 
   async init(): Promise<void> {
-    const ownDescription = await Component.loadConfigFile(this.home);
-    if (ownDescription) this.descriptions.push(ownDescription);
+    const ownDescription = await Component.loadConfigFile(this.sourcePath);
+    if (ownDescription) this.ownDescriptions.push(ownDescription);
 
-    const folderDescriptions = await Component.loadConfigFolder(this.home);
-    this.descriptions.push(...folderDescriptions);
+    const folderDescriptions = await Component.loadConfigFolder(this.sourcePath);
+    this.ownDescriptions.push(...folderDescriptions);
   }
 
   /**
-   * Returns the child component with the given `id`, building it (at
-   * `path.join(this.home, id)`, inheriting this component's descriptions) and
-   * caching it on first access. Simplified port of old/src/component.js's
+   * Returns the child component with the given `id`, building it (with
+   * `sourcePath`/`homePath` computed by joining this component's own onto `id`)
+   * and caching it on first access. Simplified port of old/src/component.js's
    * `buildChild` — it doesn't resolve dynamically-declared child components
    * from a parent's `components` description field (`getComponentsFromDesc`
    * in the old code); that stays unported, same as the cross-component
@@ -89,7 +85,25 @@ export class Component {
     const existing = this.children.find((child) => child.id === id);
     if (existing) return existing;
 
-    const child = new Component(this, id, path.join(this.home, id), this.descriptions);
+    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id));
+    await child.init();
+    this.children.push(child);
+    return child;
+  }
+
+  /**
+   * Returns the child component anchored at the real, absolute `location` —
+   * `sourcePath` and `homePath` are both set to `location` directly (not
+   * joined onto this component's own paths), and `id` is `path.basename(location)`.
+   * Used to attach an unrelated real filesystem location (e.g. a project's
+   * home directory) onto the tree. Port of old/src/component.js's `createChild`.
+   */
+  async createChild(location: string): Promise<Component> {
+    const id = path.basename(location);
+    const existing = this.children.find((child) => child.id === id);
+    if (existing) return existing;
+
+    const child = new Component(this, id, location, location);
     await child.init();
     this.children.push(child);
     return child;
@@ -111,7 +125,7 @@ export class Component {
 
     const scriptPath = await Component.writeScript(lines);
     console.log(scriptPath);
-    execSync(scriptPath, { cwd: this.home, stdio: 'inherit', env: process.env });
+    execSync(scriptPath, { cwd: this.homePath, stdio: 'inherit', env: process.env });
   }
 
   private async resolveCommandLines(commandId: string): Promise<string[]> {
@@ -149,8 +163,8 @@ export class Component {
   }
 
   private static async writeScript(lines: string[]): Promise<string> {
-    await fs.mkdir(Component.SCRIPT_TEMP_DIR, { recursive: true });
-    const scriptPath = path.join(Component.SCRIPT_TEMP_DIR, `${randomUUID()}.sh`);
+    await fs.mkdir(SCRIPT_TEMP_DIR, { recursive: true });
+    const scriptPath = path.join(SCRIPT_TEMP_DIR, `${randomUUID()}.sh`);
     const content = ['#!/usr/bin/env bash', 'set -e', ...lines, ''].join('\n');
     await fs.writeFile(scriptPath, content, { mode: 0o755 });
     return scriptPath;
@@ -165,15 +179,6 @@ export class Component {
     }
   }
 
-  /** True if `dir` has a .tln.tjs file or a .tln folder. Port of old/src/utils.js's `isConfigPresent`. */
-  static async hasConfig(dir: string): Promise<boolean> {
-    const [file, folder] = await Promise.all([
-      Component.pathExists(path.join(dir, Component.CONFIG_FILE_NAME)),
-      Component.pathExists(path.join(dir, Component.CONFIG_FOLDER_NAME)),
-    ]);
-    return file || folder;
-  }
-
   private static requireDescription(filePath: string): ComponentDescription {
     let exported: RawComponentDescription;
     try {
@@ -185,13 +190,13 @@ export class Component {
   }
 
   private static async loadConfigFile(dir: string): Promise<ComponentDescription | null> {
-    const filePath = path.join(dir, Component.CONFIG_FILE_NAME);
+    const filePath = path.join(dir, CONFIG_FILE_NAME);
     if (!(await Component.pathExists(filePath))) return null;
     return Component.requireDescription(filePath);
   }
 
   private static async loadConfigFolder(dir: string): Promise<ComponentDescription[]> {
-    const folderPath = path.join(dir, Component.CONFIG_FOLDER_NAME);
+    const folderPath = path.join(dir, CONFIG_FOLDER_NAME);
     if (!(await Component.pathExists(folderPath))) return [];
 
     const entries = await fs.readdir(folderPath, { withFileTypes: true });
@@ -210,17 +215,12 @@ export class Component {
 }
 
 /**
- * Creates the root component (id '/', no parent) at `home` and loads its config.
- * Port of old/src/component.js's `createRoot` factory, minus the built-in catalog
- * folder scan (no `source`/catalog-folder concept ported yet).
+ * Creates the root component (id '/', no parent) and loads its config from
+ * `sourcePath`. Port of old/src/component.js's `createRoot` factory, minus the
+ * built-in catalog folder scan (no `source`/catalog-folder concept ported yet).
  */
-export async function create(home: string): Promise<Component> {
-  const root = new Component(null, '/', home);
+export async function create(sourcePath: string, homePath: string): Promise<Component> {
+  const root = new Component(null, '/', sourcePath, homePath);
   await root.init();
   return root;
-}
-
-/** True if `dir` has a .tln.tjs file or a .tln folder. Port of old/src/utils.js's `isConfigPresent`. */
-export async function hasConfig(dir: string): Promise<boolean> {
-  return Component.hasConfig(dir);
 }

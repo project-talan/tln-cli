@@ -1,0 +1,73 @@
+
+module.exports = {
+  dotenvs: async (tln) => [ '.env'],
+  options: async (tln, env) => ({
+    prefix: 'TPM',
+    options: [
+      { key: 'context', desc: 'Environment Id, (dev:dev01)', type: 'string', default: null }
+    ]
+  }),
+  env: async (tln, env) => {
+    env.TLN_UID = 'sh.tln.pm';
+  },
+  inherits: async (tln) => ['docker'],
+  depends: async (tln) => [],
+  commands: async (tln) => ({
+    'sys-info': { builder: async (tln, env) => {
+      const os = require('os');
+      return [
+        `echo Platform: ${os.platform()}`,
+        `echo Architecture: ${os.arch()}`,
+        `echo CPUs: ${os.cpus().length}`,
+        `echo Machine: ${os.machine()}`,
+        `echo Release: ${os.release()}`,
+        `echo Version: "${os.version()}"`,
+        `echo Type: ${os.type()}`,
+        `echo Uptime: ${os.uptime()} seconds`,
+        `echo Total Memory: ${os.totalmem() / (1024 * 1024)} MB`,
+        `echo Free Memory: ${os.freemem() / (1024 * 1024)} MB`
+      ];
+    }, access: 'public', filter: ''},
+    // variant1 - return list of bash commands to execute
+    prereq: { builder: async (tln, env) => [
+      `echo Hi from prereq command !!!`,
+    ], access: 'public'},
+    // variant2 - shortcut for exisiting commands batch mode
+    package: { builder: ['docker:exec', 'prereq'],
+      access: 'protected'
+    },
+  }),
+  components: async (tln) => ({
+    child1: {},
+    child2: {}
+  })
+}
+
+
+/*
+
+    {
+      id: 'shell',
+      desc: '',
+      filter: 'linux',
+      builder: async (tln, script) => script.set([
+        `bash --rcfile <(cat ~/.bashrc; echo 'PS1="tln > "')`
+      ])
+    },
+    {
+      id: 'shell',
+      desc: '',
+      filter: 'darwin',
+      builder: async (tln, script) => script.set([
+        `bash --rcfile <(cat ~/.bash_profile; echo 'export PS1="tln > "')`
+      ])
+    },
+    {
+      id: 'shell',
+      desc: '',
+      filter: 'win32',
+      builder: async (tln, script) => script.set(['cmd'])
+    },
+
+
+*/

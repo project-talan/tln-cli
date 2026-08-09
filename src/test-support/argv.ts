@@ -15,6 +15,7 @@ export function baseArgv(): GlobalArgv & { _: (string | number)[]; $0: string } 
     '--': [],
     cwd: '/fake/cwd',
     catalogHome: '/fake/catalog-home',
+    userHome: '/fake/user-home',
     _: [],
     $0: 'tln',
   };

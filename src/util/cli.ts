@@ -15,7 +15,7 @@ const USAGE =
  * shared global options, `.tlnrc` config defaults (closest one found walking
  * up from cwd), `--` passthrough capture, and all command registrations.
  */
-export function build(args: readonly string[], cwd: string, catalogHome: string): Argv<GlobalArgv> {
+export function build(args: readonly string[], cwd: string, catalogHome: string, userHome: string): Argv<GlobalArgv> {
   const configPath = findUpSync(['.tlnrc'], { cwd });
   const config = configPath ? JSON.parse(readFileSync(configPath, 'utf-8')) : {};
 
@@ -30,12 +30,13 @@ export function build(args: readonly string[], cwd: string, catalogHome: string)
 
   // yargs only sets argv['--'] when at least one token follows `--`; normalize
   // it to always be an array so command handlers never see `undefined`. Also
-  // stash cwd/catalogHome on argv (not exposed as CLI options) so every command
-  // handler can build an App without recomputing them.
+  // stash cwd/catalogHome/userHome on argv (not exposed as CLI options) so every
+  // command handler can build an App without recomputing them.
   instance.middleware((argv) => {
     argv['--'] = argv['--'] ?? [];
     argv.cwd = cwd;
     argv.catalogHome = catalogHome;
+    argv.userHome = userHome;
   });
 
   return registerCommands(instance);

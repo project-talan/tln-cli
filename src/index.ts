@@ -11,9 +11,14 @@ if (process.env['Path']) {
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import path from 'node:path';
+import os from 'node:os';
 import { build } from './util/cli.js';
 
-build(process.argv.slice(2), process.cwd(), dirname(fileURLToPath(import.meta.url)))
+const catalogHome = path.join(dirname(fileURLToPath(import.meta.url)), 'components');
+const userHome = path.join(os.homedir(), '.talan', 'cli');
+
+build(process.argv.slice(2), process.cwd(), catalogHome, userHome)
   .parseAsync()
   .catch((err: unknown) => {
     console.error(err instanceof Error ? err.message : err);
