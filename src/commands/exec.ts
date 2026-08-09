@@ -2,6 +2,7 @@ import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
 import { splitIds } from '../util/misc.js';
+import { componentsPositional } from '../util/positionals.js';
 
 export interface ExecArgv extends GlobalArgv {
   components: string;
@@ -14,11 +15,7 @@ export const execCommand: CommandModule<GlobalArgv, ExecArgv> = {
   describe: 'Execute specified command or script',
   builder: (yargs) =>
     yargs
-      .positional('components', {
-        describe: 'delimited by colon components, i.e. maven:boost:bootstrap',
-        default: '',
-        type: 'string',
-      })
+      .positional('components', componentsPositional)
       .option('command', { alias: 'c', describe: 'Shell command to execute', type: 'string' })
       .option('input', { alias: 'i', describe: 'Script name to execute', type: 'string' })
       .conflicts('command', 'input')

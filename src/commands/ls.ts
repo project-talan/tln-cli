@@ -2,6 +2,7 @@ import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
 import { splitIds } from '../util/misc.js';
+import { componentsPositional } from '../util/positionals.js';
 
 export interface LsArgv extends GlobalArgv {
   components: string;
@@ -15,11 +16,7 @@ export const lsCommand: CommandModule<GlobalArgv, LsArgv> = {
   describe: 'Display components hierarchy',
   builder: (yargs) =>
     yargs
-      .positional('components', {
-        describe: 'Delimited by colon components, i.e. maven:boost:bootstrap',
-        default: '',
-        type: 'string',
-      })
+      .positional('components', componentsPositional)
       .option('limit', { alias: 'l', describe: 'Limit of children to show', default: 5, type: 'number' })
       .option('parents', { describe: 'Show all component parents', default: false, type: 'boolean' })
       .option('installedOnly', { alias: 'installed-only', describe: 'Show installed components only', default: false, type: 'boolean' }),

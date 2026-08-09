@@ -2,6 +2,7 @@ import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
 import { splitIds } from '../util/misc.js';
+import { componentsPositional } from '../util/positionals.js';
 
 export interface ConfigArgv extends GlobalArgv {
   components: string;
@@ -19,11 +20,7 @@ export const configCommand: CommandModule<GlobalArgv, ConfigArgv> = {
   describe: 'Create tln config in current folder, or clone/pull git repo with shared configuration',
   builder: (yargs) =>
     yargs
-      .positional('components', {
-        describe: 'Delimited by colon components, i.e. maven:boost:bootstrap',
-        default: '',
-        type: 'string',
-      })
+      .positional('components', componentsPositional)
       .option('repo', { describe: 'Git repository url', type: 'string' })
       .option('update', { describe: 'Update catalog inside .tln folder', default: false, type: 'boolean' })
       .option('folder', { describe: 'Additional subfolder to extract repository to', type: 'string' })

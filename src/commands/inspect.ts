@@ -2,6 +2,7 @@ import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
 import { splitIds } from '../util/misc.js';
+import { componentsPositional } from '../util/positionals.js';
 
 export interface InspectArgv extends GlobalArgv {
   components: string;
@@ -13,11 +14,7 @@ export const inspectCommand: CommandModule<GlobalArgv, InspectArgv> = {
   describe: 'Display component(s) internal structure',
   builder: (yargs) =>
     yargs
-      .positional('components', {
-        describe: 'Delimited by colon components, i.e. maven:boost:bootstrap',
-        default: '',
-        type: 'string',
-      })
+      .positional('components', componentsPositional)
       .option('json', {
         alias: 'j',
         describe: 'Output using json format instead of yaml',

@@ -2,6 +2,7 @@ import type { ArgumentsCamelCase, CommandModule } from 'yargs';
 import type { GlobalArgv } from '../util/globalOptions.js';
 import { createApp } from '../app.js';
 import { splitIds } from '../util/misc.js';
+import { componentsPositional } from '../util/positionals.js';
 
 export interface RunArgv extends GlobalArgv {
   commands: string;
@@ -16,11 +17,7 @@ export const runCommand: CommandModule<GlobalArgv, RunArgv> = {
   builder: (yargs) =>
     yargs
       .positional('commands', { describe: 'delimited by colon commands, i.e. build:test', type: 'string' })
-      .positional('components', {
-        describe: 'delimited by colon components, i.e. maven:boost:bootstrap',
-        default: '',
-        type: 'string',
-      })
+      .positional('components', componentsPositional)
       .option('save', { alias: 's', describe: "generate and save scripts inside component folder, otherwise temp folder will be used", default: false, type: 'boolean' })
       .option('depends', { describe: 'Execute commands for all components from depends list too', default: false, type: 'boolean' })
       .demandOption(['commands'], 'Please provide command(s) you need to run'),
