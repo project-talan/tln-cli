@@ -96,10 +96,11 @@ export class App {
     this.currentComponent = current;
 
     if (this.verbose > 0) {
-      console.log('cwd:', this.cwd);
-      console.log('catalogHome:', this.catalogHome);
-      console.log('userHome:', this.userHome);
-      console.log('home:', this.home);
+      console.log('* cwd:', this.cwd);
+      console.log('* catalogHome:', this.catalogHome);
+      console.log('* userHome:', this.userHome);
+      console.log('* home:', this.home);
+      console.log('');
     }
   }
 

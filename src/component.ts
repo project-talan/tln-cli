@@ -34,6 +34,7 @@ export interface ComponentDescription extends RawComponentDescription {
 
 /** Snapshot of a component's resolved structure, for the `inspect` command. */
 export interface ComponentInspection {
+  parent: string;
   id: string;
   sourcePath: string;
   homePath: string;
@@ -75,6 +76,14 @@ export class Component {
     this.sourcePath = sourcePath;
     this.homePath = homePath;
     this.descriptions = [...descriptions];
+  }
+
+  getUUID(uuid: string = ''): string {
+    if (this.parent){
+      const suffix = uuid ? `/${uuid}` : ''
+      return this.parent.getUUID(`${this.id}${suffix}`);
+    }
+    return `${this.id}${uuid}`;
   }
 
   async init(): Promise<void> {
@@ -169,6 +178,7 @@ export class Component {
     }
 
     return {
+      parent: this.parent ? this.parent.getUUID() : '',
       id: this.id,
       sourcePath: this.sourcePath,
       homePath: this.homePath,
