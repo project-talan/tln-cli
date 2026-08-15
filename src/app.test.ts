@@ -276,37 +276,39 @@ describe('App', () => {
   });
 
   describe('ls', () => {
-    it('prints installed real-folder children as a sorted box-drawn tree', async () => {
+    it('prints children in declaration order (not alphabetical) as a box-drawn tree', async () => {
       const cwd = await makeTempDir();
-      await fs.mkdir(path.join(cwd, 'b'));
-      await fs.mkdir(path.join(cwd, 'a'));
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = { components: async () => [{ id: 'zeta' }, { id: 'alpha' }] };`,
+        'utf-8',
+      );
       const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
       await app.init();
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
-      // limit covers both children, so selection order can't matter — only the final sort does.
       await app.ls([], { limit: 10, parents: false, installedOnly: false, depth: 1 });
 
       const lines = logSpy.mock.calls.map((call) => call[0] as string);
-      expect(lines).toEqual([app.currentComponent.id, '├─ a', '└─ b']);
+      expect(lines).toEqual([app.currentComponent.id, '├─ zeta *', '└─ alpha *']);
 
       logSpy.mockRestore();
     });
 
     it('marks non-installed children with " *" and reports the remainder via a "more" line', async () => {
       const cwd = await makeTempDir();
-      // Object key order is deterministic (insertion order), unlike real-folder discovery via
-      // fs.readdir — that's why this test declares virtual components instead of mkdir'ing folders.
-      // Declared on cwd itself (the anchor / currentComponent) rather than root, since root always
-      // has the anchor as an extra, unpredictably-named cached child by the time App#init() finishes.
+      // Array order is deterministic, unlike real-folder discovery via fs.readdir — that's why
+      // this test declares virtual components instead of mkdir'ing folders. Declared on cwd itself
+      // (the anchor / currentComponent) rather than root, since root always has the anchor as an
+      // extra, unpredictably-named cached child by the time App#init() finishes.
       await fs.writeFile(
         path.join(cwd, '.tln.tjs'),
         `module.exports = {
-          components: async () => ({
-            x1: {},
-            x2: {},
-            x3: {},
-          }),
+          components: async () => [
+            { id: 'x1' },
+            { id: 'x2' },
+            { id: 'x3' },
+          ],
         };`,
         'utf-8',
       );

@@ -345,9 +345,9 @@ describe('Component#buildChild', () => {
     await fs.writeFile(
       path.join(dir, '.tln.tjs'),
       `module.exports = {
-        components: async () => ({
-          nested: { env: async () => {} },
-        }),
+        components: async () => [
+          { id: 'nested', env: async () => {} },
+        ],
       };`,
       'utf-8',
     );
@@ -367,9 +367,9 @@ describe('Component#buildChild', () => {
     await fs.writeFile(
       path.join(dir, '.tln.tjs'),
       `module.exports = {
-        components: async () => ({
-          nested: { env: async () => {} },
-        }),
+        components: async () => [
+          { id: 'nested', env: async () => {} },
+        ],
       };`,
       'utf-8',
     );
@@ -445,9 +445,9 @@ describe('Component#createChild', () => {
     await fs.writeFile(
       path.join(catalogDir, '.tln.tjs'),
       `module.exports = {
-        components: async () => ({
-          "${id}": { env: async () => {} },
-        }),
+        components: async () => [
+          { id: "${id}", env: async () => {} },
+        ],
       };`,
       'utf-8',
     );
@@ -489,7 +489,9 @@ describe('Component#ls', () => {
 
     const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
 
-    expect(tree!.children.map((c) => c.id)).toEqual(['a', 'b']);
+    // Real subfolders are unordered (fs.readdir doesn't guarantee an order) — only
+    // declared `components` order is meaningful now, covered by a dedicated test below.
+    expect(tree!.children.map((c) => c.id).sort()).toEqual(['a', 'b']);
   });
 
   it('merges inline `components`-declared ids with real subfolders, deduplicated', async () => {
@@ -497,7 +499,7 @@ describe('Component#ls', () => {
     await fs.mkdir(path.join(dir, 'a'));
     await fs.writeFile(
       path.join(dir, '.tln.tjs'),
-      `module.exports = { components: async () => ({ a: {}, virtual: {} }) };`,
+      `module.exports = { components: async () => [{ id: 'a' }, { id: 'virtual' }] };`,
       'utf-8',
     );
     const component = new Component(null, 'root', dir, dir);
@@ -547,16 +549,19 @@ describe('Component#ls', () => {
     expect(tree!.more).toBe(1);
   });
 
-  it('sorts children alphabetically by id regardless of discovery order', async () => {
+  it('preserves the order components were declared in, not alphabetical order', async () => {
     const dir = await makeTempDir();
-    await fs.mkdir(path.join(dir, 'zeta'));
-    await fs.mkdir(path.join(dir, 'alpha'));
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { components: async () => [{ id: 'zeta' }, { id: 'alpha' }, { id: 'mid' }] };`,
+      'utf-8',
+    );
     const component = new Component(null, 'root', dir, dir);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
 
-    expect(tree!.children.map((c) => c.id)).toEqual(['alpha', 'zeta']);
+    expect(tree!.children.map((c) => c.id)).toEqual(['zeta', 'alpha', 'mid']);
   });
 
   it('installed reflects whether homePath exists, independent of sourcePath', async () => {

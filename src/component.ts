@@ -24,8 +24,13 @@ export interface RawComponentDescription {
   /** Component ids this description depends on. Single-list for now — will grow into a fuller dependencies feature later. */
   depends?: (tln: unknown) => Promise<string[]> | string[];
   commands?: (tln: unknown) => Promise<Record<string, CommandDescriptor>> | Record<string, CommandDescriptor>;
-  /** Inline-declared child components, keyed by id — see Component#matchingDescriptions. */
-  components?: (tln: unknown) => Promise<Record<string, RawComponentDescription>> | Record<string, RawComponentDescription>;
+  /** Inline-declared child components — see Component#matchingDescriptions. */
+  components?: (tln: unknown) => Promise<ComponentDeclaration[]> | ComponentDeclaration[];
+}
+
+/** One inline-declared child component within a `components` list — its `id` plus its own description fields. */
+export interface ComponentDeclaration extends RawComponentDescription {
+  id: string;
 }
 
 export interface ComponentDescription extends RawComponentDescription {
@@ -146,7 +151,7 @@ export class Component {
 
   /**
    * Scans this component's own descriptions for inline-declared child components
-   * (each description's `components` field, keyed by id — see old/src/component.js's
+   * (each description's `components` list — see old/src/component.js's
    * `getComponentsFromDesc`) and collects every one that declares `childId`, tagging
    * each with a synthetic `source` that traces back to the declaring description.
    */
@@ -155,9 +160,10 @@ export class Component {
     for (const description of this.descriptions) {
       if (!description.components) continue;
       const declared = await description.components(undefined);
-      const match = declared[childId];
+      const match = declared.find((component) => component.id === childId);
       if (match) {
-        matches.push({ ...match, source: `${description.source}#components/${childId}` });
+        const { id: _id, ...rest } = match;
+        matches.push({ ...rest, source: `${description.source}#components/${childId}` });
       }
     }
     return matches;
@@ -166,7 +172,7 @@ export class Component {
   /**
    * Collects every id this component could have a child for: already-built (cached)
    * children, ids inline-declared via any of this component's own descriptions'
-   * `components` field, and real subfolders found under `sourcePath` (excluding
+   * `components` list, and real subfolders found under `sourcePath` (excluding
    * `.git` and the `.tln` override folder). Port of old/src/component.js's
    * `getIDs`/`enumFolders` (minus the never-ported `catalogs` parameter).
    */
@@ -176,7 +182,7 @@ export class Component {
     for (const description of this.descriptions) {
       if (!description.components) continue;
       const declared = await description.components(undefined);
-      for (const id of Object.keys(declared)) ids.add(id);
+      for (const component of declared) ids.add(component.id);
     }
     try {
       const entries = await fs.readdir(this.sourcePath, { withFileTypes: true });
@@ -235,9 +241,10 @@ export class Component {
    * walks up via `presetChildren` instead, wrapping the already-built node as the
    * sole child at each ancestor level, so the result is the path down to this
    * component rather than a sibling-inclusive subtree. Port of old/src/component.js's
-   * `filterComponents` (its version-aware sort, via `compareVersions`/`unpackId`,
-   * isn't ported — nothing else in this codebase encodes a version in a component's
-   * id yet, so children are just sorted alphabetically by id).
+   * `filterComponents`, minus its version-aware sort (via `compareVersions`/`unpackId`)
+   * — children are kept in `discoverChildIds`'s discovery order instead (cached
+   * children, then declaration order from `components`, then filesystem order for
+   * real subfolders), so a `components` list's own ordering is preserved as-is.
    */
   async ls(options: LsOptions, presetChildren: ComponentLsNode[] = []): Promise<ComponentLsNode | null> {
     const installed = await Component.pathExists(this.homePath);
@@ -262,7 +269,6 @@ export class Component {
           }
         }
       }
-      node.children.sort((a, b) => a.id.localeCompare(b.id));
     }
 
     if (options.parents && this.parent) {
