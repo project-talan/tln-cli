@@ -12,7 +12,7 @@ describe('lsCommand', () => {
   let lsMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    lsMock = vi.fn().mockRejectedValue(new Error('Not implemented: App#ls'));
+    lsMock = vi.fn().mockResolvedValue(undefined);
     createAppMock.mockReset();
     createAppMock.mockResolvedValue({ ls: lsMock });
   });
@@ -21,19 +21,19 @@ describe('lsCommand', () => {
     expect(lsCommand.command).toBe('ls [components] [-d depth] [-l] [--parents] [--installed-only]');
   });
 
-  it('uses limit=-1 when --all is set, overriding --limit, and propagates App#ls\'s rejection', async () => {
+  it('uses limit=-1 when --all is set, overriding --limit', async () => {
     const argv: ArgumentsCamelCase<LsArgv> = { ...baseArgv(), all: true, components: '', limit: 5, parents: false, installedOnly: false };
 
-    await expect(lsCommand.handler!(argv)).rejects.toThrow('Not implemented: App#ls');
+    await lsCommand.handler!(argv);
 
-    expect(lsMock).toHaveBeenCalledWith([], { limit: -1, parents: false, installedOnly: false });
+    expect(lsMock).toHaveBeenCalledWith([], { limit: -1, parents: false, installedOnly: false, depth: argv.depth });
   });
 
   it('uses the provided --limit when --all is not set', async () => {
     const argv: ArgumentsCamelCase<LsArgv> = { ...baseArgv(), all: false, components: '', limit: 7, parents: false, installedOnly: false };
 
-    await expect(lsCommand.handler!(argv)).rejects.toThrow('Not implemented: App#ls');
+    await lsCommand.handler!(argv);
 
-    expect(lsMock).toHaveBeenCalledWith([], { limit: 7, parents: false, installedOnly: false });
+    expect(lsMock).toHaveBeenCalledWith([], { limit: 7, parents: false, installedOnly: false, depth: argv.depth });
   });
 });

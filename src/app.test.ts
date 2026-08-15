@@ -113,10 +113,10 @@ describe('App', () => {
       const app = new App(cwd, CATALOG_HOME, USER_HOME, 1);
       await app.init();
 
-      expect(logSpy).toHaveBeenCalledWith('cwd:', cwd);
-      expect(logSpy).toHaveBeenCalledWith('catalogHome:', CATALOG_HOME);
-      expect(logSpy).toHaveBeenCalledWith('userHome:', USER_HOME);
-      expect(logSpy).toHaveBeenCalledWith('home:', cwd);
+      expect(logSpy).toHaveBeenCalledWith('* cwd:', cwd);
+      expect(logSpy).toHaveBeenCalledWith('* catalogHome:', CATALOG_HOME);
+      expect(logSpy).toHaveBeenCalledWith('* userHome:', USER_HOME);
+      expect(logSpy).toHaveBeenCalledWith('* home:', cwd);
     });
 
     it('does not log when verbose is 0', async () => {
@@ -275,6 +275,55 @@ describe('App', () => {
     });
   });
 
+  describe('ls', () => {
+    it('prints installed real-folder children as a sorted box-drawn tree', async () => {
+      const cwd = await makeTempDir();
+      await fs.mkdir(path.join(cwd, 'b'));
+      await fs.mkdir(path.join(cwd, 'a'));
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      // limit covers both children, so selection order can't matter — only the final sort does.
+      await app.ls([], { limit: 10, parents: false, installedOnly: false, depth: 1 });
+
+      const lines = logSpy.mock.calls.map((call) => call[0] as string);
+      expect(lines).toEqual([app.currentComponent.id, '├─ a', '└─ b']);
+
+      logSpy.mockRestore();
+    });
+
+    it('marks non-installed children with " *" and reports the remainder via a "more" line', async () => {
+      const cwd = await makeTempDir();
+      // Object key order is deterministic (insertion order), unlike real-folder discovery via
+      // fs.readdir — that's why this test declares virtual components instead of mkdir'ing folders.
+      // Declared on cwd itself (the anchor / currentComponent) rather than root, since root always
+      // has the anchor as an extra, unpredictably-named cached child by the time App#init() finishes.
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = {
+          components: async () => ({
+            x1: {},
+            x2: {},
+            x3: {},
+          }),
+        };`,
+        'utf-8',
+      );
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await app.ls([], { limit: 2, parents: false, installedOnly: false, depth: 1 });
+
+      const lines = logSpy.mock.calls.map((call) => call[0] as string);
+      // x1/x2 are picked before the limit truncates; neither is "last" once a "more" line follows.
+      expect(lines).toEqual([app.currentComponent.id, '├─ x1 *', '├─ x2 *', '└─ ... 1 more']);
+
+      logSpy.mockRestore();
+    });
+  });
+
   describe('unported dispatch methods', () => {
     it('config rejects naming Component#config as the missing piece', async () => {
       const cwd = await makeTempDir();
@@ -284,16 +333,6 @@ describe('App', () => {
       await expect(
         app.config([], { repo: undefined, update: false, folder: undefined, force: false, terse: false, depend: [], inherit: [] }),
       ).rejects.toThrow('Not implemented: App#config — needs Component#config');
-    });
-
-    it('ls rejects naming Component#ls as the missing piece', async () => {
-      const cwd = await makeTempDir();
-      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
-      await app.init();
-
-      await expect(app.ls([], { limit: 5, parents: false, installedOnly: false })).rejects.toThrow(
-        'Not implemented: App#ls — needs Component#ls',
-      );
     });
 
     it('exec rejects naming Component#exec as the missing piece', async () => {

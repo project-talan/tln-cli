@@ -24,6 +24,6 @@ export const lsCommand: CommandModule<GlobalArgv, LsArgv> = {
     const components = splitIds(argv.components);
     const limit = argv.all ? -1 : argv.limit;
     const app = await createApp(argv);
-    await app.ls(components, { limit, parents: argv.parents, installedOnly: argv.installedOnly });
+    await app.ls(components, { limit, parents: argv.parents, installedOnly: argv.installedOnly, depth: argv.depth });
   },
 };

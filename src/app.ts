@@ -1,34 +1,10 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
-import { Component, create } from './component.js';
+import { Component, create, type ComponentLsNode } from './component.js';
 import type { GlobalArgv } from './util/globalOptions.js';
 import { hasConfig, isRootPath } from './util/misc.js';
-
-export interface ConfigOptions {
-  repo: string | undefined;
-  update: boolean;
-  folder: string | undefined;
-  force: boolean;
-  terse: boolean;
-  depend: string[];
-  inherit: string[];
-}
-
-export interface InspectOptions {
-  json: boolean;
-}
-
-export interface LsOptions {
-  limit: number;
-  parents: boolean;
-  installedOnly: boolean;
-}
-
-export interface ExecOptions {
-  command: string | undefined;
-  input: string | undefined;
-}
+import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './util/options.js';
 
 /**
  * Orchestrates a single `tln` invocation: resolves the project's `home` (walking
@@ -165,9 +141,31 @@ export class App {
   }
 
   async ls(components: string[], options: LsOptions): Promise<void> {
-    throw new Error(
-      `Not implemented: App#ls — needs Component#ls (see old/src/component.js) [components=${components.join(':')}, options=${JSON.stringify(options)}]`,
-    );
+    const resolved = await this.resolve(components);
+    for (const component of resolved) {
+      const tree = await component.ls(options);
+      if (tree) {
+        for (const line of App.formatLsTree(tree)) console.log(line);
+      }
+    }
+  }
+
+  /** Renders a `Component#ls` tree as box-drawn lines (standard per-level tree printing, not old code's — see the `ls` command plan for why). */
+  private static formatLsTree(node: ComponentLsNode, prefix = ''): string[] {
+    const lines = [`${node.id}${node.installed ? '' : ' *'}`];
+    App.formatLsChildren(node, prefix, lines);
+    return lines;
+  }
+
+  private static formatLsChildren(node: ComponentLsNode, prefix: string, lines: string[]): void {
+    node.children.forEach((child, index) => {
+      const isLast = index === node.children.length - 1 && !node.more;
+      lines.push(`${prefix}${isLast ? '└─ ' : '├─ '}${child.id}${child.installed ? '' : ' *'}`);
+      App.formatLsChildren(child, `${prefix}${isLast ? '   ' : '│  '}`, lines);
+    });
+    if (node.more) {
+      lines.push(`${prefix}└─ ... ${node.more} more`);
+    }
   }
 
   async exec(components: string[], parallel: boolean, recursive: boolean, depth: number, options: ExecOptions): Promise<void> {

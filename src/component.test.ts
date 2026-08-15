@@ -225,6 +225,7 @@ describe('Component#inspect', () => {
     const inspection = await component.inspect();
 
     expect(inspection).toEqual({
+      parent: '',
       id: 'root',
       sourcePath: dir,
       homePath: dir,
@@ -457,5 +458,149 @@ describe('Component#createChild', () => {
 
     expect(child.descriptions).toHaveLength(1);
     expect(typeof child.descriptions[0]!.env).toBe('function');
+  });
+});
+
+describe('Component#ls', () => {
+  let tempDirs: string[];
+
+  beforeEach(() => {
+    tempDirs = [];
+  });
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-component-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('discovers real subfolders as children, excluding .git and .tln', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a'));
+    await fs.mkdir(path.join(dir, 'b'));
+    await fs.mkdir(path.join(dir, '.git'));
+    await fs.mkdir(path.join(dir, '.tln'));
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
+
+    expect(tree!.children.map((c) => c.id)).toEqual(['a', 'b']);
+  });
+
+  it('merges inline `components`-declared ids with real subfolders, deduplicated', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a'));
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { components: async () => ({ a: {}, virtual: {} }) };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
+
+    expect(tree!.children.map((c) => c.id)).toEqual(['a', 'virtual']);
+  });
+
+  it('depth: 0 returns just this node, with no children discovered', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a'));
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const tree = await component.ls({ parents: false, depth: 0, limit: 0, installedOnly: false });
+
+    expect(tree).toEqual({ id: 'root', installed: true, children: [], more: 0 });
+  });
+
+  it('depth: -1 recurses through every level without decrementing', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a', 'b', 'c'), { recursive: true });
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const tree = await component.ls({ parents: false, depth: -1, limit: 0, installedOnly: false });
+
+    expect(tree!.children[0]!.id).toBe('a');
+    expect(tree!.children[0]!.children[0]!.id).toBe('b');
+    expect(tree!.children[0]!.children[0]!.children[0]!.id).toBe('c');
+    expect(tree!.children[0]!.children[0]!.children[0]!.children).toEqual([]);
+  });
+
+  it('limit truncates children and reports the remainder in `more`', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a'));
+    await fs.mkdir(path.join(dir, 'b'));
+    await fs.mkdir(path.join(dir, 'c'));
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const tree = await component.ls({ parents: false, depth: 1, limit: 2, installedOnly: false });
+
+    expect(tree!.children).toHaveLength(2);
+    expect(tree!.more).toBe(1);
+  });
+
+  it('sorts children alphabetically by id regardless of discovery order', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'zeta'));
+    await fs.mkdir(path.join(dir, 'alpha'));
+    const component = new Component(null, 'root', dir, dir);
+    await component.init();
+
+    const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
+
+    expect(tree!.children.map((c) => c.id)).toEqual(['alpha', 'zeta']);
+  });
+
+  it('installed reflects whether homePath exists, independent of sourcePath', async () => {
+    const sourceDir = await makeTempDir();
+    const homeDir = path.join(await makeTempDir(), 'does-not-exist');
+    const component = new Component(null, 'root', sourceDir, homeDir);
+
+    const tree = await component.ls({ parents: false, depth: 0, limit: 0, installedOnly: false });
+
+    expect(tree!.installed).toBe(false);
+  });
+
+  it('installedOnly drops a non-installed component and its whole subtree', async () => {
+    const dir = await makeTempDir();
+    const component = new Component(null, 'root', dir, path.join(dir, 'missing-home'));
+
+    const tree = await component.ls({ parents: false, depth: -1, limit: 0, installedOnly: true });
+
+    expect(tree).toBeNull();
+  });
+
+  it('parents wraps the ancestor chain down to this component, without pulling in sibling branches', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a', 'sibling'), { recursive: true });
+    await fs.mkdir(path.join(dir, 'a', 'b'), { recursive: true });
+    const root = new Component(null, 'root', dir, dir);
+    await root.init();
+    const a = await root.buildChild('a');
+    const b = await a.buildChild('b');
+
+    const tree = await b.ls({ parents: true, depth: 0, limit: 0, installedOnly: false });
+
+    expect(tree).toEqual({
+      id: 'root',
+      installed: true,
+      more: 0,
+      children: [
+        {
+          id: 'a',
+          installed: true,
+          more: 0,
+          children: [{ id: 'b', installed: true, more: 0, children: [] }],
+        },
+      ],
+    });
   });
 });

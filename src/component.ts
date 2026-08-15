@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR } from './util/misc.js';
+import type { LsOptions } from './util/options.js';
 
 export interface CommandDescriptor {
   // variant1: an async builder returning bash command lines to execute.
@@ -44,6 +45,15 @@ export interface ComponentInspection {
   depends: string[];
   commands: string[];
   env: Record<string, string>;
+}
+
+/** A node in the tree returned by `Component#ls`, for the `ls` command. */
+export interface ComponentLsNode {
+  id: string;
+  installed: boolean;
+  children: ComponentLsNode[];
+  /** Count of additional children beyond `limit` that were not included. */
+  more: number;
 }
 
 /**
@@ -154,6 +164,32 @@ export class Component {
   }
 
   /**
+   * Collects every id this component could have a child for: already-built (cached)
+   * children, ids inline-declared via any of this component's own descriptions'
+   * `components` field, and real subfolders found under `sourcePath` (excluding
+   * `.git` and the `.tln` override folder). Port of old/src/component.js's
+   * `getIDs`/`enumFolders` (minus the never-ported `catalogs` parameter).
+   */
+  private async discoverChildIds(): Promise<string[]> {
+    const ids = new Set<string>();
+    for (const child of this.children) ids.add(child.id);
+    for (const description of this.descriptions) {
+      if (!description.components) continue;
+      const declared = await description.components(undefined);
+      for (const id of Object.keys(declared)) ids.add(id);
+    }
+    try {
+      const entries = await fs.readdir(this.sourcePath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && entry.name !== '.git' && entry.name !== CONFIG_FOLDER_NAME) ids.add(entry.name);
+      }
+    } catch {
+      // sourcePath doesn't exist — nothing on disk to add.
+    }
+    return [...ids];
+  }
+
+  /**
    * Resolves this component's structure for the `inspect` command: identity/paths,
    * where each contributing description came from, the declared inherits/depends
    * lists (concatenated across descriptions, as-is — no dedup/resolution yet, see
@@ -188,6 +224,52 @@ export class Component {
       commands: [...commands],
       env,
     };
+  }
+
+  /**
+   * Builds the tree used by the `ls` command: this component (and, when `depth`
+   * hasn't been exhausted, up to `limit` of its children, recursively — anything
+   * beyond `limit` is counted in `more` instead of included). `installed` is
+   * whether `homePath` exists; when `installedOnly` is set, a non-installed
+   * component (and its whole subtree) is dropped entirely. When `parents` is set,
+   * walks up via `presetChildren` instead, wrapping the already-built node as the
+   * sole child at each ancestor level, so the result is the path down to this
+   * component rather than a sibling-inclusive subtree. Port of old/src/component.js's
+   * `filterComponents` (its version-aware sort, via `compareVersions`/`unpackId`,
+   * isn't ported — nothing else in this codebase encodes a version in a component's
+   * id yet, so children are just sorted alphabetically by id).
+   */
+  async ls(options: LsOptions, presetChildren: ComponentLsNode[] = []): Promise<ComponentLsNode | null> {
+    const installed = await Component.pathExists(this.homePath);
+    if (!installed && options.installedOnly) return null;
+
+    const node: ComponentLsNode = { id: this.id, installed, children: [...presetChildren], more: 0 };
+
+    if (options.depth !== 0) {
+      const childIds = await this.discoverChildIds();
+      let cnt = childIds.length;
+      if (options.limit > 0 && options.limit < cnt) cnt = options.limit;
+      const nextDepth = options.depth === -1 ? -1 : options.depth - 1;
+
+      for (const childId of childIds) {
+        const child = await this.buildChild(childId);
+        const childNode = await child.ls({ ...options, parents: false, depth: nextDepth });
+        if (childNode) {
+          node.children.push(childNode);
+          if (node.children.length >= cnt) {
+            node.more = childIds.length - node.children.length;
+            break;
+          }
+        }
+      }
+      node.children.sort((a, b) => a.id.localeCompare(b.id));
+    }
+
+    if (options.parents && this.parent) {
+      return this.parent.ls({ ...options, depth: 0, limit: 0 }, [node]);
+    }
+
+    return node;
   }
 
   /**
