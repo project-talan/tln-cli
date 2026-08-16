@@ -40,3 +40,34 @@ export function isRootPath(cwd: string, p: string): boolean {
   const root = os.platform() === 'win32' ? `${cwd.split(path.sep)[0]}${path.sep}` : path.sep;
   return p === root;
 }
+
+/**
+ * Snapshot of the current execution environment, passed as the `tln` argument to every
+ * function defined in a .tln.tjs config file (`dotenvs`, `options`, `env`, `inherits`,
+ * `depends`, `commands`, `components`, and each resolved command's `builder`). Plain data
+ * only, by design — no methods — so it's trivially clonable per call (see `cloneExecutionContext`).
+ */
+export interface ExecutionContext {
+  platform: NodeJS.Platform;
+  arch: string;
+  type: string;
+  release: string;
+}
+
+/** Builds a fresh ExecutionContext from the current process/OS. */
+export function createExecutionContext(): ExecutionContext {
+  return {
+    platform: os.platform(),
+    arch: os.arch(),
+    type: os.type(),
+    release: os.release(),
+  };
+}
+
+/**
+ * Deep-clones an ExecutionContext so a .tln.tjs-defined function receiving it as `tln`
+ * can't mutate the shared original (or another call's copy) by reference.
+ */
+export function cloneExecutionContext(context: ExecutionContext): ExecutionContext {
+  return structuredClone(context);
+}

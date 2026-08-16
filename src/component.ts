@@ -3,29 +3,27 @@ import { promises as fs } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR } from './util/misc.js';
+import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR, cloneExecutionContext, type ExecutionContext } from './util/misc.js';
 import type { LsOptions } from './util/options.js';
 
 export interface CommandDescriptor {
   // variant1: an async builder returning bash command lines to execute.
   // variant2: a batch/alias — a list of other command ids to resolve and run in sequence.
-  builder: ((tln: unknown, env: unknown) => unknown) | string[];
+  builder: ((tln: ExecutionContext, env: unknown) => unknown) | string[];
   access?: 'public' | 'protected';
 }
 
-// There is no ported `tln` context object yet (see old/src/appl.js), so builder
-// function parameters are left untyped until that context is designed.
 export interface RawComponentDescription {
-  dotenvs?: (tln: unknown) => unknown;
-  options?: (tln: unknown, env: unknown) => unknown;
-  env?: (tln: unknown, env: Record<string, string>) => unknown;
+  dotenvs?: (tln: ExecutionContext) => unknown;
+  options?: (tln: ExecutionContext, env: unknown) => unknown;
+  env?: (tln: ExecutionContext, env: Record<string, string>) => unknown;
   /** Component ids this description inherits from. Single-parent for now — will grow into multiple inheritance later. */
-  inherits?: (tln: unknown) => Promise<string[]> | string[];
+  inherits?: (tln: ExecutionContext) => Promise<string[]> | string[];
   /** Component ids this description depends on. Single-list for now — will grow into a fuller dependencies feature later. */
-  depends?: (tln: unknown) => Promise<string[]> | string[];
-  commands?: (tln: unknown) => Promise<Record<string, CommandDescriptor>> | Record<string, CommandDescriptor>;
+  depends?: (tln: ExecutionContext) => Promise<string[]> | string[];
+  commands?: (tln: ExecutionContext) => Promise<Record<string, CommandDescriptor>> | Record<string, CommandDescriptor>;
   /** Inline-declared child components — see Component#matchingDescriptions. */
-  components?: (tln: unknown) => Promise<ComponentDeclaration[]> | ComponentDeclaration[];
+  components?: (tln: ExecutionContext) => Promise<ComponentDeclaration[]> | ComponentDeclaration[];
 }
 
 /** One inline-declared child component within a `components` list — its `id` plus its own description fields. */
@@ -82,14 +80,24 @@ export class Component {
   readonly sourcePath: string;
   /** Where this component runs commands (execSync's cwd) — its deploy/working location. */
   readonly homePath: string;
+  /** Passed (as a fresh clone per call — see `cloneExecutionContext`) as `tln` to every .tln.tjs-defined function. Built once by `App` at construction time and threaded down the whole tree. */
+  readonly executionContext: ExecutionContext;
   readonly descriptions: ComponentDescription[];
   private readonly children: Component[] = [];
 
-  constructor(parent: Component | null, id: string, sourcePath: string, homePath: string, descriptions: ComponentDescription[] = []) {
+  constructor(
+    parent: Component | null,
+    id: string,
+    sourcePath: string,
+    homePath: string,
+    executionContext: ExecutionContext,
+    descriptions: ComponentDescription[] = [],
+  ) {
     this.parent = parent;
     this.id = id;
     this.sourcePath = sourcePath;
     this.homePath = homePath;
+    this.executionContext = executionContext;
     this.descriptions = [...descriptions];
   }
 
@@ -122,7 +130,7 @@ export class Component {
     if (existing) return existing;
 
     const seed = await this.matchingDescriptions(id);
-    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id), seed);
+    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id), this.executionContext, seed);
     await child.init();
     this.children.push(child);
     return child;
@@ -143,7 +151,7 @@ export class Component {
     if (existing) return existing;
 
     const seed = await this.matchingDescriptions(id);
-    const child = new Component(this, id, location, location, seed);
+    const child = new Component(this, id, location, location, this.executionContext, seed);
     await child.init();
     this.children.push(child);
     return child;
@@ -159,7 +167,7 @@ export class Component {
     const matches: ComponentDescription[] = [];
     for (const description of this.descriptions) {
       if (!description.components) continue;
-      const declared = await description.components(undefined);
+      const declared = await description.components(cloneExecutionContext(this.executionContext));
       const match = declared.find((component) => component.id === childId);
       if (match) {
         const { id: _id, ...rest } = match;
@@ -181,7 +189,7 @@ export class Component {
     for (const child of this.children) ids.add(child.id);
     for (const description of this.descriptions) {
       if (!description.components) continue;
-      const declared = await description.components(undefined);
+      const declared = await description.components(cloneExecutionContext(this.executionContext));
       for (const component of declared) ids.add(component.id);
     }
     try {
@@ -210,13 +218,13 @@ export class Component {
     const env: Record<string, string> = {};
 
     for (const description of this.descriptions) {
-      if (description.inherits) inherits.push(...(await description.inherits(undefined)));
-      if (description.depends) depends.push(...(await description.depends(undefined)));
+      if (description.inherits) inherits.push(...(await description.inherits(cloneExecutionContext(this.executionContext))));
+      if (description.depends) depends.push(...(await description.depends(cloneExecutionContext(this.executionContext))));
       if (description.commands) {
-        const resolved = await description.commands(undefined);
+        const resolved = await description.commands(cloneExecutionContext(this.executionContext));
         for (const commandId of Object.keys(resolved)) commands.add(commandId);
       }
-      if (description.env) await description.env(undefined, env);
+      if (description.env) await description.env(cloneExecutionContext(this.executionContext), env);
     }
 
     return {
@@ -305,7 +313,7 @@ export class Component {
     }
 
     if (typeof descriptor.builder === 'function') {
-      const result = await descriptor.builder(undefined, {});
+      const result = await descriptor.builder(cloneExecutionContext(this.executionContext), {});
       return Array.isArray(result) ? (result as string[]) : [];
     }
 
@@ -325,7 +333,7 @@ export class Component {
   private async findCommand(commandId: string): Promise<CommandDescriptor | undefined> {
     for (const description of this.descriptions) {
       if (!description.commands) continue;
-      const commands = await description.commands(undefined);
+      const commands = await description.commands(cloneExecutionContext(this.executionContext));
       const descriptor = commands[commandId];
       if (descriptor) return descriptor;
     }
@@ -389,8 +397,8 @@ export class Component {
  * `sourcePath`. Port of old/src/component.js's `createRoot` factory, minus the
  * built-in catalog folder scan (no `source`/catalog-folder concept ported yet).
  */
-export async function create(sourcePath: string, homePath: string): Promise<Component> {
-  const root = new Component(null, '/', sourcePath, homePath);
+export async function create(sourcePath: string, homePath: string, executionContext: ExecutionContext): Promise<Component> {
+  const root = new Component(null, '/', sourcePath, homePath, executionContext);
   await root.init();
   return root;
 }

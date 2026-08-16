@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { Component, create } from './component.js';
+import type { ExecutionContext } from './util/misc.js';
 
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>();
@@ -12,10 +13,12 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 const mockedExecSync = vi.mocked(execSync);
 
+const TEST_EXECUTION_CONTEXT: ExecutionContext = { platform: 'darwin', arch: 'arm64', type: 'Darwin', release: '99.0.0' };
+
 describe('Component constructor', () => {
   it('stores parent/id/sourcePath/homePath', () => {
-    const parent = new Component(null, 'parent', '/parent-src', '/parent-home');
-    const child = new Component(parent, 'child', '/child-src', '/child-home');
+    const parent = new Component(null, 'parent', '/parent-src', '/parent-home', TEST_EXECUTION_CONTEXT);
+    const child = new Component(parent, 'child', '/child-src', '/child-home', TEST_EXECUTION_CONTEXT);
 
     expect(child.parent).toBe(parent);
     expect(child.id).toBe('child');
@@ -24,7 +27,7 @@ describe('Component constructor', () => {
   });
 
   it('has no descriptions before init() is called', () => {
-    const component = new Component(null, 'root', '/src', '/home');
+    const component = new Component(null, 'root', '/src', '/home', TEST_EXECUTION_CONTEXT);
 
     expect(component.descriptions).toEqual([]);
   });
@@ -51,7 +54,7 @@ describe('Component#init', () => {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.tln.tjs'), `module.exports = { env: async (tln, env) => { env.FOO = 'bar'; } };`, 'utf-8');
 
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     expect(component.descriptions).toHaveLength(1);
@@ -69,7 +72,7 @@ describe('Component#init', () => {
     // Stray non-directory entry inside .tln — must be ignored, not treated as a config source.
     await fs.writeFile(path.join(dir, '.tln', 'notes.txt'), 'ignore me', 'utf-8');
 
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     expect(component.descriptions.map((d) => d.source)).toEqual([
@@ -82,7 +85,7 @@ describe('Component#init', () => {
   it('has no descriptions when there is no local .tln.tjs or .tln folder', async () => {
     const dir = await makeTempDir();
 
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     expect(component.descriptions).toEqual([]);
@@ -92,7 +95,7 @@ describe('Component#init', () => {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.tln.tjs'), 'module.exports = { broken:', 'utf-8');
 
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
 
     await expect(component.init()).rejects.toThrow(path.join(dir, '.tln.tjs'));
   });
@@ -119,10 +122,34 @@ describe('Component#run', () => {
   async function makeComponentWithCommands(tljs: string): Promise<Component> {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.tln.tjs'), tljs, 'utf-8');
-    const component = new Component(null, 'test', dir, dir);
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
     return component;
   }
+
+  it("passes a deep clone of the component's executionContext as tln, isolated from mutation", async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const component = await makeComponentWithCommands(`module.exports = {
+      commands: async () => ({
+        greet: {
+          builder: async (tln) => {
+            const line = JSON.stringify(tln);
+            tln.platform = 'mutated'; // must not affect the component or the next call's clone
+            return [line];
+          },
+        },
+      }),
+    };`);
+
+    await component.run('greet', true);
+    await component.run('greet', true);
+
+    expect(logSpy).toHaveBeenNthCalledWith(1, JSON.stringify(TEST_EXECUTION_CONTEXT));
+    expect(logSpy).toHaveBeenNthCalledWith(2, JSON.stringify(TEST_EXECUTION_CONTEXT));
+    expect(component.executionContext).toEqual(TEST_EXECUTION_CONTEXT);
+
+    logSpy.mockRestore();
+  });
 
   it('dry-run prints resolved command lines without executing anything', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -162,7 +189,7 @@ describe('Component#run', () => {
 
   it('throws when the command is not found in any description', async () => {
     const dir = await makeTempDir();
-    const component = new Component(null, 'test', dir, dir);
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     await expect(component.run('missing')).rejects.toThrow('Command "missing" not found in component "test"');
@@ -219,7 +246,7 @@ describe('Component#inspect', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const inspection = await component.inspect();
@@ -239,7 +266,7 @@ describe('Component#inspect', () => {
 
   it('returns empty lists/object when there are no descriptions', async () => {
     const dir = await makeTempDir();
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const inspection = await component.inspect();
@@ -274,7 +301,7 @@ describe('Component#inspect', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const inspection = await component.inspect();
@@ -293,7 +320,7 @@ describe('create', () => {
     try {
       await fs.writeFile(path.join(dir, '.tln.tjs'), 'module.exports = { env: async () => {} };', 'utf-8');
 
-      const root = await create(dir, '/fake/home-path');
+      const root = await create(dir, '/fake/home-path', TEST_EXECUTION_CONTEXT);
 
       expect(root.id).toBe('/');
       expect(root.parent).toBeNull();
@@ -328,7 +355,7 @@ describe('Component#buildChild', () => {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.tln.tjs'), 'module.exports = {};', 'utf-8');
     await fs.mkdir(path.join(dir, 'nested'));
-    const parent = new Component(null, 'root', dir, dir);
+    const parent = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await parent.init();
 
     const child = await parent.buildChild('nested');
@@ -352,7 +379,7 @@ describe('Component#buildChild', () => {
       'utf-8',
     );
     await fs.mkdir(path.join(dir, 'nested'));
-    const parent = new Component(null, 'root', dir, dir);
+    const parent = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await parent.init();
 
     const child = await parent.buildChild('nested');
@@ -375,7 +402,7 @@ describe('Component#buildChild', () => {
     );
     await fs.mkdir(path.join(dir, 'nested'));
     await fs.writeFile(path.join(dir, 'nested', '.tln.tjs'), 'module.exports = { depends: async () => [] };', 'utf-8');
-    const parent = new Component(null, 'root', dir, dir);
+    const parent = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await parent.init();
 
     const child = await parent.buildChild('nested');
@@ -388,7 +415,7 @@ describe('Component#buildChild', () => {
   it('caches the child on repeat calls with the same id', async () => {
     const dir = await makeTempDir();
     await fs.mkdir(path.join(dir, 'nested'));
-    const parent = new Component(null, 'root', dir, dir);
+    const parent = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
 
     const first = await parent.buildChild('nested');
     const second = await parent.buildChild('nested');
@@ -417,7 +444,7 @@ describe('Component#createChild', () => {
   it('anchors sourcePath/homePath at the given location directly (not joined onto the parent), with id = basename(location)', async () => {
     const catalogDir = await makeTempDir();
     const location = await makeTempDir();
-    const parent = new Component(null, '/', catalogDir, catalogDir);
+    const parent = new Component(null, '/', catalogDir, catalogDir, TEST_EXECUTION_CONTEXT);
 
     const child = await parent.createChild(location);
 
@@ -430,7 +457,7 @@ describe('Component#createChild', () => {
   it('caches the child on repeat calls for the same location', async () => {
     const catalogDir = await makeTempDir();
     const location = await makeTempDir();
-    const parent = new Component(null, '/', catalogDir, catalogDir);
+    const parent = new Component(null, '/', catalogDir, catalogDir, TEST_EXECUTION_CONTEXT);
 
     const first = await parent.createChild(location);
     const second = await parent.createChild(location);
@@ -451,7 +478,7 @@ describe('Component#createChild', () => {
       };`,
       'utf-8',
     );
-    const parent = new Component(null, '/', catalogDir, catalogDir);
+    const parent = new Component(null, '/', catalogDir, catalogDir, TEST_EXECUTION_CONTEXT);
     await parent.init();
 
     const child = await parent.createChild(location);
@@ -484,7 +511,7 @@ describe('Component#ls', () => {
     await fs.mkdir(path.join(dir, 'b'));
     await fs.mkdir(path.join(dir, '.git'));
     await fs.mkdir(path.join(dir, '.tln'));
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
@@ -502,7 +529,7 @@ describe('Component#ls', () => {
       `module.exports = { components: async () => [{ id: 'a' }, { id: 'virtual' }] };`,
       'utf-8',
     );
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
@@ -513,7 +540,7 @@ describe('Component#ls', () => {
   it('depth: 0 returns just this node, with no children discovered', async () => {
     const dir = await makeTempDir();
     await fs.mkdir(path.join(dir, 'a'));
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: 0, limit: 0, installedOnly: false });
@@ -524,7 +551,7 @@ describe('Component#ls', () => {
   it('depth: -1 recurses through every level without decrementing', async () => {
     const dir = await makeTempDir();
     await fs.mkdir(path.join(dir, 'a', 'b', 'c'), { recursive: true });
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: -1, limit: 0, installedOnly: false });
@@ -540,7 +567,7 @@ describe('Component#ls', () => {
     await fs.mkdir(path.join(dir, 'a'));
     await fs.mkdir(path.join(dir, 'b'));
     await fs.mkdir(path.join(dir, 'c'));
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: 1, limit: 2, installedOnly: false });
@@ -556,7 +583,7 @@ describe('Component#ls', () => {
       `module.exports = { components: async () => [{ id: 'zeta' }, { id: 'alpha' }, { id: 'mid' }] };`,
       'utf-8',
     );
-    const component = new Component(null, 'root', dir, dir);
+    const component = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await component.init();
 
     const tree = await component.ls({ parents: false, depth: 1, limit: 0, installedOnly: false });
@@ -567,7 +594,7 @@ describe('Component#ls', () => {
   it('installed reflects whether homePath exists, independent of sourcePath', async () => {
     const sourceDir = await makeTempDir();
     const homeDir = path.join(await makeTempDir(), 'does-not-exist');
-    const component = new Component(null, 'root', sourceDir, homeDir);
+    const component = new Component(null, 'root', sourceDir, homeDir, TEST_EXECUTION_CONTEXT);
 
     const tree = await component.ls({ parents: false, depth: 0, limit: 0, installedOnly: false });
 
@@ -576,7 +603,7 @@ describe('Component#ls', () => {
 
   it('installedOnly drops a non-installed component and its whole subtree', async () => {
     const dir = await makeTempDir();
-    const component = new Component(null, 'root', dir, path.join(dir, 'missing-home'));
+    const component = new Component(null, 'root', dir, path.join(dir, 'missing-home'), TEST_EXECUTION_CONTEXT);
 
     const tree = await component.ls({ parents: false, depth: -1, limit: 0, installedOnly: true });
 
@@ -587,7 +614,7 @@ describe('Component#ls', () => {
     const dir = await makeTempDir();
     await fs.mkdir(path.join(dir, 'a', 'sibling'), { recursive: true });
     await fs.mkdir(path.join(dir, 'a', 'b'), { recursive: true });
-    const root = new Component(null, 'root', dir, dir);
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
     await root.init();
     const a = await root.buildChild('a');
     const b = await a.buildChild('b');

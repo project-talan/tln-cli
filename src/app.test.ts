@@ -38,6 +38,29 @@ describe('App', () => {
     USER_HOME = await makeTempDir();
   });
 
+  describe('constructor', () => {
+    it('builds executionContext immediately, before init() runs', () => {
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE);
+
+      expect(app.executionContext).toEqual({
+        platform: os.platform(),
+        arch: os.arch(),
+        type: os.type(),
+        release: os.release(),
+      });
+    });
+
+    it('threads the same executionContext into the built component tree', async () => {
+      const cwd = await makeTempDir();
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
+
+      await app.init();
+
+      expect(app.rootComponent.executionContext).toEqual(app.executionContext);
+      expect(app.currentComponent.executionContext).toEqual(app.executionContext);
+    });
+  });
+
   describe('init', () => {
     it('walks up from cwd to the topmost ancestor with a tln config and builds the component chain down to cwd', async () => {
       const root = await makeTempDir();

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { Component, create, type ComponentLsNode } from './component.js';
 import type { GlobalArgv } from './util/globalOptions.js';
-import { hasConfig, isRootPath } from './util/misc.js';
+import { createExecutionContext, hasConfig, isRootPath, type ExecutionContext } from './util/misc.js';
 import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './util/options.js';
 
 /**
@@ -14,10 +14,10 @@ import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './ut
  * dispatches every top-level command onto the components resolved from CLI
  * arguments. Port of old/src/appl.js's `Appl`.
  *
- * Detached mode (--detach/--local-repo/TLN_DETACHED_MODE) and the `tln` builder
- * context object (old Appl#init's filter/utils-backed helpers) are not ported yet —
- * `init()` always resolves `home` from `cwd` directly, and Component builders keep
- * receiving `undefined` for `tln`, as they do today.
+ * Detached mode (--detach/--local-repo/TLN_DETACHED_MODE) isn't ported yet — `init()`
+ * always resolves `home` from `cwd` directly. The `tln` builder context passed to
+ * every .tln.tjs-defined function is `executionContext` (see util/misc.js), built once
+ * here at construction time and threaded down the whole component tree.
  */
 export class App {
   readonly cwd: string;
@@ -26,6 +26,8 @@ export class App {
   /** Per-user install root (`~/.talan/cli`) where tln installs third-party components (see index.ts). */
   readonly userHome: string;
   readonly verbose: number;
+  /** Passed (as a fresh clone per call) as `tln` to every .tln.tjs-defined function — see util/misc.js. */
+  readonly executionContext: ExecutionContext;
   home!: string;
   rootComponent!: Component;
   currentComponent!: Component;
@@ -35,6 +37,7 @@ export class App {
     this.catalogHome = catalogHome;
     this.userHome = userHome;
     this.verbose = verbose;
+    this.executionContext = createExecutionContext();
   }
 
   /**
@@ -61,7 +64,7 @@ export class App {
 
     await fs.mkdir(this.userHome, { recursive: true });
 
-    this.rootComponent = await create(this.catalogHome, this.userHome);
+    this.rootComponent = await create(this.catalogHome, this.userHome, this.executionContext);
 
     const relative = path.relative(this.home, this.cwd);
     const folders = relative ? relative.split(path.sep) : [];
