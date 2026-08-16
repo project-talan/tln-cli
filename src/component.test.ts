@@ -217,6 +217,196 @@ describe('Component#run', () => {
   });
 });
 
+describe('Component#findCommand (hierarchy, inherits, access)', () => {
+  let tempDirs: string[];
+
+  beforeEach(() => {
+    tempDirs = [];
+    mockedExecSync.mockReset();
+  });
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-component-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('a child can call a protected/public command defined only on an ancestor', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { commands: async () => ({ shared: { builder: async () => ['echo from-root'], access: 'protected' } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('shared', true);
+
+    expect(logSpy).toHaveBeenCalledWith('echo from-root');
+    logSpy.mockRestore();
+  });
+
+  it('running a command id defined both on this component and on an ancestor executes both, ancestor first then own', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-root'], access: 'protected' } }) };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'child'));
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-child'] } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('hi', true);
+
+    expect(logSpy.mock.calls.map((call) => call[0])).toEqual(['echo hi-from-root', 'echo hi-from-child']);
+    logSpy.mockRestore();
+  });
+
+  it('runs every definition of a command id, not just the first per origin: ancestor, inline components-seed, .tln-folder override, and own file, in that order', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        commands: async () => ({ hi: { builder: async () => ['echo hi-from-root'], access: 'protected' } }),
+        components: async () => [{
+          id: 'child',
+          commands: async () => ({ hi: { builder: async () => ['echo hi-from-inline-seed'] } }),
+        }],
+      };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'child', '.tln', 'override'), { recursive: true });
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln', 'override', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-tln-folder'] } }) };`,
+      'utf-8',
+    );
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-own-file'] } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('hi', true);
+
+    expect(logSpy.mock.calls.map((call) => call[0])).toEqual([
+      'echo hi-from-root',
+      'echo hi-from-inline-seed',
+      'echo hi-from-tln-folder',
+      'echo hi-from-own-file',
+    ]);
+    logSpy.mockRestore();
+
+    const inspection = await child.inspect();
+    expect(inspection.commands.filter((entry) => entry === 'hi' || entry.startsWith('hi@'))).toEqual(['hi', 'hi', 'hi', 'hi@root']);
+  });
+
+  it("a private command is callable on the component that defines it, but not on a child (even though the child could otherwise reach it via parent)", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { commands: async () => ({ secret: { builder: async () => ['echo root-only'], access: 'private' } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await root.run('secret', true);
+    expect(logSpy).toHaveBeenCalledWith('echo root-only');
+
+    await expect(child.run('secret')).rejects.toThrow('Command "secret" not found in component "child"');
+
+    logSpy.mockRestore();
+  });
+
+  it('inherits resolves other top-level catalog components by id (independent of the parent tree) and exposes their protected/public commands', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'base'));
+    await fs.writeFile(
+      path.join(dir, 'base', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-base'], access: 'public' } }) };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'derived'));
+    await fs.writeFile(
+      path.join(dir, 'derived', '.tln.tjs'),
+      `module.exports = { inherits: async () => ['base'] };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const derived = await root.buildChild('derived');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await derived.run('hi', true);
+
+    expect(logSpy).toHaveBeenCalledWith('echo hi-from-base');
+    logSpy.mockRestore();
+  });
+
+  it("inherits is transitive (an inherited component's own inherits are searched too) and excludes private commands there as well", async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'grandbase'));
+    await fs.writeFile(
+      path.join(dir, 'grandbase', '.tln.tjs'),
+      `module.exports = { commands: async () => ({
+        hi: { builder: async () => ['echo hi-from-grandbase'], access: 'public' },
+        secret: { builder: async () => ['echo should-not-run'], access: 'private' },
+      }) };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'base'));
+    await fs.writeFile(path.join(dir, 'base', '.tln.tjs'), `module.exports = { inherits: async () => ['grandbase'] };`, 'utf-8');
+    await fs.mkdir(path.join(dir, 'derived'));
+    await fs.writeFile(path.join(dir, 'derived', '.tln.tjs'), `module.exports = { inherits: async () => ['base'] };`, 'utf-8');
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const derived = await root.buildChild('derived');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await derived.run('hi', true);
+    expect(logSpy).toHaveBeenCalledWith('echo hi-from-grandbase');
+
+    await expect(derived.run('secret')).rejects.toThrow('Command "secret" not found in component "derived"');
+
+    logSpy.mockRestore();
+  });
+
+  it('does not infinite-loop on an inherits cycle (A inherits B, B inherits A)', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'a'));
+    await fs.writeFile(path.join(dir, 'a', '.tln.tjs'), `module.exports = { inherits: async () => ['b'] };`, 'utf-8');
+    await fs.mkdir(path.join(dir, 'b'));
+    await fs.writeFile(path.join(dir, 'b', '.tln.tjs'), `module.exports = { inherits: async () => ['a'] };`, 'utf-8');
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const a = await root.buildChild('a');
+
+    await expect(a.run('nope', true)).rejects.toThrow('Command "nope" not found in component "a"');
+  });
+});
+
 describe('Component#inspect', () => {
   let tempDirs: string[];
 
@@ -311,6 +501,67 @@ describe('Component#inspect', () => {
     expect(inspection.depends).toEqual(['maven']);
     expect(inspection.commands).toEqual(['first', 'second']);
     expect(inspection.env).toEqual({ FOO: 'from-own', ONLY_A: 'yes' });
+  });
+
+  it('formats a command reachable only via parent as "<id>@<originUUID>"', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-root'], access: 'protected' } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+
+    const inspection = await child.inspect();
+
+    expect(inspection.commands).toEqual(['hi@root']);
+  });
+
+  it('formats a command reachable only via inherits as "<id>@<originUUID>", alongside its own commands as plain "<id>"', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'base'));
+    await fs.writeFile(
+      path.join(dir, 'base', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi2: { builder: async () => ['echo hi2-from-base'], access: 'public' } }) };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'derived'));
+    await fs.writeFile(
+      path.join(dir, 'derived', '.tln.tjs'),
+      `module.exports = { inherits: async () => ['base'], commands: async () => ({ own: { builder: async () => ['echo own'] } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const derived = await root.buildChild('derived');
+
+    const inspection = await derived.inspect();
+
+    expect(inspection.commands).toEqual(['own', 'hi2@root/base']);
+  });
+
+  it('lists a same-named command from both this component and an ancestor, instead of letting the closer one shadow the other', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-root'], access: 'protected' } }) };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'child'));
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ hi: { builder: async () => ['echo hi-from-child'] } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+
+    const inspection = await child.inspect();
+
+    expect(inspection.commands).toEqual(['hi', 'hi@root']);
   });
 });
 

@@ -10,14 +10,28 @@ export interface CommandDescriptor {
   // variant1: an async builder returning bash command lines to execute.
   // variant2: a batch/alias — a list of other command ids to resolve and run in sequence.
   builder: ((tln: ExecutionContext, env: unknown) => unknown) | string[];
-  access?: 'public' | 'protected';
+  /**
+   * Visibility when this command is found somewhere other than the component actually
+   * being executed (an ancestor via `parent`, or a component named in `inherits`):
+   * - `'private'` — never visible there; only callable when its own component is the
+   *   one being executed (i.e. found via the initial self-search).
+   * - `'protected'` / `'public'` / unset — visible to any derived component (child,
+   *   descendant, or a component that `inherits` this one). See `Component#findAllCommands`.
+   */
+  access?: 'public' | 'protected' | 'private';
 }
 
 export interface RawComponentDescription {
   dotenvs?: (tln: ExecutionContext) => unknown;
   options?: (tln: ExecutionContext, env: unknown) => unknown;
   env?: (tln: ExecutionContext, env: Record<string, string>) => unknown;
-  /** Component ids this description inherits from. Single-parent for now — will grow into multiple inheritance later. */
+  /**
+   * Ids of other top-level catalog components (children of the tree's root) whose
+   * `protected`/`public` commands become visible to this component too — multiple
+   * inheritance by name, independent of the `parent` tree structure (the same idea as
+   * C++ multiple inheritance: a base class named here needn't be a structural ancestor).
+   * See `Component#findAllCommands`/`resolveInheritedComponents`.
+   */
   inherits?: (tln: ExecutionContext) => Promise<string[]> | string[];
   /** Component ids this description depends on. Single-list for now — will grow into a fuller dependencies feature later. */
   depends?: (tln: ExecutionContext) => Promise<string[]> | string[];
@@ -102,11 +116,16 @@ export class Component {
   }
 
   getUUID(uuid: string = ''): string {
-    if (this.parent){
-      const suffix = uuid ? `/${uuid}` : ''
+    if (this.parent) {
+      const suffix = uuid ? `/${uuid}` : '';
       return this.parent.getUUID(`${this.id}${suffix}`);
     }
-    return `${this.id}${uuid}`;
+    return uuid ? path.posix.join(this.id, uuid) : this.id;
+  }
+
+  /** Walks up `parent` to the tree's root (the component with no parent). */
+  getRoot(): Component {
+    return this.parent ? this.parent.getRoot() : this;
   }
 
   async init(): Promise<void> {
@@ -207,25 +226,27 @@ export class Component {
    * Resolves this component's structure for the `inspect` command: identity/paths,
    * where each contributing description came from, the declared inherits/depends
    * lists (concatenated across descriptions, as-is — no dedup/resolution yet, see
-   * RawComponentDescription's inherits/depends docs), every available command id,
-   * and the final env var set (each description's `env(tln, env)` mutates a shared
-   * accumulator in `descriptions` order, so later descriptions can override earlier ones).
+   * RawComponentDescription's inherits/depends docs), every command available for
+   * execution — formatted `"<id>"` for one of this component's own, or
+   * `"<id>@<originUUID>"` when it's only reachable via `parent`/`inherits` (see
+   * `collectCommands`) — and the final env var set (each description's
+   * `env(tln, env)` mutates a shared accumulator in `descriptions` order, so later
+   * descriptions can override earlier ones).
    */
   async inspect(): Promise<ComponentInspection> {
     const inherits: string[] = [];
     const depends: string[] = [];
-    const commands = new Set<string>();
     const env: Record<string, string> = {};
 
     for (const description of this.descriptions) {
       if (description.inherits) inherits.push(...(await description.inherits(cloneExecutionContext(this.executionContext))));
       if (description.depends) depends.push(...(await description.depends(cloneExecutionContext(this.executionContext))));
-      if (description.commands) {
-        const resolved = await description.commands(cloneExecutionContext(this.executionContext));
-        for (const commandId of Object.keys(resolved)) commands.add(commandId);
-      }
       if (description.env) await description.env(cloneExecutionContext(this.executionContext), env);
     }
+
+    const commands = (await this.collectCommands()).map(([commandId, origin]) =>
+      origin === this ? commandId : `${commandId}@${origin.getUUID()}`,
+    );
 
     return {
       parent: this.parent ? this.parent.getUUID() : '',
@@ -235,7 +256,7 @@ export class Component {
       descriptions: this.descriptions.map((description) => description.source),
       inherits,
       depends,
-      commands: [...commands],
+      commands,
       env,
     };
   }
@@ -306,12 +327,26 @@ export class Component {
     execSync(scriptPath, { cwd: this.homePath, stdio: 'inherit', env: process.env });
   }
 
+  /**
+   * Resolves `commandId` to every visible descriptor (see `findAllCommands`) and runs
+   * each one's bash command lines in order — ancestors/inherited components first, this
+   * component's own last — concatenating the results. This lets a component's own command
+   * extend rather than silently shadow a same-named one from `parent`/`inherits`.
+   */
   private async resolveCommandLines(commandId: string): Promise<string[]> {
-    const descriptor = await this.findCommand(commandId);
-    if (!descriptor) {
+    const descriptors = await this.findAllCommands(commandId);
+    if (descriptors.length === 0) {
       throw new Error(`Command "${commandId}" not found in component "${this.id}"`);
     }
 
+    const lines: string[] = [];
+    for (const descriptor of descriptors) {
+      lines.push(...(await this.resolveDescriptorLines(descriptor)));
+    }
+    return lines;
+  }
+
+  private async resolveDescriptorLines(descriptor: CommandDescriptor): Promise<string[]> {
     if (typeof descriptor.builder === 'function') {
       const result = await descriptor.builder(cloneExecutionContext(this.executionContext), {});
       return Array.isArray(result) ? (result as string[]) : [];
@@ -330,14 +365,108 @@ export class Component {
     return lines;
   }
 
-  private async findCommand(commandId: string): Promise<CommandDescriptor | undefined> {
+  /**
+   * Finds every descriptor for `commandId` visible to this component, searching (in
+   * order): every component named in this component's own `inherits` lists, and their
+   * `inherits`, transitively (C++-style multiple inheritance, independent of the `parent`
+   * tree — see `resolveInheritedComponents`); then `parent`, applying this same search
+   * there; then every one of this component's own descriptions that defines `commandId`
+   * (every access level counts here — a component can always call its own commands,
+   * `'private'` included) last, in `descriptions` order (e.g. an inline seed from a
+   * parent's `components` list, then any `.tln`-folder overrides, then the component's
+   * own `.tln.tjs` — see `init`). A component with more than one description defining
+   * the same id (own descriptions, or more than one `inherits`/`parent` branch reaching
+   * it) contributes one descriptor per definition, not just the first — so the returned
+   * order is outermost-ancestor-first, own-last, ALL definitions included, not just the
+   * nearest — see `resolveCommandLines`. Everywhere except the own-search, only
+   * `'protected'`/`'public'`/unset commands are visible — `'private'` ones are excluded,
+   * since by then this is no longer "the component being executed". `visited` guards
+   * against `inherits` cycles (A inherits B inherits A) and against the same origin
+   * contributing twice when reachable via more than one path (e.g. a diamond `inherits`).
+   */
+  private async findAllCommands(commandId: string, allowPrivate = true, visited: Set<Component> = new Set()): Promise<CommandDescriptor[]> {
+    if (visited.has(this)) return [];
+    visited.add(this);
+
+    const ancestors: CommandDescriptor[] = [];
+    for (const inherited of await this.resolveInheritedComponents()) {
+      ancestors.push(...(await inherited.findAllCommands(commandId, false, visited)));
+    }
+
+    if (this.parent) {
+      ancestors.push(...(await this.parent.findAllCommands(commandId, false, visited)));
+    }
+
+    const own: CommandDescriptor[] = [];
     for (const description of this.descriptions) {
       if (!description.commands) continue;
       const commands = await description.commands(cloneExecutionContext(this.executionContext));
       const descriptor = commands[commandId];
-      if (descriptor) return descriptor;
+      if (descriptor && (allowPrivate || descriptor.access !== 'private')) {
+        own.push(descriptor);
+      }
     }
-    return undefined;
+
+    return [...ancestors, ...own];
+  }
+
+  /**
+   * Every command available for execution on this component, paired with the `Component`
+   * that actually defines it (itself, for its own commands; otherwise whichever
+   * `inherits`-named or `parent` component the search (mirroring `findAllCommands`'s
+   * inherits (transitively) → parent → self search, same `'private'`-past-self exclusion,
+   * same cycle guard) found it on). Ids are NOT deduplicated at all — a same-named command
+   * defined more than once for the same origin (e.g. one from a parent's inline `components`
+   * seed and another from that same component's own `.tln.tjs`, or several from different
+   * `.tln`-folder descriptions) each get their own entry, same as a same-named command from
+   * `this` and from an ancestor/inherited component both being reported — matching
+   * `findAllCommands`, which likewise runs every one of them when this id is executed.
+   * `visited` still guards against `inherits` cycles and against the same origin
+   * contributing twice when reachable via more than one path (e.g. a diamond `inherits`).
+   */
+  private async collectCommands(allowPrivate = true, visited: Set<Component> = new Set()): Promise<Array<[string, Component]>> {
+    const found: Array<[string, Component]> = [];
+    if (visited.has(this)) return found;
+    visited.add(this);
+
+    for (const description of this.descriptions) {
+      if (!description.commands) continue;
+      const commands = await description.commands(cloneExecutionContext(this.executionContext));
+      for (const [commandId, descriptor] of Object.entries(commands)) {
+        if (allowPrivate || descriptor.access !== 'private') {
+          found.push([commandId, this]);
+        }
+      }
+    }
+
+    for (const inherited of await this.resolveInheritedComponents()) {
+      found.push(...(await inherited.collectCommands(false, visited)));
+    }
+
+    if (this.parent) {
+      found.push(...(await this.parent.collectCommands(false, visited)));
+    }
+
+    return found;
+  }
+
+  /**
+   * Resolves this component's own `inherits` lists into their target `Component`s —
+   * each id is looked up as a child of the tree's root (`getRoot`), i.e. a top-level
+   * catalog component, matching how `inherits: async () => ['docker']` names another
+   * "base class" by its catalog id rather than by structural position in the tree.
+   */
+  private async resolveInheritedComponents(): Promise<Component[]> {
+    const root = this.getRoot();
+    const resolved: Component[] = [];
+    for (const description of this.descriptions) {
+      if (!description.inherits) continue;
+      const ids = await description.inherits(cloneExecutionContext(this.executionContext));
+      for (const id of ids) {
+        resolved.push(await root.buildChild(id));
+      }
+    }
+    return resolved;
   }
 
   private static async writeScript(lines: string[]): Promise<string> {
