@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { Component, create, type ComponentLsNode } from './component.js';
+import { Env } from './env.js';
 import type { GlobalArgv } from './util/globalOptions.js';
 import { createExecutionContext, hasConfig, isRootPath, type ExecutionContext } from './util/misc.js';
 import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './util/options.js';
@@ -17,7 +18,10 @@ import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './ut
  * Detached mode (--detach/--local-repo/TLN_DETACHED_MODE) isn't ported yet — `init()`
  * always resolves `home` from `cwd` directly. The `tln` builder context passed to
  * every .tln.tjs-defined function is `executionContext` (see util/misc.js), built once
- * here at construction time and threaded down the whole component tree.
+ * here at construction time and threaded down the whole component tree. `env` (see
+ * env.js) is built here too, from `process.env`, and seeds the root component's base
+ * environment — every other component's effective environment is resolved on demand
+ * from there (see `Component#resolveEnv`), not threaded through construction.
  */
 export class App {
   readonly cwd: string;
@@ -28,6 +32,8 @@ export class App {
   readonly verbose: number;
   /** Passed (as a fresh clone per call) as `tln` to every .tln.tjs-defined function — see util/misc.js. */
   readonly executionContext: ExecutionContext;
+  /** Seeds the root component's base environment (see `Component#resolveEnv`) with `process.env`. */
+  readonly env: Env;
   home!: string;
   rootComponent!: Component;
   currentComponent!: Component;
@@ -38,6 +44,7 @@ export class App {
     this.userHome = userHome;
     this.verbose = verbose;
     this.executionContext = createExecutionContext();
+    this.env = Env.fromProcessEnv();
   }
 
   /**
@@ -64,7 +71,7 @@ export class App {
 
     await fs.mkdir(this.userHome, { recursive: true });
 
-    this.rootComponent = await create(this.catalogHome, this.userHome, this.executionContext);
+    this.rootComponent = await create(this.catalogHome, this.userHome, this.executionContext, this.env);
 
     const relative = path.relative(this.home, this.cwd);
     const folders = relative ? relative.split(path.sep) : [];

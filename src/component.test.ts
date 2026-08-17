@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { Component, create } from './component.js';
+import { Env } from './env.js';
 import type { ExecutionContext } from './util/misc.js';
 
 vi.mock('node:child_process', async (importOriginal) => {
@@ -214,6 +215,183 @@ describe('Component#run', () => {
     expect(content).toBe(['#!/usr/bin/env bash', 'set -e', 'echo one', 'echo two', ''].join('\n'));
 
     await fs.rm(scriptPath as string, { force: true });
+  });
+});
+
+describe('Component#run (env)', () => {
+  let tempDirs: string[];
+
+  beforeEach(() => {
+    tempDirs = [];
+    mockedExecSync.mockReset();
+  });
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-component-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('loads dotenvs files and applies the env(tln, env) function on top, passing the result as the builder\'s env argument', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.env'), 'FROM_FILE=file-value\nOVERRIDDEN=from-file\n', 'utf-8');
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        dotenvs: async () => ['.env'],
+        env: async (tln, env) => { env.OVERRIDDEN = 'from-function'; env.FROM_FUNCTION = 'yes'; },
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed).toMatchObject({ FROM_FILE: 'file-value', OVERRIDDEN: 'from-function', FROM_FUNCTION: 'yes' });
+    logSpy.mockRestore();
+  });
+
+  it("merges a parent's env before this component's own, so the child's dotenvs/env() override the parent's", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = { env: async (tln, env) => { env.FOO = 'from-parent'; env.PARENT_ONLY = 'yes'; } };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'child'));
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = {
+        env: async (tln, env) => { env.FOO = 'from-child'; },
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed).toMatchObject({ FOO: 'from-child', PARENT_ONLY: 'yes' });
+    logSpy.mockRestore();
+  });
+
+  it("merges an inherits-named component's env as a mixin, overridable by this component's own", async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'base'));
+    await fs.writeFile(
+      path.join(dir, 'base', '.tln.tjs'),
+      `module.exports = { env: async (tln, env) => { env.FOO = 'from-base'; env.BASE_ONLY = 'yes'; } };`,
+      'utf-8',
+    );
+    await fs.mkdir(path.join(dir, 'derived'));
+    await fs.writeFile(
+      path.join(dir, 'derived', '.tln.tjs'),
+      `module.exports = {
+        inherits: async () => ['base'],
+        env: async (tln, env) => { env.FOO = 'from-derived'; },
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT);
+    await root.init();
+    const derived = await root.buildChild('derived');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await derived.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed).toMatchObject({ FOO: 'from-derived', BASE_ONLY: 'yes' });
+    logSpy.mockRestore();
+  });
+
+  it("threads the root's seeded base Env (e.g. from process.env, via create) down through parent to every descendant", async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'child'));
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, '/', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env({ SEEDED: 'from-root' }));
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed).toMatchObject({ SEEDED: 'from-root' });
+    logSpy.mockRestore();
+  });
+
+  it('gives each builder invocation within one run() its own copy of env — one mutating its env argument does not affect a sibling batch/alias call', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        env: async (tln, env) => { env.FOO = 'original'; },
+        commands: async () => ({
+          mutator: { builder: async (tln, env) => { env.FOO = 'mutated-by-mutator'; return [JSON.stringify(env)]; } },
+          reporter: { builder: async (tln, env) => [JSON.stringify(env)] },
+          batch: { builder: ['mutator', 'reporter'] },
+        }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('batch', true);
+
+    const [mutatorOutput, reporterOutput] = logSpy.mock.calls.map((call) => JSON.parse(call[0] as string));
+    expect(mutatorOutput).toMatchObject({ FOO: 'mutated-by-mutator' });
+    expect(reporterOutput).toMatchObject({ FOO: 'original' });
+    logSpy.mockRestore();
+  });
+
+  it('resolves a fresh env for every run() call — no state leaks between separate executions', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        env: async (tln, env) => { env.FOO = 'original'; },
+        commands: async () => ({
+          mutator: {
+            builder: async (tln, env) => {
+              const seenOnEntry = env.FOO; // captured BEFORE this call's own mutation
+              env.FOO = 'mutated';
+              return [JSON.stringify({ seenOnEntry })];
+            },
+          },
+        }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('mutator', true);
+    await component.run('mutator', true);
+
+    const outputs = logSpy.mock.calls.map((call) => JSON.parse(call[0] as string));
+    expect(outputs[0]).toEqual({ seenOnEntry: 'original' });
+    expect(outputs[1]).toEqual({ seenOnEntry: 'original' });
+    logSpy.mockRestore();
   });
 });
 
@@ -571,7 +749,7 @@ describe('create', () => {
     try {
       await fs.writeFile(path.join(dir, '.tln.tjs'), 'module.exports = { env: async () => {} };', 'utf-8');
 
-      const root = await create(dir, '/fake/home-path', TEST_EXECUTION_CONTEXT);
+      const root = await create(dir, '/fake/home-path', TEST_EXECUTION_CONTEXT, new Env());
 
       expect(root.id).toBe('/');
       expect(root.parent).toBeNull();

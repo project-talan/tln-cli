@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/project-talan/tln-cli#readme",
   "dependencies": {
+    "dotenv": "^17.4.2",
     "find-up": "^8.0.0",
     "yaml": "^2.9.0",
     "yargs": "^17.7.2"

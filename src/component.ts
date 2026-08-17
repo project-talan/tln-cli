@@ -3,13 +3,14 @@ import { promises as fs } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { Env } from './env.js';
 import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR, cloneExecutionContext, type ExecutionContext } from './util/misc.js';
 import type { LsOptions } from './util/options.js';
 
 export interface CommandDescriptor {
   // variant1: an async builder returning bash command lines to execute.
   // variant2: a batch/alias — a list of other command ids to resolve and run in sequence.
-  builder: ((tln: ExecutionContext, env: unknown) => unknown) | string[];
+  builder: ((tln: ExecutionContext, env: Record<string, string>) => unknown) | string[];
   /**
    * Visibility when this command is found somewhere other than the component actually
    * being executed (an ancestor via `parent`, or a component named in `inherits`):
@@ -22,7 +23,8 @@ export interface CommandDescriptor {
 }
 
 export interface RawComponentDescription {
-  dotenvs?: (tln: ExecutionContext) => unknown;
+  /** Paths (relative to this description's owning component's `sourcePath`, unless absolute) of dotenv files to load — see `Component#resolveEnv`. */
+  dotenvs?: (tln: ExecutionContext) => Promise<string[]> | string[];
   options?: (tln: ExecutionContext, env: unknown) => unknown;
   env?: (tln: ExecutionContext, env: Record<string, string>) => unknown;
   /**
@@ -97,6 +99,14 @@ export class Component {
   /** Passed (as a fresh clone per call — see `cloneExecutionContext`) as `tln` to every .tln.tjs-defined function. Built once by `App` at construction time and threaded down the whole tree. */
   readonly executionContext: ExecutionContext;
   readonly descriptions: ComponentDescription[];
+  /**
+   * This component's own env "seed" — empty for every component except the real root,
+   * which `create` seeds with `Env.fromProcessEnv()` (see `App`). Every other component's
+   * effective environment isn't threaded through the constructor; it's computed on demand
+   * by `resolveEnv`, which starts from `parent`'s resolved env (root-to-leaf) rather than
+   * from this field.
+   */
+  private readonly baseEnv: Env;
   private readonly children: Component[] = [];
 
   constructor(
@@ -106,6 +116,7 @@ export class Component {
     homePath: string,
     executionContext: ExecutionContext,
     descriptions: ComponentDescription[] = [],
+    baseEnv: Env = new Env(),
   ) {
     this.parent = parent;
     this.id = id;
@@ -113,6 +124,7 @@ export class Component {
     this.homePath = homePath;
     this.executionContext = executionContext;
     this.descriptions = [...descriptions];
+    this.baseEnv = baseEnv;
   }
 
   getUUID(uuid: string = ''): string {
@@ -314,7 +326,11 @@ export class Component {
    * in this component's home directory.
    */
   async run(commandId: string, dryRun = false): Promise<void> {
-    const lines = (await this.resolveCommandLines(commandId)).filter(Boolean);
+    // Resolved once per run() call ("execution") and threaded as a plain-object copy into
+    // every builder invocation triggered by it (including nested batch/alias references),
+    // so this whole execution sees one consistent snapshot, isolated from any other run().
+    const env = (await this.resolveEnv()).toRecord();
+    const lines = (await this.resolveCommandLines(commandId, env)).filter(Boolean);
 
     if (dryRun) {
       for (const line of lines) console.log(line);
@@ -333,7 +349,7 @@ export class Component {
    * component's own last — concatenating the results. This lets a component's own command
    * extend rather than silently shadow a same-named one from `parent`/`inherits`.
    */
-  private async resolveCommandLines(commandId: string): Promise<string[]> {
+  private async resolveCommandLines(commandId: string, env: Record<string, string>): Promise<string[]> {
     const descriptors = await this.findAllCommands(commandId);
     if (descriptors.length === 0) {
       throw new Error(`Command "${commandId}" not found in component "${this.id}"`);
@@ -341,14 +357,17 @@ export class Component {
 
     const lines: string[] = [];
     for (const descriptor of descriptors) {
-      lines.push(...(await this.resolveDescriptorLines(descriptor)));
+      lines.push(...(await this.resolveDescriptorLines(descriptor, env)));
     }
     return lines;
   }
 
-  private async resolveDescriptorLines(descriptor: CommandDescriptor): Promise<string[]> {
+  private async resolveDescriptorLines(descriptor: CommandDescriptor, env: Record<string, string>): Promise<string[]> {
     if (typeof descriptor.builder === 'function') {
-      const result = await descriptor.builder(cloneExecutionContext(this.executionContext), {});
+      // A fresh copy per builder call, so one builder mutating its `env` argument (matching
+      // `.tln.tjs`'s `env(tln, env)` mutation convention) can't affect any other builder
+      // called within the same run() — see `run`'s "own immutable copy" comment.
+      const result = await descriptor.builder(cloneExecutionContext(this.executionContext), { ...env });
       return Array.isArray(result) ? (result as string[]) : [];
     }
 
@@ -360,7 +379,7 @@ export class Component {
         console.warn(`Skipping cross-component command reference "${ref}" (not yet supported)`);
         continue;
       }
-      lines.push(...(await this.resolveCommandLines(ref)));
+      lines.push(...(await this.resolveCommandLines(ref, env)));
     }
     return lines;
   }
@@ -469,6 +488,46 @@ export class Component {
     return resolved;
   }
 
+  /**
+   * Resolves this component's fully-merged environment for command execution: starts
+   * from `parent`'s resolved env (root-to-leaf — the real root's is seeded from
+   * `process.env`, see `create`/`App`), merges in every `inherits`-named component's
+   * resolved env the same way (in list order), then applies this component's own
+   * `dotenvs` files and `env(tln, env)` functions, one description at a time in
+   * `descriptions` order (so a later description, e.g. this component's own `.tln.tjs`,
+   * overrides an earlier one, e.g. an inline seed from a parent's `components` list) —
+   * each description's dotenv files load before its own `env(tln, env)` runs, matching
+   * `RawComponentDescription`'s field order. Own settings are applied last, so they win
+   * over both ancestors and `inherits` mixins. Recomputed on every call, not cached —
+   * matches `findAllCommands`/`collectCommands`; `visited` guards the same `inherits`-cycle
+   * case (an already-visited component contributes nothing further, rather than
+   * re-merging and looping forever).
+   */
+  private async resolveEnv(visited: Set<Component> = new Set()): Promise<Env> {
+    if (visited.has(this)) return new Env();
+    visited.add(this);
+
+    let env = this.parent ? await this.parent.resolveEnv(visited) : this.baseEnv;
+
+    for (const inherited of await this.resolveInheritedComponents()) {
+      env = env.merge((await inherited.resolveEnv(visited)).toRecord());
+    }
+
+    for (const description of this.descriptions) {
+      if (description.dotenvs) {
+        const files = await description.dotenvs(cloneExecutionContext(this.executionContext));
+        for (const file of files) {
+          env = await env.mergeDotenvFile(path.isAbsolute(file) ? file : path.join(this.sourcePath, file));
+        }
+      }
+      if (description.env) {
+        env = await env.mergeEnvFunction(description.env, cloneExecutionContext(this.executionContext));
+      }
+    }
+
+    return env;
+  }
+
   private static async writeScript(lines: string[]): Promise<string> {
     await fs.mkdir(SCRIPT_TEMP_DIR, { recursive: true });
     const scriptPath = path.join(SCRIPT_TEMP_DIR, `${randomUUID()}.sh`);
@@ -525,9 +584,11 @@ export class Component {
  * Creates the root component (id '/', no parent) and loads its config from
  * `sourcePath`. Port of old/src/component.js's `createRoot` factory, minus the
  * built-in catalog folder scan (no `source`/catalog-folder concept ported yet).
+ * `env` seeds the root's base environment (see `Component#resolveEnv`) — built by
+ * `App` from `process.env` and passed in explicitly, same as `executionContext`.
  */
-export async function create(sourcePath: string, homePath: string, executionContext: ExecutionContext): Promise<Component> {
-  const root = new Component(null, '/', sourcePath, homePath, executionContext);
+export async function create(sourcePath: string, homePath: string, executionContext: ExecutionContext, env: Env): Promise<Component> {
+  const root = new Component(null, '/', sourcePath, homePath, executionContext, [], env);
   await root.init();
   return root;
 }

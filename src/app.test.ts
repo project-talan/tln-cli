@@ -59,6 +59,37 @@ describe('App', () => {
       expect(app.rootComponent.executionContext).toEqual(app.executionContext);
       expect(app.currentComponent.executionContext).toEqual(app.executionContext);
     });
+
+    it('builds env from process.env immediately, before init() runs', () => {
+      vi.stubEnv('TLN_TEST_VAR', 'from-process-env');
+
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE);
+
+      expect(app.env.toRecord().TLN_TEST_VAR).toBe('from-process-env');
+
+      vi.unstubAllEnvs();
+    });
+
+    it('seeds the root component with env, visible to every command run in the tree', async () => {
+      vi.stubEnv('TLN_TEST_VAR', 'from-process-env');
+      const cwd = await makeTempDir();
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = { commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }) };`,
+        'utf-8',
+      );
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE);
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await app.currentComponent.run('report', true);
+
+      const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+      expect(printed).toMatchObject({ TLN_TEST_VAR: 'from-process-env' });
+
+      logSpy.mockRestore();
+      vi.unstubAllEnvs();
+    });
   });
 
   describe('init', () => {
