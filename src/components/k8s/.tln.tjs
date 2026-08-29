@@ -1,0 +1,11 @@
+
+module.exports = {
+  dotenvs: async (tln) => [],
+  options: async (tln, env) => ({}),
+  env: async (tln, env) => {},
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  commands: async (tln) => ({
+  }),
+  components: async (tln) => require('./components.cjs').map((v) => ({ id: `k8s-${v.id}` }))
+}

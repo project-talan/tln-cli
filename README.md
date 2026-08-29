@@ -4,14 +4,14 @@
 
 Talan CLI (tln)
 * is an open-source framework designed to manage third-party components across diverse ecosystems like Java, Node.js, C++, Golang etc.
-* it enables the creation of fully isolated, nested development, environments, streamlines the management of both mono and multi-repo configurations, and facilitates a seamless onboarding experience.
+* it enables the creation of fully isolated, nested development, environments, streamlines the management complex development setups and facilitates a seamless onboarding experience.
 * effectively bridges gaps between local development environments and CI/CD setups, maximizing the benefits of Polyglot Programming and Polyglot Persistence (4Ps) design.
 
 ## Similar or related projects
 [Brew](https://brew.sh/), [Conan](https://conan.io/), [Meta](https://github.com/mateodelnorte/meta), [Lerna](https://github.com/lerna/lerna), [SDKMAN](https://sdkman.io), [jEnv](https://www.jenv.be/), [Chocolatey](https://chocolatey.org/)
 
 ## Prerequisites
-* Install `Nodejs 20.x` or higher (https://nodejs.org)
+* Install `Nodejs 24.x` or higher (https://nodejs.org)
 * Make sure that `wget` is accessible via command line (Linux/MacOS)
 * Make sure that [`Powershell`](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) script can be executed (Windows):
 * Install tln-cli 
@@ -79,6 +79,39 @@ Talan CLI (tln)
   Client Version: version.Info{Major:"1", Minor:"23", GitVersion:"v1.23.13", GitCommit:"592eca05be27f7d927d0b25cbb4241d75a9574bf", GitTreeState:"clean", BuildDate:"2022-10-12T10:57:16Z", GoVersion:"go1.17.13", Compiler:"gc", Platform:"linux/amd64"}
   [firebase]
   11.15.0
+  ```
+
+## Local Development Setup
+This repository is currently being rewritten in TypeScript (`v2.0.0-alpha`, source in `src/`, compiled to `dist/`). The steps below are for working on `tln-cli` itself, not for using the published CLI.
+
+* Clone the repo and install dependencies
+  ```
+  git clone https://github.com/project-talan/tln-cli.git
+  cd tln-cli
+  npm install
+  ```
+* Build once — compiles `src/*.ts` to `dist/`, then marks the emitted entry point executable
+  ```
+  npm run build
+  ```
+* Develop with auto-restart on save (runs TS directly, no manual rebuild needed)
+  ```
+  npm run dev
+  ```
+* Debug with breakpoints — starts the process paused, waiting for a debugger to attach
+  ```
+  npm run dev:debug
+  ```
+  Attach via VS Code's built-in debugger (see the "Debug CLI (src/index.ts)" config in `.vscode/launch.json`, just hit F5), or via `chrome://inspect` if you're not using VS Code.
+* Try it as a real installed CLI — exercises the actual `bin` entry, shebang and file permissions, not just the logic
+  ```
+  npm run build && npm link
+  tln2 --some-flag
+  npm unlink -g tln-cli   # when done
+  ```
+* Publish (maintainers only) — publishes under the `next` dist-tag while the rewrite is in alpha
+  ```
+  ./publish.sh
   ```
 
 ## tln architecture & in-depth details
