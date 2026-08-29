@@ -3,6 +3,7 @@ import type { Argv } from 'yargs';
 import yargs from 'yargs/yargs';
 import { findUpSync } from 'find-up';
 import { registerCommands } from '../commands/index.js';
+import { parseCliOverrides } from '../env.js';
 import { globalOptions, type GlobalArgv } from './globalOptions.js';
 
 const USAGE =
@@ -29,11 +30,16 @@ export function build(args: readonly string[], cwd: string, catalogHome: string,
     .config(config) as unknown as Argv<GlobalArgv>;
 
   // yargs only sets argv['--'] when at least one token follows `--`; normalize
-  // it to always be an array so command handlers never see `undefined`. Also
-  // stash cwd/catalogHome/userHome on argv (not exposed as CLI options) so every
-  // command handler can build an App without recomputing them.
+  // it to always be an array so command handlers never see `undefined`. Parse
+  // those tokens once, here, via yargs-parser (parseCliOverrides) into an
+  // immutable object and stash it as cliOverrides — every component's own
+  // options() reads from this same shared, frozen object (see
+  // Component#resolveEnv), rather than each one re-parsing the raw tokens.
+  // Also stash cwd/catalogHome/userHome on argv (not exposed as CLI options)
+  // so every command handler can build an App without recomputing them.
   instance.middleware((argv) => {
     argv['--'] = argv['--'] ?? [];
+    argv.cliOverrides = parseCliOverrides(argv['--']);
     argv.cwd = cwd;
     argv.catalogHome = catalogHome;
     argv.userHome = userHome;

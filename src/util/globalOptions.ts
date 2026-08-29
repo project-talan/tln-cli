@@ -1,4 +1,5 @@
 import type { Options } from 'yargs';
+import type { CliOverrides } from '../env.js';
 
 /**
  * Argv shape shared by every command. Port of the global option set defined in
@@ -23,6 +24,8 @@ export interface GlobalArgv {
   catalogHome: string;
   /** Per-user install root (`~/.talan/cli`) where tln installs third-party components (see index.ts). Set by build()'s middleware, not a real CLI flag. */
   userHome: string;
+  /** `'--'`'s tokens parsed via yargs-parser (see `parseCliOverrides`) — set by build()'s middleware, not a real CLI flag. */
+  cliOverrides: CliOverrides;
 }
 
 export const globalOptions = {

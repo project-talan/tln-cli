@@ -393,6 +393,225 @@ describe('Component#run (env)', () => {
     expect(outputs[1]).toEqual({ seenOnEntry: 'original' });
     logSpy.mockRestore();
   });
+
+  it("maps a CLI token (from --) onto ${prefix}_${KEY}, dashes in a multi-word key becoming underscores", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'TPM', options: [{ key: 'context', type: 'string', default: null }, { key: 'two-words', type: 'string', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01', 'two-words': 'value' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed).toMatchObject({ TPM_CONTEXT: 'dev01', TPM_TWO_WORDS: 'value' });
+    logSpy.mockRestore();
+  });
+
+  it('falls back to the option\'s default when the CLI flag was not passed, and sets nothing when neither is present', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'TPM', options: [
+          { key: 'context', type: 'string', default: 'dev' },
+          { key: 'unset', type: 'string', default: null },
+        ] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.TPM_CONTEXT).toBe('dev');
+    expect(printed).not.toHaveProperty('TPM_UNSET');
+    logSpy.mockRestore();
+  });
+
+  it('joins a repeated CLI flag (already a string[], from parseCliOverrides) with commas', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'TPM', options: [{ key: 'tag', type: 'array', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { tag: ['a', 'b', 'c'] });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.TPM_TAG).toBe('a,b,c');
+    logSpy.mockRestore();
+  });
+
+  it("type: 'array' still produces a single-element joined value when the CLI flag was only given once", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'TPM', options: [{ key: 'tag', type: 'array', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { tag: 'solo' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.TPM_TAG).toBe('solo');
+    logSpy.mockRestore();
+  });
+
+  it('renders a bare boolean CLI flag (e.g. --flag / --no-flag) as the literal string "true"/"false"', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'TPM', options: [{ key: 'flag', type: 'boolean', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { flag: false });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.TPM_FLAG).toBe('false');
+    logSpy.mockRestore();
+  });
+
+  it('supports a non-null default (including an array default) when the CLI flag was not passed', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'TPM', options: [{ key: 'tags', type: 'array', default: ['x', 'y'] }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT);
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.TPM_TAGS).toBe('x,y');
+    logSpy.mockRestore();
+  });
+
+  it('applies options() after dotenvs/env(), so a CLI value overrides both for that same description', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.env'), 'CONTEXT=from-file\n', 'utf-8');
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        dotenvs: async () => ['.env'],
+        env: async (tln, env) => { env.CONTEXT = 'from-function'; },
+        options: async () => ({ options: [{ key: 'context', type: 'string', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'from-cli' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.CONTEXT).toBe('from-cli');
+    logSpy.mockRestore();
+  });
+
+  it('omits the prefix segment entirely when options() declares no prefix', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ options: [{ key: 'context', type: 'string', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.CONTEXT).toBe('dev01');
+    logSpy.mockRestore();
+  });
+
+  it('does not throw when options() returns {} with no "options" array (a valid "no options declared" shape)', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({}),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await expect(component.run('report', true)).resolves.toBeUndefined();
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed).not.toHaveProperty('CONTEXT');
+    logSpy.mockRestore();
+  });
+
+  it('threads the same cliOverrides down through buildChild, so a descendant\'s own options() reads the same CLI tokens', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'child'));
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ prefix: 'CHILD', options: [{ key: 'context', type: 'string', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01' });
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.CHILD_CONTEXT).toBe('dev01');
+    logSpy.mockRestore();
+  });
 });
 
 describe('Component#findCommand (hierarchy, inherits, access)', () => {

@@ -3,9 +3,33 @@ import { promises as fs } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { Env } from './env.js';
+import { Env, envVarNameForOption, stringifyOptionValue, type CliOptionValue, type CliOverrides } from './env.js';
 import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR, cloneExecutionContext, type ExecutionContext } from './util/misc.js';
 import type { LsOptions } from './util/options.js';
+
+/** One entry in a description's `options()` list — see `RawComponentDescription.options`. */
+export interface ComponentOption {
+  /** The CLI flag name after `--` (e.g. `'two-words'` for `--two-words`), dashes and all — not env-var-cased. */
+  key: string;
+  desc?: string;
+  /**
+   * `'array'` forces the resolved value to be treated as a `string[]` even when the CLI
+   * only supplied `--<key>` once (`parseCliOverrides` only produces an array itself for
+   * a *repeated* flag) — see `Component#resolveEnv`. Otherwise documentation only, not
+   * used to validate or coerce the CLI-supplied value.
+   */
+  type?: 'string' | 'array' | 'boolean';
+  /** Used when `--<key>` wasn't passed on the command line. `null`/unset means no default — the env var is simply not set. */
+  default?: CliOptionValue | null;
+}
+
+/** What a description's `options()` returns — see `Component#resolveEnv`. */
+export interface ComponentOptionsSpec {
+  /** Prepended (as `${prefix}_`, upper-cased) to every option's env var name — see `envVarNameForOption`. */
+  prefix?: string;
+  /** Unset/omitted (e.g. a description returning `{}` to declare no options) means none — same as an empty array. */
+  options?: ComponentOption[];
+}
 
 export interface CommandDescriptor {
   // variant1: an async builder returning bash command lines to execute.
@@ -25,7 +49,14 @@ export interface CommandDescriptor {
 export interface RawComponentDescription {
   /** Paths (relative to this description's owning component's `sourcePath`, unless absolute) of dotenv files to load — see `Component#resolveEnv`. */
   dotenvs?: (tln: ExecutionContext) => Promise<string[]> | string[];
-  options?: (tln: ExecutionContext, env: unknown) => unknown;
+  /**
+   * Declares how CLI tokens after `--` (e.g. `tln hi -- --two-words value`) map onto env
+   * vars: each `options[]` entry's `key` names the `--<key>` flag, and its value ends up
+   * at `${prefix}_${KEY}` (dashes in `key` become underscores, everything upper-cased —
+   * see `envVarNameForOption`); `default` is used when that flag wasn't passed. Applied
+   * last, after `dotenvs`/`env()` — see `Component#resolveEnv`.
+   */
+  options?: (tln: ExecutionContext, env: Record<string, string>) => Promise<ComponentOptionsSpec> | ComponentOptionsSpec;
   env?: (tln: ExecutionContext, env: Record<string, string>) => unknown;
   /**
    * Ids of other top-level catalog components (children of the tree's root) whose
@@ -107,6 +138,14 @@ export class Component {
    * from this field.
    */
   private readonly baseEnv: Env;
+  /**
+   * The `--` tokens after `build()` (util/cli.ts) has run them through `parseCliOverrides`
+   * once, at CLI bootstrap — an immutable object threaded down the whole tree unchanged
+   * (same reference, like `executionContext` — NOT root-only like `baseEnv`), since every
+   * component's own `options()` may declare different keys against this same shared set.
+   * See `resolveEnv`.
+   */
+  private readonly cliOverrides: CliOverrides;
   private readonly children: Component[] = [];
 
   constructor(
@@ -117,6 +156,7 @@ export class Component {
     executionContext: ExecutionContext,
     descriptions: ComponentDescription[] = [],
     baseEnv: Env = new Env(),
+    cliOverrides: CliOverrides = {},
   ) {
     this.parent = parent;
     this.id = id;
@@ -125,6 +165,7 @@ export class Component {
     this.executionContext = executionContext;
     this.descriptions = [...descriptions];
     this.baseEnv = baseEnv;
+    this.cliOverrides = cliOverrides;
   }
 
   getUUID(uuid: string = ''): string {
@@ -161,7 +202,7 @@ export class Component {
     if (existing) return existing;
 
     const seed = await this.matchingDescriptions(id);
-    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id), this.executionContext, seed);
+    const child = new Component(this, id, path.join(this.sourcePath, id), path.join(this.homePath, id), this.executionContext, seed, new Env(), this.cliOverrides);
     await child.init();
     this.children.push(child);
     return child;
@@ -182,7 +223,7 @@ export class Component {
     if (existing) return existing;
 
     const seed = await this.matchingDescriptions(id);
-    const child = new Component(this, id, location, location, this.executionContext, seed);
+    const child = new Component(this, id, location, location, this.executionContext, seed, new Env(), this.cliOverrides);
     await child.init();
     this.children.push(child);
     return child;
@@ -493,15 +534,17 @@ export class Component {
    * from `parent`'s resolved env (root-to-leaf — the real root's is seeded from
    * `process.env`, see `create`/`App`), merges in every `inherits`-named component's
    * resolved env the same way (in list order), then applies this component's own
-   * `dotenvs` files and `env(tln, env)` functions, one description at a time in
-   * `descriptions` order (so a later description, e.g. this component's own `.tln.tjs`,
-   * overrides an earlier one, e.g. an inline seed from a parent's `components` list) —
-   * each description's dotenv files load before its own `env(tln, env)` runs, matching
-   * `RawComponentDescription`'s field order. Own settings are applied last, so they win
-   * over both ancestors and `inherits` mixins. Recomputed on every call, not cached —
-   * matches `findAllCommands`/`collectCommands`; `visited` guards the same `inherits`-cycle
-   * case (an already-visited component contributes nothing further, rather than
-   * re-merging and looping forever).
+   * `dotenvs` files, `env(tln, env)` function, and `options()` mapping, one description
+   * at a time in `descriptions` order (so a later description, e.g. this component's own
+   * `.tln.tjs`, overrides an earlier one, e.g. an inline seed from a parent's `components`
+   * list) — within a description, `dotenvs` load first, then `env(tln, env)` runs, then
+   * `options()` is applied on top, per `RawComponentDescription.options`'s "applied last"
+   * doc (so a `--flag` on the CLI always wins over that same description's own dotenv/env
+   * values). Own settings (all three) are applied last, so they win over both ancestors
+   * and `inherits` mixins. Recomputed on every call, not cached — matches
+   * `findAllCommands`/`collectCommands`; `visited` guards the same `inherits`-cycle case
+   * (an already-visited component contributes nothing further, rather than re-merging and
+   * looping forever).
    */
   private async resolveEnv(visited: Set<Component> = new Set()): Promise<Env> {
     if (visited.has(this)) return new Env();
@@ -522,6 +565,19 @@ export class Component {
       }
       if (description.env) {
         env = await env.mergeEnvFunction(description.env, cloneExecutionContext(this.executionContext));
+      }
+      if (description.options) {
+        const spec = await description.options(cloneExecutionContext(this.executionContext), env.toRecord());
+        const overrides: Record<string, string> = {};
+        for (const option of spec.options ?? []) {
+          const raw = this.cliOverrides[option.key] ?? option.default ?? undefined;
+          if (raw === undefined) continue;
+          // A CLI flag only becomes a string[] when repeated (see parseCliOverrides);
+          // an `option.type: 'array'` still forces array shape for a single occurrence.
+          const value: CliOptionValue = option.type === 'array' && !Array.isArray(raw) ? [stringifyOptionValue(raw)] : raw;
+          overrides[envVarNameForOption(spec.prefix, option.key)] = stringifyOptionValue(value);
+        }
+        env = env.merge(overrides);
       }
     }
 
@@ -586,9 +642,18 @@ export class Component {
  * built-in catalog folder scan (no `source`/catalog-folder concept ported yet).
  * `env` seeds the root's base environment (see `Component#resolveEnv`) — built by
  * `App` from `process.env` and passed in explicitly, same as `executionContext`.
+ * `cliOverrides` is `argv['--']` already parsed by `build()` (see `parseCliOverrides`),
+ * threaded down the whole tree unchanged — defaults to `{}` for invocations with no `--`
+ * tokens.
  */
-export async function create(sourcePath: string, homePath: string, executionContext: ExecutionContext, env: Env): Promise<Component> {
-  const root = new Component(null, '/', sourcePath, homePath, executionContext, [], env);
+export async function create(
+  sourcePath: string,
+  homePath: string,
+  executionContext: ExecutionContext,
+  env: Env,
+  cliOverrides: CliOverrides = {},
+): Promise<Component> {
+  const root = new Component(null, '/', sourcePath, homePath, executionContext, [], env, cliOverrides);
   await root.init();
   return root;
 }

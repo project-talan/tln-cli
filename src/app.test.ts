@@ -3,8 +3,9 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { App } from './app.js';
+import { App, createApp } from './app.js';
 import type { Component } from './component.js';
+import type { GlobalArgv } from './util/globalOptions.js';
 
 const CATALOG_HOME = '/fake/catalog-home';
 const VERBOSE = 0;
@@ -89,6 +90,40 @@ describe('App', () => {
 
       logSpy.mockRestore();
       vi.unstubAllEnvs();
+    });
+
+    it('stores the given (already-parsed) cliOverrides immediately, before init() runs', () => {
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE, { context: 'dev01', 'two-words': 'value' });
+
+      expect(app.cliOverrides).toEqual({ context: 'dev01', 'two-words': 'value' });
+    });
+
+    it('defaults cliOverrides to {} when no "--" tokens are given', () => {
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE);
+
+      expect(app.cliOverrides).toEqual({});
+    });
+
+    it("seeds the root component with cliOverrides, so a component's options() maps CLI tokens after -- onto env vars", async () => {
+      const cwd = await makeTempDir();
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = {
+          options: async () => ({ prefix: 'TPM', options: [{ key: 'context', type: 'string', default: null }] }),
+          commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+        };`,
+        'utf-8',
+      );
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE, { context: 'dev01' });
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await app.currentComponent.run('report', true);
+
+      const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+      expect(printed.TPM_CONTEXT).toBe('dev01');
+
+      logSpy.mockRestore();
     });
   });
 
@@ -399,6 +434,21 @@ describe('App', () => {
       await expect(app.exec([], false, false, 1, { command: 'echo hi', input: undefined })).rejects.toThrow(
         'Not implemented: App#exec — needs Component#exec',
       );
+    });
+  });
+
+  describe('createApp', () => {
+    it('forwards argv.cliOverrides (already parsed by build()) into App as-is', async () => {
+      const cwd = await makeTempDir();
+      const app = await createApp({
+        cwd,
+        catalogHome: CATALOG_HOME,
+        userHome: USER_HOME,
+        verbose: VERBOSE,
+        cliOverrides: { context: 'dev01' },
+      } as GlobalArgv);
+
+      expect(app.cliOverrides).toEqual({ context: 'dev01' });
     });
   });
 });

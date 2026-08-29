@@ -54,6 +54,26 @@ describe('build', () => {
     logSpy.mockRestore();
   });
 
+  it('parses "--" tokens into cliOverrides via yargs-parser (parseCliOverrides), once, here', async () => {
+    const dir = await makeTempDir();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const argv = await build(['about', '--', '--context', 'dev01', '--two-words', 'value'], dir, catalogHome, userHome).parseAsync();
+
+    expect(argv.cliOverrides).toEqual({ context: 'dev01', 'two-words': 'value' });
+    logSpy.mockRestore();
+  });
+
+  it('defaults cliOverrides to {} when nothing follows "--"', async () => {
+    const dir = await makeTempDir();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const argv = await build(['about'], dir, catalogHome, userHome).parseAsync();
+
+    expect(argv.cliOverrides).toEqual({});
+    logSpy.mockRestore();
+  });
+
   it('applies defaults found in the nearest .tlnrc walking up from cwd', async () => {
     const root = await makeTempDir();
     await fs.writeFile(path.join(root, '.tlnrc'), JSON.stringify({ verbose: 3 }), 'utf-8');

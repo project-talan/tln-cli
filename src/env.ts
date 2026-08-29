@@ -1,20 +1,105 @@
 import { promises as fs } from 'node:fs';
 import { parse as parseDotenv } from 'dotenv';
+import yargsParser from 'yargs-parser';
 import type { ExecutionContext } from './util/misc.js';
 
 /**
- * Parses "-e KEY=VALUE" style CLI entries into a flat env-var object.
- * Port of old/cli.js's parseEnv helper.
+ * Parses one "-e KEY=VALUE" style CLI entry, dotenv-style:
+ * - A line that's empty or starts with `#` (after trimming) is a comment — `null`.
+ * - Whitespace around `=`, and around an unquoted value, is trimmed.
+ * - A single- or double-quoted value keeps everything between the matching quotes
+ *   verbatim (including `#` or extra `=` characters) — no trailing-comment stripping.
+ * - An unquoted value ends at a `#` that starts the value or is preceded by
+ *   whitespace, so `FOO=bar#baz` stays literal but `FOO=bar # comment` doesn't.
+ * - No `=` at all means the whole line is the key, with an empty value (matches
+ *   plain `-e FOO` usage).
+ */
+function parseEnvLine(line: string): [string, string] | null {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) return null;
+
+  const eq = trimmed.indexOf('=');
+  if (eq === -1) return [trimmed, ''];
+
+  const key = trimmed.slice(0, eq).trim();
+  if (!key) return null;
+
+  const rawValue = trimmed.slice(eq + 1);
+  const quote = rawValue.trimStart()[0];
+  if (quote === '"' || quote === "'") {
+    const afterQuote = rawValue.trimStart().slice(1);
+    const closing = afterQuote.indexOf(quote);
+    if (closing !== -1) return [key, afterQuote.slice(0, closing)];
+  }
+
+  const commentAt = rawValue.search(/(^|\s)#/);
+  const value = commentAt === -1 ? rawValue : rawValue.slice(0, commentAt);
+  return [key, value.trim()];
+}
+
+/**
+ * Parses "-e KEY=VALUE" style CLI entries into a flat env-var object — see `parseEnvLine`
+ * for the per-entry format. Port of old/cli.js's parseEnv helper.
  */
 export function parseEnv(entries: readonly string[]): Record<string, string> {
   const obj: Record<string, string> = {};
   for (const entry of entries) {
-    const [key, value] = entry.split('=');
-    if (key) {
-      obj[key] = value ?? '';
-    }
+    const parsed = parseEnvLine(entry);
+    if (parsed) obj[parsed[0]] = parsed[1];
   }
   return obj;
+}
+
+/** What one `--key` token after `--` can parse to — see `parseCliOverrides`. */
+export type CliOptionValue = string | string[] | boolean;
+
+/** Flat `{ key: value }` map of every `--key`/`--key=value` token after `--` — see `parseCliOverrides`. */
+export type CliOverrides = Record<string, CliOptionValue>;
+
+/**
+ * Parses the raw tokens captured after a literal `--` (see `GlobalArgv['--']`) using
+ * `yargs-parser` — the same engine `yargs` itself uses, so `--key value`, `--key=value`,
+ * quoted multi-word values (already a single token by the time the shell hands them to
+ * us), a repeated `--key` becoming a `string[]`, and a bare `--key`/`--no-key` becoming a
+ * boolean, are all handled the same way the rest of the CLI's own flags are. Number
+ * auto-coercion and camelCase aliasing are both turned off — a value like `--context 007`
+ * must stay the literal string `'007'`, and `--two-words` must not gain a spurious
+ * `twoWords` alias — since a `.tln.tjs` description's `options()` looks entries up by the
+ * exact dashed `key` it declares (see `Component#resolveEnv`). Called once, at CLI
+ * bootstrap (`build`), and the result is frozen and threaded down the whole component
+ * tree unchanged from there.
+ */
+export function parseCliOverrides(tokens: readonly string[]): CliOverrides {
+  const { _, ...rest } = yargsParser(tokens as string[], {
+    configuration: { 'parse-numbers': false, 'parse-positional-numbers': false, 'camel-case-expansion': false },
+  });
+  const options: Record<string, CliOptionValue> = rest;
+  for (const value of Object.values(options)) {
+    if (Array.isArray(value)) Object.freeze(value);
+  }
+  return Object.freeze(options);
+}
+
+/**
+ * Renders one resolved option value as the string an env var needs: a `string[]` (e.g.
+ * from a repeated `--key`) joins with `,`; a `boolean` (a bare `--key`/`--no-key`) becomes
+ * `'true'`/`'false'`; a plain string passes through as-is. See `Component#resolveEnv`.
+ */
+export function stringifyOptionValue(value: CliOptionValue): string {
+  if (Array.isArray(value)) return value.join(',');
+  if (typeof value === 'boolean') return String(value);
+  return value;
+}
+
+/**
+ * Builds the env var name for one `options()` entry: `key` with every `-` replaced by `_`
+ * and upper-cased, prefixed with `${prefix}_` (also upper-cased) when a prefix is given —
+ * e.g. `envVarNameForOption('TPM', 'two-words')` → `'TPM_TWO_WORDS'`. See
+ * `Component#resolveEnv` and `RawComponentDescription.options`.
+ */
+export function envVarNameForOption(prefix: string | undefined, key: string): string {
+  const normalizedKey = key.replace(/-/g, '_').toUpperCase();
+  return prefix ? `${prefix.toUpperCase()}_${normalizedKey}` : normalizedKey;
 }
 
 /**
