@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { Component, create, type ComponentLsNode } from './component.js';
-import { Env, type CliOverrides } from './env.js';
+import { Env, type EnvOverrides, type CliOverrides } from './env.js';
 import type { GlobalArgv } from './util/globalOptions.js';
 import { createExecutionContext, hasConfig, isRootPath, type ExecutionContext } from './util/misc.js';
 import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './util/options.js';
@@ -21,10 +21,13 @@ import type { ConfigOptions, InspectOptions, LsOptions, ExecOptions } from './ut
  * here at construction time and threaded down the whole component tree. `env` (see
  * env.js) is built here too, from `process.env`, and seeds the root component's base
  * environment — every other component's effective environment is resolved on demand
- * from there (see `Component#resolveEnv`), not threaded through construction. `cliOverrides`
- * is already-parsed by the time it reaches `App` — `build()` (util/cli.ts) runs `argv['--']`
- * through `parseCliOverrides` once, at CLI bootstrap, and `App` just threads that same
- * frozen object down; every `.tln.tjs` description's `options()` mapping reads from it.
+ * from there (see `Component#resolveEnv`), not threaded through construction. `envOverrides`
+ * and `cliOverrides` are already-parsed by the time they reach `App` — `build()` (util/cli.ts)
+ * runs `env`/`envFile` through `resolveEnvOverrides`, and `argv['--']` through
+ * `parseCliOverrides`, once, at CLI bootstrap, and `App` just threads those same frozen
+ * objects down; `envOverrides` overrides a component's own hierarchy, and `cliOverrides`
+ * (via each description's `options()` mapping) overrides `envOverrides` on top of that —
+ * see `Component#resolveEnv`.
  */
 export class App {
   readonly cwd: string;
@@ -37,19 +40,22 @@ export class App {
   readonly executionContext: ExecutionContext;
   /** Seeds the root component's base environment (see `Component#resolveEnv`) with `process.env`. */
   readonly env: Env;
+  /** Resolved `env`/`envFile` (see `resolveEnvOverrides`, run once by `build()`) — merged into every component's env, ahead of `cliOverrides`. */
+  readonly envOverrides: EnvOverrides;
   /** Parsed `argv['--']` (see `parseCliOverrides`, run once by `build()`) — read by every `.tln.tjs` description's `options()` mapping. */
   readonly cliOverrides: CliOverrides;
   home!: string;
   rootComponent!: Component;
   currentComponent!: Component;
 
-  constructor(cwd: string, catalogHome: string, userHome: string, verbose: number, cliOverrides: CliOverrides = {}) {
+  constructor(cwd: string, catalogHome: string, userHome: string, verbose: number, envOverrides: EnvOverrides = {}, cliOverrides: CliOverrides = {}) {
     this.cwd = cwd;
     this.catalogHome = catalogHome;
     this.userHome = userHome;
     this.verbose = verbose;
     this.executionContext = createExecutionContext();
     this.env = Env.fromProcessEnv();
+    this.envOverrides = envOverrides;
     this.cliOverrides = cliOverrides;
   }
 
@@ -77,7 +83,7 @@ export class App {
 
     await fs.mkdir(this.userHome, { recursive: true });
 
-    this.rootComponent = await create(this.catalogHome, this.userHome, this.executionContext, this.env, this.cliOverrides);
+    this.rootComponent = await create(this.catalogHome, this.userHome, this.executionContext, this.env, this.envOverrides, this.cliOverrides);
 
     const relative = path.relative(this.home, this.cwd);
     const folders = relative ? relative.split(path.sep) : [];
@@ -193,7 +199,7 @@ export class App {
 
 /** Builds and initializes an App from a command handler's argv (see build()'s cwd/catalogHome/userHome middleware). */
 export async function createApp(argv: GlobalArgv): Promise<App> {
-  const app = new App(argv.cwd, argv.catalogHome, argv.userHome, argv.verbose, argv.cliOverrides);
+  const app = new App(argv.cwd, argv.catalogHome, argv.userHome, argv.verbose, argv.envOverrides, argv.cliOverrides);
   await app.init();
   return app;
 }

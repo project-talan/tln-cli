@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 import yargsParser from 'yargs-parser';
 import type { ExecutionContext } from './util/misc.js';
@@ -89,6 +90,28 @@ export function stringifyOptionValue(value: CliOptionValue): string {
   if (Array.isArray(value)) return value.join(',');
   if (typeof value === 'boolean') return String(value);
   return value;
+}
+
+/** Flat `{ VAR_NAME: value }` map from `--env`/`-e` and `--env-file` — see `resolveEnvOverrides`. */
+export type EnvOverrides = Record<string, string>;
+
+/**
+ * Builds the immutable `EnvOverrides` object from the global `--env`/`-e` and `--env-file`
+ * CLI options: every `--env-file` path (relative to `baseDir` unless absolute) is loaded
+ * and merged in array order (a missing file is silently skipped, same as
+ * `Env#mergeDotenvFile`), then every `--env`/`-e KEY=VALUE` entry (see `parseEnv`) is
+ * merged on top — `-e` always wins over `--env-file` for the same key. Called once, at CLI
+ * bootstrap (`build`), the same way `parseCliOverrides` handles `--`; see
+ * `Component#resolveEnv` for how the result and `CliOverrides` are layered on top of a
+ * component's own hierarchy.
+ */
+export async function resolveEnvOverrides(envEntries: readonly string[], envFilePaths: readonly string[], baseDir: string): Promise<EnvOverrides> {
+  let env = new Env();
+  for (const file of envFilePaths) {
+    env = await env.mergeDotenvFile(path.isAbsolute(file) ? file : path.join(baseDir, file));
+  }
+  env = env.merge(parseEnv(envEntries));
+  return Object.freeze(env.toRecord());
 }
 
 /**

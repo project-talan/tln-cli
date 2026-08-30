@@ -93,7 +93,7 @@ describe('App', () => {
     });
 
     it('stores the given (already-parsed) cliOverrides immediately, before init() runs', () => {
-      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE, { context: 'dev01', 'two-words': 'value' });
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE, {}, { context: 'dev01', 'two-words': 'value' });
 
       expect(app.cliOverrides).toEqual({ context: 'dev01', 'two-words': 'value' });
     });
@@ -114,7 +114,7 @@ describe('App', () => {
         };`,
         'utf-8',
       );
-      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE, { context: 'dev01' });
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE, {}, { context: 'dev01' });
       await app.init();
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -122,6 +122,42 @@ describe('App', () => {
 
       const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
       expect(printed.TPM_CONTEXT).toBe('dev01');
+
+      logSpy.mockRestore();
+    });
+
+    it('stores the given (already-resolved) envOverrides immediately, before init() runs', () => {
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE, { FOO: 'from-env-override' });
+
+      expect(app.envOverrides).toEqual({ FOO: 'from-env-override' });
+    });
+
+    it('defaults envOverrides to {} when neither --env nor --env-file was given', () => {
+      const app = new App('/fake/cwd', CATALOG_HOME, USER_HOME, VERBOSE);
+
+      expect(app.envOverrides).toEqual({});
+    });
+
+    it("seeds the root component with envOverrides, the single highest-priority override — beats both a component's own env() and cliOverrides", async () => {
+      const cwd = await makeTempDir();
+      await fs.writeFile(
+        path.join(cwd, '.tln.tjs'),
+        `module.exports = {
+          env: async (tln, env) => { env.FOO = 'from-code'; },
+          options: async () => ({ options: [{ key: 'context', type: 'string', default: null }] }),
+          commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+        };`,
+        'utf-8',
+      );
+      const app = new App(cwd, CATALOG_HOME, USER_HOME, VERBOSE, { FOO: 'from-env-override', CONTEXT: 'from-env-override' }, { context: 'from-cli' });
+      await app.init();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      await app.currentComponent.run('report', true);
+
+      const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+      expect(printed.FOO).toBe('from-env-override');
+      expect(printed.CONTEXT).toBe('from-env-override');
 
       logSpy.mockRestore();
     });
@@ -438,16 +474,18 @@ describe('App', () => {
   });
 
   describe('createApp', () => {
-    it('forwards argv.cliOverrides (already parsed by build()) into App as-is', async () => {
+    it('forwards argv.envOverrides and argv.cliOverrides (already resolved by build()) into App as-is', async () => {
       const cwd = await makeTempDir();
       const app = await createApp({
         cwd,
         catalogHome: CATALOG_HOME,
         userHome: USER_HOME,
         verbose: VERBOSE,
+        envOverrides: { FOO: 'bar' },
         cliOverrides: { context: 'dev01' },
       } as GlobalArgv);
 
+      expect(app.envOverrides).toEqual({ FOO: 'bar' });
       expect(app.cliOverrides).toEqual({ context: 'dev01' });
     });
   });

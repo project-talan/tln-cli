@@ -3,7 +3,7 @@ import type { Argv } from 'yargs';
 import yargs from 'yargs/yargs';
 import { findUpSync } from 'find-up';
 import { registerCommands } from '../commands/index.js';
-import { parseCliOverrides } from '../env.js';
+import { resolveEnvOverrides, parseCliOverrides } from '../env.js';
 import { globalOptions, type GlobalArgv } from './globalOptions.js';
 
 const USAGE =
@@ -29,15 +29,19 @@ export function build(args: readonly string[], cwd: string, catalogHome: string,
     .options(globalOptions)
     .config(config) as unknown as Argv<GlobalArgv>;
 
-  // yargs only sets argv['--'] when at least one token follows `--`; normalize
-  // it to always be an array so command handlers never see `undefined`. Parse
-  // those tokens once, here, via yargs-parser (parseCliOverrides) into an
-  // immutable object and stash it as cliOverrides — every component's own
-  // options() reads from this same shared, frozen object (see
-  // Component#resolveEnv), rather than each one re-parsing the raw tokens.
-  // Also stash cwd/catalogHome/userHome on argv (not exposed as CLI options)
-  // so every command handler can build an App without recomputing them.
-  instance.middleware((argv) => {
+  // --env/-e and --env-file are resolved once, here, into envOverrides
+  // (resolveEnvOverrides) — env-file paths are resolved relative to cwd. yargs
+  // only sets argv['--'] when at least one token follows `--`; normalize it to
+  // always be an array so command handlers never see `undefined`, then parse
+  // those tokens the same way, via yargs-parser (parseCliOverrides), into an
+  // immutable object stashed as cliOverrides — every component's own options()
+  // reads from this same shared, frozen object (see Component#resolveEnv),
+  // rather than each one re-parsing the raw tokens; it's the highest-priority
+  // override, resolved last. Also stash cwd/catalogHome/userHome on argv (not
+  // exposed as CLI options) so every command handler can build an App without
+  // recomputing them.
+  instance.middleware(async (argv) => {
+    argv.envOverrides = await resolveEnvOverrides(argv.env, argv.envFile, cwd);
     argv['--'] = argv['--'] ?? [];
     argv.cliOverrides = parseCliOverrides(argv['--']);
     argv.cwd = cwd;

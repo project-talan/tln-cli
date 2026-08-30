@@ -74,6 +74,27 @@ describe('build', () => {
     logSpy.mockRestore();
   });
 
+  it('defaults envOverrides to {} when neither --env nor --env-file is given', async () => {
+    const dir = await makeTempDir();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const argv = await build(['about'], dir, catalogHome, userHome).parseAsync();
+
+    expect(argv.envOverrides).toEqual({});
+    logSpy.mockRestore();
+  });
+
+  it('resolves --env-file (relative to cwd) and -e/--env into envOverrides, -e winning on conflicts', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.env'), 'FOO=from-file\nKEEP=file-only\n', 'utf-8');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const argv = await build(['about', '--env-file', '.env', '-e', 'FOO=from-e'], dir, catalogHome, userHome).parseAsync();
+
+    expect(argv.envOverrides).toEqual({ FOO: 'from-e', KEEP: 'file-only' });
+    logSpy.mockRestore();
+  });
+
   it('applies defaults found in the nearest .tlnrc walking up from cwd', async () => {
     const root = await makeTempDir();
     await fs.writeFile(path.join(root, '.tlnrc'), JSON.stringify({ verbose: 3 }), 'utf-8');

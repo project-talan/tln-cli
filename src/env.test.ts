@@ -2,7 +2,7 @@ import { describe, expect, it, afterEach } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { Env, envVarNameForOption, parseCliOverrides, parseEnv, stringifyOptionValue } from './env.js';
+import { Env, envVarNameForOption, parseCliOverrides, parseEnv, resolveEnvOverrides, stringifyOptionValue } from './env.js';
 import type { ExecutionContext } from './util/misc.js';
 
 const TEST_EXECUTION_CONTEXT: ExecutionContext = { platform: 'darwin', arch: 'arm64', type: 'Darwin', release: '99.0.0' };
@@ -138,6 +138,77 @@ describe('envVarNameForOption', () => {
 
   it('omits the prefix segment entirely when no prefix is given', () => {
     expect(envVarNameForOption(undefined, 'two-words')).toBe('TWO_WORDS');
+  });
+});
+
+describe('resolveEnvOverrides', () => {
+  let tempDirs: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
+    tempDirs = [];
+  });
+
+  async function makeTempDir(): Promise<string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'tln-env-test-'));
+    tempDirs.push(dir);
+    return dir;
+  }
+
+  it('returns an empty object when neither --env nor --env-file was given', async () => {
+    expect(await resolveEnvOverrides([], [], '/does/not/matter')).toEqual({});
+  });
+
+  it('loads a --env-file (resolved relative to baseDir) into the result', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.env'), 'FOO=from-file\nBAR=also-from-file\n', 'utf-8');
+
+    const result = await resolveEnvOverrides([], ['.env'], dir);
+
+    expect(result).toEqual({ FOO: 'from-file', BAR: 'also-from-file' });
+  });
+
+  it('merges multiple --env-file entries in array order, later files overriding earlier ones', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, 'first.env'), 'FOO=first\nONLY_FIRST=yes\n', 'utf-8');
+    await fs.writeFile(path.join(dir, 'second.env'), 'FOO=second\n', 'utf-8');
+
+    const result = await resolveEnvOverrides([], ['first.env', 'second.env'], dir);
+
+    expect(result).toEqual({ FOO: 'second', ONLY_FIRST: 'yes' });
+  });
+
+  it('silently skips a --env-file that does not exist', async () => {
+    const dir = await makeTempDir();
+
+    const result = await resolveEnvOverrides([], ['missing.env'], dir);
+
+    expect(result).toEqual({});
+  });
+
+  it('accepts an absolute --env-file path unchanged, ignoring baseDir', async () => {
+    const dir = await makeTempDir();
+    const filePath = path.join(dir, 'abs.env');
+    await fs.writeFile(filePath, 'FOO=abs-value\n', 'utf-8');
+
+    const result = await resolveEnvOverrides([], [filePath], '/some/unrelated/dir');
+
+    expect(result).toEqual({ FOO: 'abs-value' });
+  });
+
+  it('--env/-e entries (parseEnv) take priority over --env-file for the same key', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.env'), 'FOO=from-file\nKEEP=file-only\n', 'utf-8');
+
+    const result = await resolveEnvOverrides(['FOO=from-e'], ['.env'], dir);
+
+    expect(result).toEqual({ FOO: 'from-e', KEEP: 'file-only' });
+  });
+
+  it('freezes the returned object against mutation', async () => {
+    const result = await resolveEnvOverrides(['FOO=bar'], [], '/does/not/matter');
+
+    expect(Object.isFrozen(result)).toBe(true);
   });
 });
 

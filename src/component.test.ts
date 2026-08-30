@@ -404,7 +404,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01', 'two-words': 'value' });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { context: 'dev01', 'two-words': 'value' });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -450,7 +450,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { tag: ['a', 'b', 'c'] });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { tag: ['a', 'b', 'c'] });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -471,7 +471,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { tag: 'solo' });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { tag: 'solo' });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -492,7 +492,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { flag: false });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { flag: false });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -524,27 +524,27 @@ describe('Component#run (env)', () => {
     logSpy.mockRestore();
   });
 
-  it('applies options() after dotenvs/env(), so a CLI value overrides both for that same description', async () => {
+  it("applies a description's own env() after dotenvs/options(), so env() can still override a CLI value for that same description", async () => {
     const dir = await makeTempDir();
     await fs.writeFile(path.join(dir, '.env'), 'CONTEXT=from-file\n', 'utf-8');
     await fs.writeFile(
       path.join(dir, '.tln.tjs'),
       `module.exports = {
         dotenvs: async () => ['.env'],
-        env: async (tln, env) => { env.CONTEXT = 'from-function'; },
         options: async () => ({ options: [{ key: 'context', type: 'string', default: null }] }),
+        env: async (tln, env) => { env.CONTEXT = 'from-function'; },
         commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'from-cli' });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { context: 'from-cli' });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     await component.run('report', true);
 
     const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
-    expect(printed.CONTEXT).toBe('from-cli');
+    expect(printed.CONTEXT).toBe('from-function');
     logSpy.mockRestore();
   });
 
@@ -558,7 +558,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01' });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { context: 'dev01' });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -579,7 +579,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01' });
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { context: 'dev01' });
     await component.init();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
@@ -601,7 +601,7 @@ describe('Component#run (env)', () => {
       };`,
       'utf-8',
     );
-    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { context: 'dev01' });
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), {}, { context: 'dev01' });
     await root.init();
     const child = await root.buildChild('child');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -610,6 +610,71 @@ describe('Component#run (env)', () => {
 
     const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
     expect(printed.CHILD_CONTEXT).toBe('dev01');
+    logSpy.mockRestore();
+  });
+
+  it("envOverrides (--env/-e and --env-file) overrides a component's own hierarchy (dotenvs/env())", async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, '.env'), 'FROM_FILE=file-value\n', 'utf-8');
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        dotenvs: async () => ['.env'],
+        env: async (tln, env) => { env.FOO = 'from-code'; },
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { FOO: 'from-env-override', FROM_FILE: 'env-override-wins' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.FOO).toBe('from-env-override');
+    expect(printed.FROM_FILE).toBe('env-override-wins');
+    logSpy.mockRestore();
+  });
+
+  it('envOverrides wins over cliOverrides (via options()) for the same env var — the single highest-priority override, applied last', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(
+      path.join(dir, '.tln.tjs'),
+      `module.exports = {
+        options: async () => ({ options: [{ key: 'context', type: 'string', default: null }] }),
+        commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }),
+      };`,
+      'utf-8',
+    );
+    const component = new Component(null, 'test', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { CONTEXT: 'from-env-override' }, { context: 'from-cli' });
+    await component.init();
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await component.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.CONTEXT).toBe('from-env-override');
+    logSpy.mockRestore();
+  });
+
+  it('threads the same envOverrides down through buildChild to a descendant', async () => {
+    const dir = await makeTempDir();
+    await fs.mkdir(path.join(dir, 'child'));
+    await fs.writeFile(
+      path.join(dir, 'child', '.tln.tjs'),
+      `module.exports = { commands: async () => ({ report: { builder: async (tln, env) => [JSON.stringify(env)] } }) };`,
+      'utf-8',
+    );
+    const root = new Component(null, 'root', dir, dir, TEST_EXECUTION_CONTEXT, [], new Env(), { FOO: 'from-env-override' });
+    await root.init();
+    const child = await root.buildChild('child');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await child.run('report', true);
+
+    const printed = JSON.parse(logSpy.mock.calls[0]![0] as string);
+    expect(printed.FOO).toBe('from-env-override');
     logSpy.mockRestore();
   });
 });
