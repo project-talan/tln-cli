@@ -1,11 +1,14 @@
 # Architecture as Code
 
-<img alt="tln" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/tlnv2/tln.png" width="300">
+<img alt="tln" align="right" src="tln.png" width="300">
 
-Talan CLI (tln)
-* is an open-source framework designed to manage third-party components across diverse ecosystems like Java, Node.js, C++, Golang etc.
-* it enables the creation of fully isolated, nested development, environments, streamlines the management complex development setups and facilitates a seamless onboarding experience.
-* effectively bridges gaps between local development environments and CI/CD setups, maximizing the benefits of Polyglot Programming and Polyglot Persistence (4Ps) design.
+Talan CLI (tln) is an open-source framework for architecting and orchestrating software systems as code — across every language, every repo layout, and every internal org structure.
+
+* **Hierarchical component structure.** Every folder — your projects home, a company, a repo, a service — is the same kind of component, nested as deep as your org chart and your codebase actually go.
+* **Facade by design.** A hierarchy of facades, each of which hides internal complexity, providing a simple, orthogonal interface to the underlying elements.
+* **A virtual environment for every ecosystem, at once.** Java, Node.js, Go, kubectl, Helm, Angular, C++ — pin the exact version each project needs and run them all side by side on the same machine, without ever touching the host OS. Full Polyglot Programming, Polyglot Persistence (4Ps) — none of the operational tax.
+* **Onboarding measured in minutes, not days.** Clone the catalog, run one command, and every dependency, environment variable, and tool version resolves itself.
+* **Architecture that's actually code.** Every component declares its own structure, commands, and inheritance explicitly instead of living in someone's head or a stale wiki page — the foundation for keeping architecture honest as the system evolves, not just documented once and forgotten.
 
 ## Similar or related projects
 [Brew](https://brew.sh/), [Conan](https://conan.io/), [Meta](https://github.com/mateodelnorte/meta), [Lerna](https://github.com/lerna/lerna), [SDKMAN](https://sdkman.io), [jEnv](https://www.jenv.be/), [Chocolatey](https://chocolatey.org/)
@@ -21,7 +24,7 @@ Talan CLI (tln)
 
 ### What is a component?
 
-A **component** is any part of a software system that serves a structural or functional role:
+A **component** is any part of a software system that serves a **structural** or **functional** role:
 
 * Is your projects home a component (`~/projects`)?  
   **Yes** — it holds all your projects.
