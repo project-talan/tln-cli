@@ -111,10 +111,13 @@ export interface ComponentLsNode {
  * A single node in the component tree. `descriptions` is seeded at construction
  * time — either empty (the root, see `create`) or with whatever the parent's own
  * descriptions declare for this child's id (see `matchingDescriptions`) — and then
- * `init()` appends this component's own .tln.tjs config file and any override
- * configs nested under a .tln folder found under `sourcePath`. There is no
- * live parent-chain composition on read; each component's `descriptions` is a
- * plain, fully-formed array once construction + `init()` have run.
+ * `init()` appends any shared/prerequisite configs nested under a .tln folder found
+ * under `sourcePath` (e.g. org-wide defaults vendored like a git submodule/subtree),
+ * followed by this component's own .tln.tjs config file, so the component's own
+ * config is later in `descriptions` order and can override the shared .tln folder
+ * configs (see `resolveEnv`). There is no live parent-chain composition on read;
+ * each component's `descriptions` is a plain, fully-formed array once construction
+ * + `init()` have run.
  */
 export class Component {
   // package.json/.tln.tjs live outside tsconfig's rootDir ("./src"), and .tln.tjs files

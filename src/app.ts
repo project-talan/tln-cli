@@ -98,6 +98,14 @@ export class App {
       console.log('* catalogHome:', this.catalogHome);
       console.log('* userHome:', this.userHome);
       console.log('* home:', this.home);
+      console.log('* rootComponent:', this.rootComponent.id);
+      console.log('* currentComponent:', this.currentComponent.id);
+      if (this.verbose > 1) {
+        console.log('* env:', this.env.toRecord());
+        console.log('* envOverrides:', this.envOverrides);
+        console.log('* cliOverrides:', this.cliOverrides);
+        console.log('* executionContext:', this.executionContext);
+      }
       console.log('');
     }
   }
