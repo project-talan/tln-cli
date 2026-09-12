@@ -1,6 +1,6 @@
 # Architecture as Code
 
-<img alt="ccf" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/master/docs/banner.jpg" width="300">
+<img alt="tln" align="right" src="https://raw.githubusercontent.com/project-talan/tln-cli/tlnv2/tln.png" width="300">
 
 Talan CLI (tln)
 * is an open-source framework designed to manage third-party components across diverse ecosystems like Java, Node.js, C++, Golang etc.
@@ -12,78 +12,105 @@ Talan CLI (tln)
 
 ## Prerequisites
 * Install `Nodejs 24.x` or higher (https://nodejs.org)
-* Make sure that `wget` is accessible via command line (Linux/MacOS)
-* Make sure that [`Powershell`](https://superuser.com/questions/106360/how-to-enable-execution-of-powershell-scripts) script can be executed (Windows):
-* Install tln-cli 
+* Install tln-cli
   ```
-  npm i -g tln-cli@1.110.0 && tln --version
+  npm i -g tln-cli && tln --version
   ```
+
+## Key concepts
+
+### What is a component?
+
+A **component** is any part of a software system that serves a structural or functional role:
+
+* Is your projects home a component (`~/projects`)?  
+  **Yes** — it holds all your projects.
+* Is a company folder a component (`~/projects/petramco`)?  
+  **Yes** — it holds that company's own git user/email, access keys, etc., so different companies' projects stay isolated from each other.
+* Is a specific project folder a component (`~/projects/petramco/saas`)?  
+  **Yes** — it's your git repository, whether mono-repo or multi-repo.
+* Are `backend`, `web`, `mobile`, and `platform` — the folders splitting `saas` by part of the system — components too?  
+  **Yes** — however you've divided your repo internally, every part of that split is covered by the same component concept.
+
+Components follow the folder structure, so they nest as deep as your repo does:
+
+```
+~/projects
+├ petramco
+│ └ saas
+│   ├ backend
+│   │ └ services
+│   │   └ apps
+│   │     └ iam
+│   │       └ src
+│   │         └ main.ts
+│   ├ web
+│   │ └ apps
+│   │   └ admin
+│   │     └ src
+│   │       └ index.tsx
+│   ├ mobile
+│   │ └ ...
+│   └ platform
+│     └ ...
+└ acme
+  └ ...
+```
+
+A folder becomes a component `tln` actually knows about once it has a `.tln.tjs` config file (or a `.tln/` folder of them) — you don't need one in every folder, only at the boundaries where you want to attach commands, env vars, or dependencies (here, that's likely `~/projects/petramco`, `saas`, `backend`, and `iam`, not every folder down to `src/`).
+
+### How the component model works
+
+```js
+// .tln.tjs
+module.exports = {
+  dotenvs: async (tln) => ['.env'],
+  options: async (tln, env) => ({
+    prefix: 'MY_APP',
+    options: [{ key: 'context', desc: 'Environment id', type: 'string', default: 'dev' }],
+  }),
+  env: async (tln, env) => { env.BUILT_AT = new Date().toISOString(); },
+  inherits: async (tln) => ['docker'],
+  depends: async (tln) => [],
+  commands: async (tln) => ({
+    hi: { builder: async (tln, env) => [`echo Hi from ${env.MY_APP_CONTEXT}`], access: 'public' },
+  }),
+  components: async (tln) => [],
+};
+```
+
+* **Structure and inheritance are separate.** A component's `parent` chain is its literal folder nesting; its `inherits` list is independent — name another catalog component as a "base class" (C++-style multiple inheritance) without it being a structural ancestor.
+* **Commands have real visibility.** Each command declares `access: 'public' | 'protected' | 'private'` — private stays callable only on the component that defines it, public/protected flows down to every descendant and every `inherits` link, and a descendant's own command runs alongside (not instead of) an inherited one of the same name.
+* **One env-var pipeline, same order every time.** Per command run: parent chain → `inherits` → each config's `dotenvs` files → `--` CLI flags (mapped through that config's `options()`) → its `env()` function, then the global `-e`/`--env-file` overrides win over all of it.
 
 ## Quick start <sub><sup>~3 min</sup></sub>
-* Create folder where all your projects will be located
-  * Linux/MacOs
-    ```
-    cd ~
-    ```
-  * Windows (you can use any disk, disk d: is used for demonstration purpose)
-    ```
-    d:
-    cd /
-    ```
+* Create a project folder and drop in the `.tln.tjs` from [Key concepts](#key-concepts) above
   ```
-  mkdir projects && cd projects && tln config --terse
+  mkdir hellotalan && cd hellotalan
+  ```
+* Run the `hi` command, passing `context` through `--`
+  ```
+  tln hi -- --context staging
+  ```
+  ```
+  echo Hi from staging
+  ```
+* Inspect the component — every command it can run, where each came from, its resolved env vars
+  ```
+  tln inspect
+  ```
+* List the component tree
+  ```
+  tln ls
   ```
 
-* Create folder for the `hellotalan` project (inside `projects` folder)
-  ```
-  mkdir hellotalan && cd hellotalan && tln config --terse
-  ```
-* Edit `.tln.conf` file to get next configuration (you can just copy-paste it)
-  ```
-  module.exports = {
-    options: async (tln, args) => {},
-    env: async (tln, env) => {},
-    dotenvs: async (tln) => [],
-    inherits: async (tln) => [],
-    depends: async (tln) => ['openjdk-18', 'mvn-3.8.6', 'go-1.19.2', 'node-16.18.0', 'kubectl-1.23.13', 'firebase-11.15.0'],
-    steps: async (tln) => [],
-    components: async (tln) => []
-  }
-  ```
-* Next command will install all components were listed inside `depends` section from `.tln.conf`. Components will be installed inside `projects` folder and `will not affect any other already installed software`.
-  ```
-  tln install --depends
-  ```
-* Check version of installed components
-  ```
-  tln versions --depends
-  ```
-  ```
-  [java]
-  openjdk version "18" 2022-03-22
-  OpenJDK Runtime Environment (build 18+36-2087)
-  OpenJDK 64-Bit Server VM (build 18+36-2087, mixed mode, sharing)
-  [maven]
-  Apache Maven 3.8.6 (84538c9988a25aec085021c365c560670ad80f63)
-  Maven home: /root/projects/maven/mvn-3.8.6
-  Java version: 1.8.0_342, vendor: Private Build, runtime: /usr/lib/jvm/java-8-openjdk-amd64/jre
-  Default locale: en, platform encoding: UTF-8
-  OS name: "linux", version: "4.15.0-194-generic", arch: "amd64", family: "unix"
-  [golang]
-  go version go1.19.2 linux/amd64
-  [node]
-  v16.18.0
-  [npm]
-  8.19.2
-  [kubectl]
-  Client Version: version.Info{Major:"1", Minor:"23", GitVersion:"v1.23.13", GitCommit:"592eca05be27f7d927d0b25cbb4241d75a9574bf", GitTreeState:"clean", BuildDate:"2022-10-12T10:57:16Z", GoVersion:"go1.17.13", Compiler:"gc", Platform:"linux/amd64"}
-  [firebase]
-  11.15.0
-  ```
+## Command reference
+* `tln <commands>[:<commands>...] [<components>[:<components>...]] [options] -- [command-specific options]` — run one or more commands against one or more components (the default command)
+* `tln inspect [components] [-j]` — show a component's resolved structure: commands, `inherits`, `depends`, env
+* `tln ls [components] [-d depth] [-l limit] [--parents] [--installed-only]` — show the component tree
+* `tln about` — version and project info
 
 ## Local Development Setup
-This repository is currently being rewritten in TypeScript (`v2.0.0-alpha`, source in `src/`, compiled to `dist/`). The steps below are for working on `tln-cli` itself, not for using the published CLI.
-
 * Clone the repo and install dependencies
   ```
   git clone https://github.com/project-talan/tln-cli.git
@@ -103,236 +130,13 @@ This repository is currently being rewritten in TypeScript (`v2.0.0-alpha`, sour
   npm run dev:debug
   ```
   Attach via VS Code's built-in debugger (see the "Debug CLI (src/index.ts)" config in `.vscode/launch.json`, just hit F5), or via `chrome://inspect` if you're not using VS Code.
-* Try it as a real installed CLI — exercises the actual `bin` entry, shebang and file permissions, not just the logic
+* Try it as a real installed CLI — exercises the actual `bin` entry, shebang and file permissions, not just the logic (the package currently exposes its bin as `tln2`, not `tln`, until this branch is published)
   ```
   npm run build && npm link
   tln2 --some-flag
   npm unlink -g tln-cli   # when done
   ```
-* Publish (maintainers only) — publishes under the `next` dist-tag while the rewrite is in alpha
+* Publish (maintainers only)
   ```
   ./publish.sh
-  ```
-
-## tln architecture & in-depth details
-* [What is Component?](docs/component.md)
-* [Management of environment variables & dotenv files](docs/dotenv.md)
-* [Versioning](docs/versioning.md)
-* [Mono- & multi-repo configurations](docs/repos.md)
-* [MVTs - Minimal Vaible Templates](docs/mvt.md)
-* [Software Development Life Cycle](docs/sdlc.md)
-
-
-## Real life scenario <sub><sup>~15 min</sup></sub>
-Let's say, you've joined Calbro.com company to head software project development. You will need to build new service as part of multiple already in-production applications. Your first steps are: configure local development environment, checkout existing projects and create initial structure for the new one.
-
-### Calbro projects home
-* First step is to configure Calbro components
-  * Linux/MacOs
-    ```
-    > cd ~/projects
-    ```
-  * Windows
-    ```
-    > d:
-    > cd /projects
-    ```
-  ```
-  > mkdir calbro
-  > cd calbro
-  ```
-  For the next command replace Alice account name and email with your own (for this tutorial, please use your Github account)
-  ```
-  > tln config --terse -e TLN_GIT_USER=Alice -e TLN_GIT_EMAIL=alice@calbro.com --inherit git
-  ```
-  
-* If you check created configuration file `.tln.conf`, you will see following JSON structure
-  ```
-  module.exports = {
-    options: async (tln, args) => {},
-    env: async (tln, env) => {
-      env.TLN_GIT_USER = 'Alice';
-      env.TLN_GIT_EMAIL = 'alice@calbro.com';
-    },
-    dotenvs: async (tln) => [],
-    inherits: async (tln) => ['git'],
-    depends: async (tln) => [],
-    steps: async (tln) => [],
-    components: async (tln) => []
-  }
-  ```
-  This information will be used by all subsequent git calls.
-
-### Checkout, configure & build existing projects
-Calbo is a big company and has a lot of teams and ongoing projects. You know that Calbro is using `tln` to deal with internal complexity, so onboarding should be straightforward.
-* You are part of `teamone` team and this should be reflected as part of your local dev environment
-  ```
-  > mkdir teamone
-  > cd teamone
-  
-  # for ssh access
-  > tln config --repo git@github.com:project-talan/calbro-teamone-tln.git
-  # for https access
-  # tln config --repo https://github.com/project-talan/tln-calbro-teamone.git
-  
-  > tln ls
-  ```
-  Two last commands will do the magic: get teamone list of projects and display them to you
-  
-  Configuration file `.tln/.tlf.conf` can unhide more details
-  ```
-  module.exports = {
-    options: async (tln) => [],
-    dotenvs: async (tln) => [],
-    inherits: async (tln) => [],
-    depends: async (tln) => [],
-    env: async (tln, env) => {
-      env.TLN_GIT_SSH_PREFIX = 'git@github.com:';
-      env.TLN_GIT_HTTPS_PREFIX = 'https://github.com/';  
-      env.TLN_GIT_ORIGIN = `${env.TLN_GIT_USER}/${env.TLN_COMPONENT_ID}.git`;
-      env.TLN_GIT_UPSTREAM = `project-talan/${env.TLN_COMPONENT_ID}.git`;
-    },
-    steps: async (tln) => [],
-    components: async (tln) => [
-      { id: 'calbro-scanner' },
-      { id: 'calbro-portal' }
-    ]
-  }
-  ```
-  
-* At this point, you are ready to get source code of the existing projects, build it and start checking implemented functionality
-  ```
-  # for ssh access
-  > tln clone calbro-scanner:calbro-portal
-  # for https access
-  # tln clone calbro-scanner:calbro-portal -- --https
-  
-  > tln install calbro-portal:calbro-scanner --depends
-  > tln prereq:init -r
-  > tln build -r
-  ```
-  * First command will use `git clone` and your credentials were defined early inside `.tln.conf`
-  * Second will install all necessary `third-parties` components
-  * Third one will generate `.env` file if any, using template, and run initialization commands like `npm i`
-  * The last command will recursivelly `build` all components
-
-### Skeleton for the new project
-You project is still at early stage, there are a lot of uncertainty, but you have to push it forward.
-
-It's also not clear will be project based on SOA or Microservices or even N-tier, so you are ok to start with mono repo, but at the same time you want to build structure which can be splitted later if needed.
-
-Calbro software development culture also includes recommendation to reuse wide range of project templates and you will follow this practice too.
-
-* This is how your initial concept looks like:
-  * Admin `Frontend` - `Angular`, a couple of developers have joined your team recently with necessary skills, Admin `Backend` - `Nodejs`
-  * `API` service - `Go`, since this is general company strategy and your project should be aligned with it
-  * `Auth` service will utilize `Nodejs` again, since it will be handled by the developer who will be working on Admin part
-  * You need to have two types of persistent storages - `SQL & NoSQL`, because initial analysis shows that we can't have "shoes for all feets" approach
-  * Managment wants to go with `mobile-first` approach, so you will try satisfy this requirement by using `Cordova` and reuse our Javascript based frontend
-  * `Main portal` web part will use `React`, because it's cool
-  * We also need `Java` to build our automated test framework
-
-* So, here we go (you can copy commands below into create.sh script and execute them in a single run)
-  ```
-  mkdir calbro-reporting && \
-  cd calbro-reporting && \
-  tln init-repo && \
-  tln config --terse && git add . && git commit -m"empty repo" && \
-  tln subtree-add -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && \
-  tln subtree-add -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && \
-  tln subtree-add -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
-  tln subtree-add -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && \
-  tln subtree-add -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && \
-  tln subtree-add -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && \
-  tln subtree-add -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && \
-  tln subtree-add -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && \
-  tln subtree-add -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && \
-  tln subtree-add -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && \
-  tln subtree-add -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && \
-  tln config dbs:mobile:qa:services:static --terse && \
-  git add . && git commit -m"Initial skeleton" && \
-  cd ..
-  ```
-  Windows (create.cmd)
-  ```
-  mkdir calbro-reporting && ^
-  cd calbro-reporting && ^
-  tln init-repo && ^
-  tln config --terse && git add . && git commit -m"empty repo" && ^
-  tln subtree-add -- --prefix static/admin --subtree https://github.com/project-talan/tln-angular.git --ref master && ^
-  tln subtree-add -- --prefix static/portal --subtree https://github.com/project-talan/tln-react.git --ref master && ^
-  tln subtree-add -- --prefix services/admin --subtree https://github.com/project-talan/tln-nodejs.git --ref master && ^
-  tln subtree-add -- --prefix services/api --subtree https://github.com/project-talan/tln-golang.git --ref master && ^
-  tln subtree-add -- --prefix services/auth --subtree https://github.com/project-talan/tln-nodejs.git --ref master && ^
-  tln subtree-add -- --prefix dbs/mongo --subtree https://github.com/project-talan/tln-mongodb.git --ref master && ^
-  tln subtree-add -- --prefix dbs/postgresql --subtree https://github.com/project-talan/tln-postgresql.git --ref master && ^
-  tln subtree-add -- --prefix mobile/cordova --subtree https://github.com/project-talan/tln-cordova.git --ref master && ^
-  tln subtree-add -- --prefix qa/api --subtree https://github.com/project-talan/tln-java.git --ref master && ^
-  tln subtree-add -- --prefix qa/load --subtree https://github.com/project-talan/tln-java.git --ref master && ^
-  tln subtree-add -- --prefix qa/e2e --subtree https://github.com/project-talan/tln-java.git --ref master && ^
-  tln config dbs:mobile:qa:services:static --terse && ^
-  git add . && git commit -m"Initial skeleton" && ^
-  cd ..
-  ```
-
-* Initial structure is ready and we can verify mounted subtrees
-  ```
-  > tln ls-subtrees calbro-reporting
-  ```
-  | Prefix | Subtree | Ref |
-  |-----------|-----------|-----------|
-  | static/admin | https://github.com/project-talan/tln-angular.git | master |
-  | static/portal | https://github.com/project-talan/tln-react.git | master |
-  | services/admin | https://github.com/project-talan/tln-nodejs.git | master |
-  | services/api | https://github.com/project-talan/tln-golang.git | master |
-  | services/auth | https://github.com/project-talan/tln-nodejs.git | master |
-  | dbs/mongo | https://github.com/project-talan/tln-mongodb.git | master |
-  | dbs/postgresql | https://github.com/project-talan/tln-postgresql.git | master |
-  | mobile/cordova | https://github.com/project-talan/tln-cordova.git | master |
-  | qa/api | https://github.com/project-talan/tln-java.git | master |
-  | qa/load | https://github.com/project-talan/tln-java.git | master |
-  | qa/e2e | https://github.com/project-talan/tln-java.git | master |
-
-* And the final step is to observe ready to use development environment structure with all necessary dependencies
-  ```
-  > tln ls / -d 5 --all --installed-only
-  ```
-  ```
-  /
-  ├ angular
-  │ ├ angular-9.1.8
-  │ └ angular-9.1.7
-  ├ calbro
-  │ └ teamone
-  │   ├ calbro-portal
-  │   ├ calbro-reporting
-  │   │ ├ dbs
-  │   │ │ ├ mongo
-  │   │ │ └ postgresql
-  │   │ ├ mobile
-  │   │ │ └ cordova
-  │   │ ├ qa
-  │   │ │ ├ api
-  │   │ │ ├ e2e
-  │   │ │ └ load
-  │   │ ├ services
-  │   │ │ ├ admin
-  │   │ │ ├ api
-  │   │ │ └ auth
-  │   │ └ static
-  │   │   ├ admin
-  │   │   └ portal
-  │   └ calbro-scanner
-  ├ cordova
-  │ └ cordova-9.0.0
-  ├ golang
-  │ └ go-1.14.4
-  ├ hellotalan
-  ├ java
-  │ ├ openjdk-14.0.1
-  │ └ openjdk-11.0.2
-  ├ maven
-  │ └ mvn-3.6.3
-  └ nodejs
-    └ node-14.4.0
   ```
