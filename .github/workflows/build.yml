@@ -7,14 +7,28 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:    
 jobs:
-  sonarcloud:
-    name: SonarCloud
+  build:
+    name: Talan CLI CI/CD
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24.15.0'
+
+      - name: Build
+        run: |
+          npm i
+          npm run build
+
+      - name: Format & Unit test
+        run: |
+          npm run test:coverage
+
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6.0.0
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

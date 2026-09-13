@@ -1,0 +1,46 @@
+
+module.exports = {
+  dotenvs: async (tln) => [],
+  options: async (tln, env) => ({}),
+  env: async (tln, env) => {},
+  inherits: async (tln) => [],
+  depends: async (tln) => [],
+  commands: async (tln) => ({
+    'sys-info': { builder: async (tln, env) => {
+      const os = require('os');
+      return [
+        `echo Platform: ${os.platform()}`,
+        `echo Architecture: ${os.arch()}`,
+        `echo CPUs: ${os.cpus().length}`,
+        `echo Machine: ${os.machine()}`,
+        `echo Release: ${os.release()}`,
+        `echo Version: "${os.version()}"`,
+        `echo Type: ${os.type()}`,
+        `echo Uptime: ${os.uptime()} seconds`,
+        `echo Total Memory: ${os.totalmem() / (1024 * 1024)} MB`,
+        `echo Free Memory: ${os.freemem() / (1024 * 1024)} MB`
+      ];
+    }},
+    'shell': { builder: async (tln, env) => {
+      const os = require('os');
+      const platform = os.platform();
+      if (platform === 'darwin') {
+        return [
+          `BASH_SILENCE_DEPRECATION_WARNING=1 bash --rcfile <(for f in ~/.bash_profile ~/.bashrc ~/.profile; do [ -f "$f" ] && cat "$f"; done; echo 'export PS1="tln > "')`
+        ];
+      } else if (platform === 'linux') {
+        return [
+          `bash --rcfile <(for f in ~/.bashrc ~/.bash_profile ~/.profile; do [ -f "$f" ] && cat "$f"; done; echo 'export PS1="tln > "')`
+        ];
+      } else if (platform === 'win32') {
+        return [
+          `powershell -NoExit -Command 'if (Test-Path $PROFILE) { . $PROFILE }; function prompt { "tln > " }'`
+        ];
+      }
+      return [
+        `echo Platform: ${platform} is not supported`,
+      ];
+    }},
+  }),
+  components: async (tln) => []
+}
