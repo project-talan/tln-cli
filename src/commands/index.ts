@@ -6,6 +6,7 @@ import { lsCommand } from './ls.js';
 import { execCommand } from './exec.js';
 import { runCommand } from './run.js';
 import { aboutCommand } from './about.js';
+import { catalogCommand } from './catalog.js';
 
 /**
  * Registers each command module individually so yargs can infer each command's
@@ -20,5 +21,6 @@ export function registerCommands(yargsInstance: Argv<GlobalArgv>): Argv<GlobalAr
     .command(lsCommand)
     .command(execCommand)
     .command(runCommand)
-    .command(aboutCommand);
+    .command(aboutCommand)
+    .command(catalogCommand);
 }

@@ -3,8 +3,9 @@ import { promises as fs } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR } from './config.js';
 import { Env, envVarNameForOption, stringifyOptionValue, type CliOptionValue, type EnvOverrides, type CliOverrides } from './env.js';
-import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME, SCRIPT_TEMP_DIR, cloneExecutionContext, type ExecutionContext } from './util/misc.js';
+import { cloneExecutionContext, type ExecutionContext } from './util/misc.js';
 import type { LsOptions } from './util/options.js';
 
 /** One entry in a description's `options()` list — see `RawComponentDescription.options`. */

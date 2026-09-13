@@ -1,10 +1,7 @@
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-export const CONFIG_FILE_NAME = '.tln.tjs';
-export const CONFIG_FOLDER_NAME = '.tln';
-export const SCRIPT_TEMP_DIR = path.join(os.tmpdir(), 'talan', 'cli');
+import { CONFIG_FILE_NAME, CONFIG_FOLDER_NAME } from '../config.js';
 
 /**
  * Splits a colon-delimited id list into its parts, e.g. "maven:boost:bootstrap" or

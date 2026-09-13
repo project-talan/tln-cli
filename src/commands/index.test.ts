@@ -8,9 +8,10 @@ import { lsCommand } from './ls.js';
 import { execCommand } from './exec.js';
 import { runCommand } from './run.js';
 import { aboutCommand } from './about.js';
+import { catalogCommand } from './catalog.js';
 
 describe('registerCommands', () => {
-  it('registers all six commands, in order, on the yargs instance', () => {
+  it('registers all seven commands, in order, on the yargs instance', () => {
     const fake = { command: vi.fn() };
     fake.command.mockReturnValue(fake);
 
@@ -23,6 +24,7 @@ describe('registerCommands', () => {
     expect(fake.command).toHaveBeenNthCalledWith(4, execCommand);
     expect(fake.command).toHaveBeenNthCalledWith(5, runCommand);
     expect(fake.command).toHaveBeenNthCalledWith(6, aboutCommand);
-    expect(fake.command).toHaveBeenCalledTimes(6);
+    expect(fake.command).toHaveBeenNthCalledWith(7, catalogCommand);
+    expect(fake.command).toHaveBeenCalledTimes(7);
   });
 });
